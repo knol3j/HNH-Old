@@ -1,11 +1,13 @@
 {
   "expo": {
     "name": "ARMgeddon Miner",
-    "slug": "armageddon-miner",
+    "slug": "armgeddon-miner",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#111827"
     },
@@ -14,17 +16,43 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.armageddon.miner"
+      "bundleIdentifier": "com.hashnhedge.armgeddon",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app uses location to optimize mining based on your region",
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth for peer-to-peer mining coordination"
+      }
     },
     "android": {
-      "package": "com.armageddon.miner",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#111827"
+      },
+      "package": "com.hashnhedge.armgeddon",
+      "versionCode": 1,
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "WAKE_LOCK",
+        "VIBRATE"
       ]
     },
     "web": {
-      "bundler": "metro"
-    }
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "hashnhedge-armgeddon"
+      }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ef4444"
+        }
+      ]
+    ]
   }
 }
