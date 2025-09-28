@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARMgeddon PhoneProof Pool Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .mining-animation {
+            animation: mining 3s ease-in-out infinite;
+        }
+        @keyframes mining {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold">📱 PhoneProof Pool</h1>
+                <p class="text-gray-200">Mobile-Optimized Mining Dashboard</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <div class="text-right">
+                    <div class="pulse-dot bg-green-400 w-3 h-3 rounded-full inline-block mr-2"></div>
+                    <span class="text-sm">Pool Status: <span id="poolStatus">Online</span></span>
+                </div>
+                <a href="../../index.html" class="bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-600 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Quick Stats -->
+    <section class="container mx-auto p-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="card p-6 rounded-xl text-center">
+                <div class="text-3xl mb-2">📱</div>
+                <h3 class="text-gray-400 text-sm">Active Miners</h3>
+                <p class="text-2xl font-bold" id="activeMiners">0</p>
+                <span class="text-xs text-green-400" id="minersTrend">Loading...</span>
+            </div>
+            <div class="card p-6 rounded-xl text-center">
+                <div class="text-3xl mb-2">⚡</div>
+                <h3 class="text-gray-400 text-sm">Pool Hashrate</h3>
+                <p class="text-2xl font-bold" id="poolHashrate">0 H/s</p>
+                <span class="text-xs text-blue-400" id="hashrateTrend">Loading...</span>
+            </div>
+            <div class="card p-6 rounded-xl text-center">
+                <div class="text-3xl mb-2">📊</div>
+                <h3 class="text-gray-400 text-sm">Total Shares</h3>
+                <p class="text-2xl font-bold" id="totalShares">0</p>
+                <span class="text-xs text-purple-400" id="sharesTrend">Loading...</span>
+            </div>
+            <div class="card p-6 rounded-xl text-center">
+                <div class="text-3xl mb-2">🎯</div>
+                <h3 class="text-gray-400 text-sm">Blocks Found</h3>
+                <p class="text-2xl font-bold" id="blocksFound">0</p>
+                <span class="text-xs text-yellow-400" id="blocksTrend">Loading...</span>
+            </div>
+            <div class="card p-6 rounded-xl text-center">
+                <div class="text-3xl mb-2">💰</div>
+                <h3 class="text-gray-400 text-sm">Pool Fee</h3>
+                <p class="text-2xl font-bold" id="poolFee">1.5%</p>
+                <span class="text-xs text-gray-400">Mobile Optimized</span>
+            </div>
+        </div>
+
+        <!-- Device Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fab fa-android text-green-400 mr-2"></i> Android Miners
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Count:</span>
+                        <span class="font-bold" id="androidCount">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Hashrate:</span>
+                        <span class="font-bold" id="androidHashrate">0 H/s</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" id="androidPercent" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fab fa-apple text-blue-400 mr-2"></i> iOS Miners
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Count:</span>
+                        <span class="font-bold" id="iosCount">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Hashrate:</span>
+                        <span class="font-bold" id="iosHashrate">0 H/s</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" id="iosPercent" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-mobile-alt text-purple-400 mr-2"></i> Pool Health
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Algorithm:</span>
+                        <span class="font-bold text-red-400">PhoneProof</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Difficulty:</span>
+                        <span class="font-bold" id="currentDifficulty">0x0000ffff</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Block Time:</span>
+                        <span class="font-bold text-green-400">30s target</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-chart-line mr-2"></i> Hashrate History
+                </h3>
+                <canvas id="hashrateChart" height="200"></canvas>
+            </div>
+
+            <div class="card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-mobile-alt mr-2"></i> Device Distribution
+                </h3>
+                <canvas id="deviceChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Blocks -->
+        <div class="card p-6 rounded-xl mb-8">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-cubes mr-2"></i> Recent Blocks
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left p-3">Height</th>
+                            <th class="text-left p-3">Hash</th>
+                            <th class="text-left p-3">Finder</th>
+                            <th class="text-left p-3">Platform</th>
+                            <th class="text-left p-3">Time</th>
+                            <th class="text-left p-3">Reward</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentBlocks">
+                        <tr>
+                            <td colspan="6" class="text-center p-6 text-gray-400">
+                                <i class="fas fa-cube text-2xl mb-2"></i>
+                                <p>No blocks found yet</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card p-6 rounded-xl">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-trophy mr-2"></i> Top Mobile Miners
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left p-3">Rank</th>
+                            <th class="text-left p-3">Miner</th>
+                            <th class="text-left p-3">Platform</th>
+                            <th class="text-left p-3">Shares</th>
+                            <th class="text-left p-3">Earnings</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard">
+                        <tr>
+                            <td colspan="5" class="text-center p-6 text-gray-400">
+                                <i class="fas fa-trophy text-2xl mb-2"></i>
+                                <p>No miners yet - be the first!</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mining Instructions -->
+    <section class="bg-gray-800 py-12">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-8">Start Mining with PhoneProof</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📲</div>
+                    <h3 class="text-xl font-bold mb-2">Download App</h3>
+                    <p class="text-gray-400 mb-4">Get the ARMgeddon mobile miner for your device</p>
+                    <a href="../../downloads/mobile.html" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-semibold transition">
+                        Download Now
+                    </a>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4">💳</div>
+                    <h3 class="text-xl font-bold mb-2">Connect Wallet</h3>
+                    <p class="text-gray-400 mb-4">Enter your Solana wallet address to receive HNH rewards</p>
+                    <button class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-semibold transition">
+                        Setup Wallet
+                    </button>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4 mining-animation">⛏️</div>
+                    <h3 class="text-xl font-bold mb-2">Start Mining</h3>
+                    <p class="text-gray-400 mb-4">Begin earning HNH tokens with our battery-friendly algorithm</p>
+                    <button class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold transition">
+                        Start Mining
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 py-6 border-t border-gray-700">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-gray-400">
+                PhoneProof Pool • Part of the ARMgeddon Mobile Mining Ecosystem
+            </p>
+            <div class="mt-4 space-x-4">
+                <a href="../../armageddon/index.html" class="text-red-400 hover:text-red-300">ARMgeddon Hub</a>
+                <a href="../../docs/gpu-farm-dashboard.html" class="text-blue-400 hover:text-blue-300">GPU Dashboard</a>
+                <a href="../../index.html" class="text-purple-400 hover:text-purple-300">HashNHedge</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Pool API configuration
+        const POOL_API = window.location.hostname === 'localhost'
+            ? 'http://localhost:3003/api'
+            : 'https://phoneproof-pool.onrender.com/api';
+        let hashrateChart, deviceChart;
+        let poolStats = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            loadPoolStats();
+            loadLeaderboard();
+
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                loadPoolStats();
+                loadLeaderboard();
+            }, 30000);
+
+            // WebSocket connection for real-time updates
+            connectWebSocket();
+        });
+
+        async function loadPoolStats() {
+            try {
+                const response = await fetch(`${POOL_API}/stats`);
+                const data = await response.json();
+
+                if (data.success) {
+                    poolStats = data;
+                    updateDashboard(data);
+                }
+            } catch (error) {
+                console.error('Failed to load pool stats:', error);
+                document.getElementById('poolStatus').textContent = 'Offline';
+                document.getElementById('poolStatus').parentElement.querySelector('.pulse-dot').classList.remove('bg-green-400');
+                document.getElementById('poolStatus').parentElement.querySelector('.pulse-dot').classList.add('bg-red-400');
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update main stats
+            document.getElementById('activeMiners').textContent = data.pool.miners.toLocaleString();
+            document.getElementById('poolHashrate').textContent = formatHashrate(data.pool.hashrate);
+            document.getElementById('totalShares').textContent = data.pool.shares.toLocaleString();
+            document.getElementById('blocksFound').textContent = data.pool.blocks.toLocaleString();
+            document.getElementById('poolFee').textContent = data.pool.fee + '%';
+
+            // Update device stats
+            document.getElementById('androidCount').textContent = data.devices.android.count.toLocaleString();
+            document.getElementById('androidHashrate').textContent = formatHashrate(data.devices.android.hashrate);
+            document.getElementById('iosCount').textContent = data.devices.ios.count.toLocaleString();
+            document.getElementById('iosHashrate').textContent = formatHashrate(data.devices.ios.hashrate);
+
+            // Update difficulty
+            document.getElementById('currentDifficulty').textContent = `0x${data.network.difficulty.toString(16)}`;
+
+            // Update device percentages
+            const totalDevices = data.devices.total.count;
+            if (totalDevices > 0) {
+                const androidPercent = (data.devices.android.count / totalDevices) * 100;
+                const iosPercent = (data.devices.ios.count / totalDevices) * 100;
+
+                document.getElementById('androidPercent').style.width = androidPercent + '%';
+                document.getElementById('iosPercent').style.width = iosPercent + '%';
+            }
+
+            // Update recent blocks
+            updateRecentBlocks(data.recentBlocks);
+
+            // Update charts
+            updateHashrateChart(data.pool.hashrate);
+            updateDeviceChart(data.devices);
+        }
+
+        function updateRecentBlocks(blocks) {
+            const tbody = document.getElementById('recentBlocks');
+
+            if (blocks && blocks.length > 0) {
+                tbody.innerHTML = blocks.map((block, index) => `
+                    <tr class="border-b border-gray-700 hover:bg-gray-800">
+                        <td class="p-3 font-bold">#${block.height}</td>
+                        <td class="p-3 font-mono text-xs">${block.hash.substring(0, 16)}...</td>
+                        <td class="p-3">${block.workerName}</td>
+                        <td class="p-3">
+                            <span class="inline-flex items-center">
+                                ${getPlatformIcon(block.platform || 'unknown')}
+                                ${block.platform || 'Unknown'}
+                            </span>
+                        </td>
+                        <td class="p-3 text-gray-400">${formatTime(block.timestamp)}</td>
+                        <td class="p-3 text-green-400 font-bold">${block.reward.toFixed(2)} HNH</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center p-6 text-gray-400">
+                            <i class="fas fa-cube text-2xl mb-2"></i>
+                            <p>No blocks found yet</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(`${POOL_API}/leaderboard`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateLeaderboard(data.leaderboard);
+                }
+            } catch (error) {
+                console.error('Failed to load leaderboard:', error);
+            }
+        }
+
+        function updateLeaderboard(leaderboard) {
+            const tbody = document.getElementById('leaderboard');
+
+            if (leaderboard && leaderboard.length > 0) {
+                tbody.innerHTML = leaderboard.map((entry, index) => `
+                    <tr class="border-b border-gray-700 hover:bg-gray-800">
+                        <td class="p-3">
+                            <span class="inline-flex items-center">
+                                ${getRankIcon(index + 1)}
+                                ${index + 1}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <div>
+                                <div class="font-semibold">${entry.workerName}</div>
+                                <div class="text-xs text-gray-400 font-mono">${entry.address}</div>
+                            </div>
+                        </td>
+                        <td class="p-3">
+                            <span class="inline-flex items-center">
+                                ${getPlatformIcon(entry.platform)}
+                                ${entry.platform}
+                            </span>
+                        </td>
+                        <td class="p-3 font-bold">${entry.shares.toLocaleString()}</td>
+                        <td class="p-3 font-bold text-green-400">${entry.earnings.toFixed(4)} HNH</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center p-6 text-gray-400">
+                            <i class="fas fa-trophy text-2xl mb-2"></i>
+                            <p>No miners yet - be the first!</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function initCharts() {
+            // Hashrate Chart
+            const hashrateCtx = document.getElementById('hashrateChart').getContext('2d');
+            hashrateChart = new Chart(hashrateCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Pool Hashrate',
+                        data: [],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'white' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: 'white' }
+                        }
+                    }
+                }
+            });
+
+            // Device Chart
+            const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+            deviceChart = new Chart(deviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Android', 'iOS'],
+                    datasets: [{
+                        data: [0, 0],
+                        backgroundColor: ['#10b981', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHashrateChart(hashrate) {
+            const now = new Date().toLocaleTimeString();
+
+            hashrateChart.data.labels.push(now);
+            hashrateChart.data.datasets[0].data.push(hashrate);
+
+            // Keep only last 20 data points
+            if (hashrateChart.data.labels.length > 20) {
+                hashrateChart.data.labels.shift();
+                hashrateChart.data.datasets[0].data.shift();
+            }
+
+            hashrateChart.update('none');
+        }
+
+        function updateDeviceChart(devices) {
+            deviceChart.data.datasets[0].data = [
+                devices.android.count,
+                devices.ios.count
+            ];
+            deviceChart.update();
+        }
+
+        function connectWebSocket() {
+            try {
+                const wsUrl = window.location.hostname === 'localhost'
+                    ? 'ws://localhost:3004'
+                    : 'wss://phoneproof-pool.onrender.com:10001';
+                const ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    console.log('📡 Connected to PhoneProof pool WebSocket');
+                };
+
+                ws.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                };
+
+                ws.onclose = () => {
+                    console.log('🔌 WebSocket disconnected, reconnecting...');
+                    setTimeout(connectWebSocket, 5000);
+                };
+            } catch (error) {
+                console.warn('WebSocket connection failed:', error);
+            }
+        }
+
+        function handleWebSocketMessage(message) {
+            switch (message.type) {
+                case 'block_found':
+                    showNotification('🎉 Block Found!', `Block #${message.data.height} found by ${message.data.workerName}`);
+                    loadPoolStats(); // Refresh stats
+                    break;
+                case 'miner_joined':
+                    showNotification('👋 New Miner', `${message.data.workerName} joined the pool`);
+                    break;
+            }
+        }
+
+        function showNotification(title, message) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body: message });
+            }
+        }
+
+        // Utility functions
+        function formatHashrate(hashrate) {
+            if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
+            if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
+            return `${hashrate} H/s`;
+        }
+
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        function getPlatformIcon(platform) {
+            switch (platform?.toLowerCase()) {
+                case 'android':
+                    return '<i class="fab fa-android text-green-400 mr-1"></i>';
+                case 'ios':
+                    return '<i class="fab fa-apple text-blue-400 mr-1"></i>';
+                default:
+                    return '<i class="fas fa-mobile-alt text-gray-400 mr-1"></i>';
+            }
+        }
+
+        function getRankIcon(rank) {
+            switch (rank) {
+                case 1:
+                    return '<i class="fas fa-trophy text-yellow-400 mr-1"></i>';
+                case 2:
+                    return '<i class="fas fa-medal text-gray-300 mr-1"></i>';
+                case 3:
+                    return '<i class="fas fa-award text-yellow-600 mr-1"></i>';
+                default:
+                    return '<i class="fas fa-user text-gray-400 mr-1"></i>';
+            }
+        }
+
+        // Request notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>

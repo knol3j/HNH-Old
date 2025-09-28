@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: phoneproof-pool
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run start:phoneproof
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: WS_PORT
+        value: 10001
+      - key: POOL_NAME
+        value: "ARMgeddon PhoneProof Pool"
+      - key: ALGORITHM
+        value: "PhoneProof"
+      - key: POOL_FEE
+        value: "1.5"
+      - key: BLOCK_TIME
+        value: "30000"
+      - key: DIFFICULTY_ADJUSTMENT
+        value: "120000"
+      - key: MIN_BATTERY
+        value: "20"
+      - key: MAX_TEMPERATURE
+        value: "40"
+      - key: MAX_MINING_DURATION
+        value: "300000"
+      - key: COOLDOWN_PERIOD
+        value: "60000"
+    disk:
+      name: phoneproof-pool-disk
+      sizeGB: 1
+      mountPath: /opt/render/project/data
+    healthCheckPath: /health
+    region: oregon
+    autoDeploy: true
+    branches:
+      - master
+      - main
+    rootDir: armageddon/pool

@@ -81,8 +81,11 @@
                 <a href="#download" class="bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
                     <i class="fas fa-download mr-2"></i> Download Miner
                 </a>
+                <a href="pool/phoneproof-dashboard.html" class="bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
+                    <i class="fas fa-mobile-alt mr-2"></i> PhoneProof Pool
+                </a>
                 <a href="pool/index.html" class="border border-red-500 hover:border-red-400 px-8 py-4 rounded-lg font-semibold text-lg transition">
-                    <i class="fas fa-server mr-2"></i> Join Pool
+                    <i class="fas fa-server mr-2"></i> General Pool
                 </a>
                 <a href="dashboard/index.html" class="bg-gray-800 hover:bg-gray-700 px-8 py-4 rounded-lg font-semibold text-lg transition">
                     <i class="fas fa-chart-line mr-2"></i> Dashboard
@@ -208,25 +211,34 @@
             </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <div class="bg-gray-800 p-8 rounded-xl border border-gray-700">
+                <div class="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-green-500 transition">
                     <i class="fab fa-android text-6xl text-green-400 mb-4"></i>
                     <h3 class="text-2xl font-bold mb-4">Android App</h3>
-                    <p class="text-gray-400 mb-6">Compatible with Android 8.0+</p>
-                    <a href="mobile-app/android/ARMgeddon.apk" class="inline-block bg-green-600 hover:bg-green-700 px-8 py-3 rounded-lg font-semibold transition">
+                    <p class="text-gray-400 mb-6">Compatible with Android 6.0+ • ~25MB</p>
+                    <a href="../downloads/mobile.html" class="inline-block bg-green-600 hover:bg-green-700 px-8 py-3 rounded-lg font-semibold transition transform hover:scale-105">
                         <i class="fas fa-download mr-2"></i> Download APK
                     </a>
-                    <p class="text-sm text-gray-500 mt-4">Coming Soon</p>
+                    <p class="text-sm text-yellow-400 mt-4">🚧 In Development</p>
                 </div>
 
-                <div class="bg-gray-800 p-8 rounded-xl border border-gray-700">
-                    <i class="fab fa-apple text-6xl text-gray-400 mb-4"></i>
+                <div class="bg-gray-800 p-8 rounded-xl border border-gray-700 hover:border-blue-500 transition">
+                    <i class="fab fa-apple text-6xl text-blue-400 mb-4"></i>
                     <h3 class="text-2xl font-bold mb-4">iOS App</h3>
-                    <p class="text-gray-400 mb-6">Compatible with iOS 14.0+</p>
-                    <a href="#" class="inline-block bg-gray-600 px-8 py-3 rounded-lg font-semibold cursor-not-allowed opacity-50">
-                        <i class="fas fa-clock mr-2"></i> Coming Soon
+                    <p class="text-gray-400 mb-6">Compatible with iOS 12.0+ • ~30MB</p>
+                    <a href="../downloads/mobile.html" class="inline-block bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                        <i class="fas fa-download mr-2"></i> Download IPA
                     </a>
-                    <p class="text-sm text-gray-500 mt-4">In Development</p>
+                    <p class="text-sm text-yellow-400 mt-4">🚧 In Development</p>
                 </div>
+            </div>
+
+            <!-- Additional Download Info -->
+            <div class="mt-12 bg-yellow-600 bg-opacity-20 border border-yellow-600 rounded-lg p-6 max-w-2xl mx-auto">
+                <h4 class="font-bold text-yellow-400 mb-2">📱 Mobile App Development Status</h4>
+                <p class="text-sm text-gray-300">
+                    Our mobile apps are currently in active development. Both Android APK and iOS IPA downloads will be available soon.
+                    The apps feature battery-optimized mining, PhoneProof algorithm, and seamless wallet integration.
+                </p>
             </div>
         </div>
     </section>

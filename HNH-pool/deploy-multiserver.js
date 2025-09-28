@@ -4,11 +4,6 @@ const path = require('path');
 
 // Server Configuration
 const SERVERS = {
-  local: {
-    ip: '192.168.254.2',
-    port: 3001,
-    name: 'Local Network Hub'
-  },
   onrender1: {
     ip: '35.160.120.126',
     port: 10000,
@@ -23,6 +18,16 @@ const SERVERS = {
     ip: '34.211.200.85',
     port: 10000,
     name: 'OnRender Tertiary'
+  },
+  onrender_range1: {
+    ip: '74.220.48.0/24',
+    port: 10000,
+    name: 'OnRender Range 48'
+  },
+  onrender_range2: {
+    ip: '74.220.56.0/24',
+    port: 10000,
+    name: 'OnRender Range 56'
   }
 };
 
@@ -36,7 +41,7 @@ const LOAD_BALANCER_CONFIG = {
   },
   failover: {
     enabled: true,
-    priority: ['local', 'onrender1', 'onrender2', 'onrender3']
+    priority: ['onrender1', 'onrender2', 'onrender3', 'onrender_range1', 'onrender_range2']
   }
 };
 

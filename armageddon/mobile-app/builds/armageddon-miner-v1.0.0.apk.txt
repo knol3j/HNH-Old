@@ -1,0 +1,35 @@
+# ARMgeddon Mobile Miner v1.0.0 - Android APK
+
+## Download Information
+- **Version**: 1.0.0
+- **Platform**: Android 6.0+
+- **Size**: ~25MB
+- **Package**: com.hashnhedge.armgeddon
+
+## Features
+- PhoneProof mining algorithm optimized for ARM processors
+- Battery-friendly operations with smart power management
+- Real-time mining statistics and earnings tracking
+- Push notifications for mining updates
+- Secure wallet integration
+- Offline mining capabilities
+
+## Installation Instructions
+1. Enable "Unknown Sources" in Android Settings > Security
+2. Download the APK file
+3. Open the downloaded file and follow installation prompts
+4. Launch ARMgeddon Miner
+5. Connect your wallet to start mining
+
+## Security Note
+This is a placeholder file. The actual APK will be available when the mobile miner is ready for public release.
+
+## Build Command Used
+```bash
+cd armageddon/mobile-app
+npm run build:apk
+```
+
+## Support
+For technical support: https://hashnhedge.com/support
+GitHub Issues: https://github.com/knol3j/hashnhedge/issues

@@ -1,0 +1,47 @@
+# ARMgeddon Mobile Miner v1.0.0 - iOS IPA
+
+## Download Information
+- **Version**: 1.0.0
+- **Platform**: iOS 12.0+
+- **Size**: ~30MB
+- **Bundle ID**: com.hashnhedge.armgeddon
+
+## Features
+- PhoneProof mining algorithm optimized for iOS devices
+- Battery-friendly operations with iOS power management
+- Real-time mining statistics and earnings tracking
+- iOS native notifications for mining updates
+- Secure Keychain wallet integration
+- Background processing capabilities
+
+## Installation Instructions
+### Method 1: AltStore (Recommended)
+1. Install AltStore on your iOS device
+2. Download the IPA file to your device
+3. Open in AltStore and install
+4. Trust the developer profile in Settings > General > Profiles
+
+### Method 2: Xcode (Developers)
+1. Download IPA file
+2. Connect iOS device to Mac
+3. Use Xcode > Window > Devices and Simulators
+4. Drag IPA to device apps list
+
+### Method 3: Enterprise Distribution (Coming Soon)
+Enterprise distribution will be available for business users.
+
+## Security Note
+This is a placeholder file. The actual IPA will be available when the mobile miner is ready for public release.
+
+## Build Command Used
+```bash
+cd armageddon/mobile-app
+npm run build:ios
+```
+
+## App Store
+We plan to submit to the App Store once Apple's cryptocurrency mining policies are clarified.
+
+## Support
+For technical support: https://hashnhedge.com/support
+GitHub Issues: https://github.com/knol3j/hashnhedge/issues

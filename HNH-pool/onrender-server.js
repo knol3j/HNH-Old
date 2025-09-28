@@ -25,7 +25,15 @@ const globalStorage = {
 
 // Middleware
 app.use(cors({
-  origin: ['https://hashnhedge.netlify.app', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:9000'],
+  origin: [
+    'https://hashnhedge.netlify.app',
+    'http://35.160.120.126:10000',
+    'http://44.233.151.27:10000',
+    'http://34.211.200.85:10000',
+    'https://35.160.120.126:10000',
+    'https://44.233.151.27:10000',
+    'https://34.211.200.85:10000'
+  ],
   credentials: true
 }));
 app.use(express.json());

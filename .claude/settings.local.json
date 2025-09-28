@@ -30,7 +30,8 @@
       "Bash(netlify:*)",
       "Bash(npm run dev:*)",
       "Bash(dir:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(deploy-production.bat)"
     ],
     "deny": [],
     "ask": []

@@ -100,23 +100,23 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="metric-card p-6 rounded-lg card-hover">
                     <h3 class="text-gray-400 text-sm">Total Nodes</h3>
-                    <p class="text-3xl font-bold mt-2">1,247</p>
-                    <span class="text-green-400 text-sm">↑ 12% this week</span>
+                    <p class="text-3xl font-bold mt-2" id="totalNodes">Loading...</p>
+                    <span class="text-gray-400 text-sm">Real-time data</span>
                 </div>
                 <div class="metric-card p-6 rounded-lg card-hover">
                     <h3 class="text-gray-400 text-sm">Active GPUs</h3>
-                    <p class="text-3xl font-bold mt-2">3,892</p>
-                    <span class="text-green-400 text-sm">↑ 8% this week</span>
+                    <p class="text-3xl font-bold mt-2" id="activeGPUs">Loading...</p>
+                    <span class="text-gray-400 text-sm">Real-time data</span>
                 </div>
                 <div class="metric-card p-6 rounded-lg card-hover">
                     <h3 class="text-gray-400 text-sm">Total TFLOPS</h3>
-                    <p class="text-3xl font-bold mt-2">847.3</p>
-                    <span class="text-green-400 text-sm">↑ 15% this week</span>
+                    <p class="text-3xl font-bold mt-2" id="totalTFLOPS">Loading...</p>
+                    <span class="text-gray-400 text-sm">Real-time data</span>
                 </div>
                 <div class="metric-card p-6 rounded-lg card-hover">
                     <h3 class="text-gray-400 text-sm">Network Utilization</h3>
-                    <p class="text-3xl font-bold mt-2">76.4%</p>
-                    <span class="text-yellow-400 text-sm">Optimal Range</span>
+                    <p class="text-3xl font-bold mt-2" id="networkUtilization">Loading...</p>
+                    <span class="text-gray-400 text-sm">Real-time data</span>
                 </div>
             </div>
 
@@ -163,23 +163,10 @@
                 <div class="bg-gray-800 p-6 rounded-lg">
                     <h3 class="text-xl font-semibold mb-4">Active Farms</h3>
                     <div class="space-y-3" id="farmList">
-                        <div class="bg-gray-700 p-4 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-semibold">Alpha Farm Node</p>
-                                    <p class="text-sm text-gray-400">32 GPUs • California</p>
-                                </div>
-                                <span class="bg-green-500 px-3 py-1 rounded-full text-sm">Online</span>
-                            </div>
-                        </div>
-                        <div class="bg-gray-700 p-4 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="font-semibold">Beta Mining Cluster</p>
-                                    <p class="text-sm text-gray-400">64 GPUs • Texas</p>
-                                </div>
-                                <span class="bg-green-500 px-3 py-1 rounded-full text-sm">Online</span>
-                            </div>
+                        <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
+                            <i class="fas fa-server text-2xl mb-2"></i>
+                            <p>No farms registered yet</p>
+                            <p class="text-sm">Register your first farm to get started</p>
                         </div>
                     </div>
                 </div>
@@ -224,25 +211,21 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-gray-800 p-6 rounded-lg">
                     <h4 class="font-semibold mb-3">Your Nodes</h4>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span>Node #001</span>
-                            <span class="text-green-400">Active</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Node #002</span>
-                            <span class="text-yellow-400">Syncing</span>
+                    <div class="space-y-2" id="nodesList">
+                        <div class="text-center text-gray-400">
+                            <i class="fas fa-desktop text-xl mb-2"></i>
+                            <p class="text-sm">No nodes connected</p>
                         </div>
                     </div>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg">
                     <h4 class="font-semibold mb-3">Compute Tasks</h4>
-                    <p class="text-3xl font-bold">47</p>
+                    <p class="text-3xl font-bold" id="completedTasks">0</p>
                     <p class="text-sm text-gray-400">Completed today</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg">
                     <h4 class="font-semibold mb-3">Earnings</h4>
-                    <p class="text-3xl font-bold">1,247 HNH</p>
+                    <p class="text-3xl font-bold" id="monthlyEarnings">0 HNH</p>
                     <p class="text-sm text-gray-400">This month</p>
                 </div>
             </div>
@@ -260,11 +243,11 @@
                     <div class="mt-4 space-y-2">
                         <div class="flex justify-between">
                             <span>Total Supply:</span>
-                            <span class="font-bold">1,000,000,000 HNH</span>
+                            <span class="font-bold">TBD</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Circulating Supply:</span>
-                            <span class="font-bold">350,000,000 HNH</span>
+                            <span class="font-bold">TBD</span>
                         </div>
                     </div>
                 </div>
@@ -275,19 +258,19 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm mb-2">Investment Amount (USD)</label>
-                            <input type="number" id="investmentAmount" value="1000" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()">
+                            <input type="number" id="investmentAmount" value="" placeholder="Enter amount" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()">
                         </div>
                         <div>
                             <label class="block text-sm mb-2">Token Price (USD)</label>
-                            <input type="number" id="tokenPrice" value="0.05" step="0.01" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()">
+                            <input type="number" id="tokenPrice" value="" placeholder="TBD - Token not launched" step="0.01" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()" disabled>
                         </div>
                         <div>
                             <label class="block text-sm mb-2">Expected APY (%)</label>
-                            <input type="number" id="apyRate" value="120" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()">
+                            <input type="number" id="apyRate" value="" placeholder="TBD - Depends on network usage" class="w-full p-3 bg-gray-700 rounded-lg" onchange="calculateROI()" disabled>
                         </div>
                         <div class="bg-gray-700 p-4 rounded-lg">
                             <p class="text-sm text-gray-400">Estimated Annual Return</p>
-                            <p class="text-2xl font-bold text-green-400" id="roiResult">$1,200</p>
+                            <p class="text-2xl font-bold text-gray-400" id="roiResult">Token not launched yet</p>
                         </div>
                     </div>
                 </div>
@@ -548,11 +531,11 @@ contract HashNHedgeOrchestrator {
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg text-center">
                     <p class="text-gray-400 text-sm">Total Transactions</p>
-                    <p class="text-2xl font-bold mt-2">48,293</p>
+                    <p class="text-2xl font-bold mt-2" id="totalTransactions">0</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-lg text-center">
                     <p class="text-gray-400 text-sm">Contract Balance</p>
-                    <p class="text-2xl font-bold mt-2">1,247,892 HNH</p>
+                    <p class="text-2xl font-bold mt-2" id="contractBalance">0 HNH</p>
                 </div>
             </div>
         </div>
@@ -582,13 +565,28 @@ contract HashNHedgeOrchestrator {
                 const response = await fetch(`${API_BASE}/network-stats`);
                 const data = await response.json();
 
-                // Update dashboard metrics
-                document.querySelector('.metric-card:nth-child(1) p').textContent = data.totalNodes.toLocaleString();
-                document.querySelector('.metric-card:nth-child(2) p').textContent = data.activeGPUs.toLocaleString();
-                document.querySelector('.metric-card:nth-child(3) p').textContent = data.totalTFLOPS.toFixed(1);
-                document.querySelector('.metric-card:nth-child(4) p').textContent = data.networkUtilization.toFixed(1) + '%';
+                // Update dashboard metrics with real data
+                document.getElementById('totalNodes').textContent = data.totalNodes ? data.totalNodes.toLocaleString() : '0';
+                document.getElementById('activeGPUs').textContent = data.activeGPUs ? data.activeGPUs.toLocaleString() : '0';
+                document.getElementById('totalTFLOPS').textContent = data.totalTFLOPS ? data.totalTFLOPS.toFixed(1) : '0.0';
+                document.getElementById('networkUtilization').textContent = data.networkUtilization ? data.networkUtilization.toFixed(1) + '%' : '0.0%';
+
+                // Update other metrics
+                document.getElementById('completedTasks').textContent = data.completedTasks || '0';
+                document.getElementById('monthlyEarnings').textContent = `${data.monthlyEarnings || '0'} HNH`;
+                document.getElementById('totalTransactions').textContent = data.totalTransactions ? data.totalTransactions.toLocaleString() : '0';
+                document.getElementById('contractBalance').textContent = `${data.contractBalance || '0'} HNH`;
             } catch (error) {
                 console.error('Failed to load network stats:', error);
+                // Show zero values on error
+                document.getElementById('totalNodes').textContent = '0';
+                document.getElementById('activeGPUs').textContent = '0';
+                document.getElementById('totalTFLOPS').textContent = '0.0';
+                document.getElementById('networkUtilization').textContent = '0.0%';
+                document.getElementById('completedTasks').textContent = '0';
+                document.getElementById('monthlyEarnings').textContent = '0 HNH';
+                document.getElementById('totalTransactions').textContent = '0';
+                document.getElementById('contractBalance').textContent = '0 HNH';
             }
         }
 
@@ -599,93 +597,163 @@ contract HashNHedgeOrchestrator {
                 const farms = await response.json();
 
                 const farmList = document.getElementById('farmList');
-                farmList.innerHTML = farms.map(farm => `
-                    <div class="bg-gray-700 p-4 rounded-lg">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-semibold">${farm.name}</p>
-                                <p class="text-sm text-gray-400">${farm.gpus} GPUs • ${farm.location}</p>
+                if (farms && farms.length > 0) {
+                    farmList.innerHTML = farms.map(farm => `
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold">${farm.name}</p>
+                                    <p class="text-sm text-gray-400">${farm.gpus} GPUs • ${farm.location}</p>
+                                </div>
+                                <span class="bg-${farm.status === 'online' ? 'green' : 'red'}-500 px-3 py-1 rounded-full text-sm">
+                                    ${farm.status.charAt(0).toUpperCase() + farm.status.slice(1)}
+                                </span>
                             </div>
-                            <span class="bg-${farm.status === 'online' ? 'green' : 'red'}-500 px-3 py-1 rounded-full text-sm">
-                                ${farm.status.charAt(0).toUpperCase() + farm.status.slice(1)}
-                            </span>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                } else {
+                    farmList.innerHTML = `
+                        <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
+                            <i class="fas fa-server text-2xl mb-2"></i>
+                            <p>No farms registered yet</p>
+                            <p class="text-sm">Register your first farm to get started</p>
+                        </div>
+                    `;
+                }
             } catch (error) {
                 console.error('Failed to load farms:', error);
+                const farmList = document.getElementById('farmList');
+                farmList.innerHTML = `
+                    <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Unable to load farms</p>
+                        <p class="text-sm">Check your connection and try again</p>
+                    </div>
+                `;
             }
         }
 
-        // Initialize Charts
-        function initCharts() {
-            // Network Growth Chart
-            const growthCtx = document.getElementById('growthChart').getContext('2d');
-            new Chart(growthCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Active Nodes',
-                        data: [120, 290, 450, 720, 980, 1247],
-                        borderColor: 'rgb(99, 102, 241)',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
+        // Initialize Charts with real data or empty states
+        async function initCharts() {
+            try {
+                // Network Growth Chart - Load real historical data
+                const growthResponse = await fetch(`${API_BASE}/network-growth`);
+                const growthData = await growthResponse.json();
+
+                const growthCtx = document.getElementById('growthChart').getContext('2d');
+                new Chart(growthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: growthData.labels || ['No Data'],
+                        datasets: [{
+                            label: 'Active Nodes',
+                            data: growthData.data || [0],
+                            borderColor: 'rgb(99, 102, 241)',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            tension: 0.4
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
                             }
                         },
-                        x: {
-                            grid: {
-                                color: 'rgba(255, 255, 255, 0.1)'
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
                             }
                         }
                     }
-                }
-            });
-
-            // Compute Distribution Chart
-            const computeCtx = document.getElementById('computeChart').getContext('2d');
-            new Chart(computeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['AI Training', 'Rendering', 'Data Processing', 'Idle'],
-                    datasets: [{
-                        data: [35, 25, 16.4, 23.6],
-                        backgroundColor: [
-                            'rgb(99, 102, 241)',
-                            'rgb(139, 92, 246)',
-                            'rgb(168, 85, 247)',
-                            'rgb(75, 85, 99)'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: 'white'
+                });
+            } catch (error) {
+                // Show empty chart on error
+                const growthCtx = document.getElementById('growthChart').getContext('2d');
+                new Chart(growthCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            label: 'Active Nodes',
+                            data: [0],
+                            borderColor: 'rgb(99, 102, 241)',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
                             }
                         }
                     }
-                }
-            });
+                });
+            }
 
-            // Token Distribution Chart
+            try {
+                // Compute Distribution Chart - Load real distribution data
+                const computeResponse = await fetch(`${API_BASE}/compute-distribution`);
+                const computeData = await computeResponse.json();
+
+                const computeCtx = document.getElementById('computeChart').getContext('2d');
+                new Chart(computeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: computeData.labels || ['No Active Tasks'],
+                        datasets: [{
+                            data: computeData.data || [100],
+                            backgroundColor: computeData.colors || ['rgb(75, 85, 99)']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                // Show empty state
+                const computeCtx = document.getElementById('computeChart').getContext('2d');
+                new Chart(computeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No Active Tasks'],
+                        datasets: [{
+                            data: [100],
+                            backgroundColor: ['rgb(75, 85, 99)']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Token Distribution Chart - Keep static planned distribution
             const tokenCtx = document.getElementById('tokenDistChart');
             if (tokenCtx) {
                 new Chart(tokenCtx.getContext('2d'), {
@@ -717,41 +785,70 @@ contract HashNHedgeOrchestrator {
                 });
             }
 
-            // Farm Performance Chart
-            const farmPerfCtx = document.getElementById('farmPerformanceChart');
-            if (farmPerfCtx) {
-                new Chart(farmPerfCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Alpha Farm', 'Beta Cluster', 'Gamma Node', 'Delta Pool', 'Epsilon Grid'],
-                        datasets: [{
-                            label: 'TFLOPS',
-                            data: [245, 189, 167, 143, 103],
-                            backgroundColor: 'rgba(99, 102, 241, 0.8)'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+            try {
+                // Farm Performance Chart - Load real farm data
+                const farmPerfResponse = await fetch(`${API_BASE}/farm-performance`);
+                const farmPerfData = await farmPerfResponse.json();
+
+                const farmPerfCtx = document.getElementById('farmPerformanceChart');
+                if (farmPerfCtx) {
+                    new Chart(farmPerfCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: farmPerfData.labels || ['No Farms'],
+                            datasets: [{
+                                label: 'TFLOPS',
+                                data: farmPerfData.data || [0],
+                                backgroundColor: 'rgba(99, 102, 241, 0.8)'
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
                                 }
                             },
-                            x: {
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
+            } catch (error) {
+                // Show empty state
+                const farmPerfCtx = document.getElementById('farmPerformanceChart');
+                if (farmPerfCtx) {
+                    new Chart(farmPerfCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['No Farms'],
+                            datasets: [{
+                                label: 'TFLOPS',
+                                data: [0],
+                                backgroundColor: 'rgba(99, 102, 241, 0.8)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
             }
         }
 
@@ -760,10 +857,15 @@ contract HashNHedgeOrchestrator {
             const investment = parseFloat(document.getElementById('investmentAmount').value) || 0;
             const price = parseFloat(document.getElementById('tokenPrice').value) || 0;
             const apy = parseFloat(document.getElementById('apyRate').value) || 0;
-            
+
+            if (investment === 0 || price === 0 || apy === 0) {
+                document.getElementById('roiResult').textContent = 'Token not launched yet';
+                return;
+            }
+
             const tokens = investment / price;
             const annualReturn = investment * (apy / 100);
-            
+
             document.getElementById('roiResult').textContent = `$${annualReturn.toFixed(2)}`;
         }
 

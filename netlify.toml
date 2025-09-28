@@ -1,16 +1,38 @@
 [build]
   command = "npm install"
-  functions = "functions"
+  functions = "netlify/functions"
   publish = "."
 
 [build.environment]
   NODE_ENV = "production"
+  POOL_API_URL = "https://phoneproof-pool.onrender.com"
 
+# PhoneProof Pool API redirects
+[[redirects]]
+  from = "/phoneproof-api/*"
+  to = "https://phoneproof-pool.onrender.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+# Original API redirects
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
 
+# Static file handling
+[[redirects]]
+  from = "/armageddon/pool/phoneproof-dashboard.html"
+  to = "/armageddon/pool/phoneproof-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/downloads/*"
+  to = "/downloads/:splat"
+  status = 200
+
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -19,6 +41,31 @@
 [functions]
   node_bundler = "nft"
 
+# Headers for security and CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/phoneproof-api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-Device-Type, X-Battery-Level"
+
 [dev]
   command = "npm run dev"
   port = 3001
+
+# Environment variables
+[context.production.environment]
+  POOL_API_URL = "https://phoneproof-pool.onrender.com"
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  POOL_API_URL = "https://phoneproof-pool.onrender.com"
+  NODE_ENV = "staging"

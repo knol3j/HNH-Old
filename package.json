@@ -5,12 +5,16 @@
   "main": "pool_server_file.js",
   "scripts": {
     "start": "node pool_server_file.js",
+    "start:phoneproof": "cd armageddon/pool && npm start:phoneproof",
     "dev": "nodemon pool_server_file.js",
+    "dev:phoneproof": "cd armageddon/pool && npm run dev:phoneproof",
     "static": "npx http-server HNH-pool -p 8080",
     "miner": "node miner_client_file.js",
     "deploy-token": "node token_deploy_file.js",
-    "build": "echo 'No build step required for static site'",
-    "deploy": "echo 'Deploy to your hosting provider'"
+    "build": "npm install && cd armageddon/pool && npm install",
+    "deploy": "node deploy-production.bat",
+    "test:deployment": "node test-deployment.js",
+    "health": "node test-deployment.js"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.14",
