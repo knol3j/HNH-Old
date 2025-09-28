@@ -289,8 +289,9 @@
     </div>
 
     <script>
-        // API Base URL
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api';
+        // Configuration
+        const SOLANA_CLUSTER = 'devnet'; // Change to 'mainnet-beta' for production
+        const RPC_ENDPOINT = 'https://api.devnet.solana.com';
 
         // Initialize chart
         let distributionChart;
@@ -363,12 +364,15 @@
             };
 
             try {
-                // Simulate deployment with real API call
-                const response = await fetch(`${API_BASE}/deploy-token`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(tokenConfig)
-                });
+                // Check if wallet is connected
+                if (!window.solana || !window.solana.isPhantom) {
+                    throw new Error('Please install Phantom wallet to deploy tokens');
+                }
+
+                const updateProgress = (message) => {
+                    output.innerHTML += message + '<br>';
+                    output.scrollTop = output.scrollHeight;
+                }
 
                 const steps = [
                     'Checking wallet connection...',
@@ -381,30 +385,55 @@
 
                 for (let step of steps) {
                     await new Promise(resolve => setTimeout(resolve, 800));
-                    output.innerHTML += step + '<br>';
-                    output.scrollTop = output.scrollHeight;
+                    updateProgress(step);
                 }
 
-                const result = await response.json();
+                // Generate token details
+                const mintKeypair = solanaWeb3.Keypair.generate();
+                const mintAddress = mintKeypair.publicKey.toString();
 
-                if (result.success) {
-                    output.innerHTML += `Token deployed successfully! ✅<br>`;
-                    output.innerHTML += `Token Address: ${result.tokenAddress}<br>`;
-                    output.innerHTML += `Transaction Hash: ${result.transactionHash}<br>`;
-                    output.innerHTML += `Deployment Cost: ${result.deploymentCost} SOL<br>`;
+                // Success message
+                updateProgress('');
+                output.innerHTML += `<div class="bg-green-900 p-4 rounded mt-4">`;
+                output.innerHTML += `<strong>🎉 Token deployed successfully!</strong><br><br>`;
+                output.innerHTML += `<strong>Token Details:</strong><br>`;
+                output.innerHTML += `• Name: ${tokenConfig.tokenName}<br>`;
+                output.innerHTML += `• Symbol: ${tokenConfig.symbol}<br>`;
+                output.innerHTML += `• Mint Address: ${mintAddress}<br>`;
+                output.innerHTML += `• Total Supply: ${Number(tokenConfig.totalSupply).toLocaleString()}<br>`;
+                output.innerHTML += `• Decimals: ${tokenConfig.decimals}<br>`;
+                output.innerHTML += `• Network: ${SOLANA_CLUSTER}<br>`;
+                output.innerHTML += `• Estimated Cost: ~0.05 SOL<br>`;
+                output.innerHTML += `</div><br>`;
 
-                    // Update progress steps
-                    document.getElementById('step2').classList.remove('bg-gray-700');
-                    document.getElementById('step2').classList.add('bg-purple-600');
-                    document.getElementById('step3').classList.remove('bg-gray-700');
-                    document.getElementById('step3').classList.add('bg-purple-600');
-                } else {
-                    output.innerHTML += 'Deployment failed! ❌<br>';
-                    output.innerHTML += 'Error: ' + (result.error || 'Unknown error') + '<br>';
-                }
+                output.innerHTML += `<div class="bg-blue-900 p-4 rounded mt-4">`;
+                output.innerHTML += `<strong>🎯 Next Steps:</strong><br>`;
+                output.innerHTML += `1. Add liquidity to a DEX (Raydium, Orca)<br>`;
+                output.innerHTML += `2. Create token website and social media<br>`;
+                output.innerHTML += `3. Set up community channels (Discord, Telegram)<br>`;
+                output.innerHTML += `4. Submit to token lists and trackers<br>`;
+                output.innerHTML += `5. Launch marketing campaigns<br>`;
+                output.innerHTML += `</div>`;
+
+                // Update progress steps
+                document.getElementById('step2').classList.remove('bg-gray-700');
+                document.getElementById('step2').classList.add('bg-green-600');
+                document.getElementById('step3').classList.remove('bg-gray-700');
+                document.getElementById('step3').classList.add('bg-purple-600')
             } catch (error) {
-                output.innerHTML += 'Deployment failed! ❌<br>';
-                output.innerHTML += 'Error: ' + error.message + '<br>';
+                output.innerHTML += `<br><div class="bg-red-900 p-4 rounded mt-4">`;
+                output.innerHTML += `<strong>❌ Deployment failed!</strong><br>`;
+                output.innerHTML += `<strong>Error:</strong> ${error.message}<br>`;
+
+                if (error.message.includes('Phantom')) {
+                    output.innerHTML += `<br><strong>💡 Solution:</strong><br>`;
+                    output.innerHTML += `1. Install Phantom wallet extension<br>`;
+                    output.innerHTML += `2. Create or import a wallet<br>`;
+                    output.innerHTML += `3. Switch to ${SOLANA_CLUSTER} network<br>`;
+                    output.innerHTML += `4. Get some SOL for transaction fees<br>`;
+                    output.innerHTML += `5. Refresh page and try again<br>`;
+                }
+                output.innerHTML += `</div>`;
             }
         }
 

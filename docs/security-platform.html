@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashNHedge Security Platform - Advanced Hashcat Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .security-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .security-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        .terminal {
+            background: #0f0f0f;
+            border: 1px solid #333;
+            font-family: 'Courier New', monospace;
+        }
+        .command-output {
+            color: #00ff00;
+        }
+        .warning-text {
+            color: #fbbf24;
+        }
+        .danger-text {
+            color: #ef4444;
+        }
+        .animate-pulse-custom {
+            animation: pulse-custom 2s infinite;
+        }
+        @keyframes pulse-custom {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <a href="../index.html" class="text-4xl font-bold hover:opacity-80 transition">HashNHedge</a>
+                <p class="text-gray-200">Security & Penetration Testing Platform</p>
+            </div>
+            <div class="flex gap-4">
+                <a href="../index.html" class="bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-600 transition">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Home
+                </a>
+                <button id="emergencyStop" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">
+                    <i class="fas fa-stop mr-2"></i> Emergency Stop
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Security Warning Banner -->
+    <div class="bg-red-900 border-l-4 border-red-500 p-4 mx-6 mt-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-lg font-bold text-red-200">⚠️ AUTHORIZED PERSONNEL ONLY</h3>
+                <p class="text-red-300">
+                    This platform is designed for legitimate security testing and authorized penetration testing only.
+                    Unauthorized access to computer systems is illegal. Use responsibly and only on systems you own or have explicit permission to test.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12 max-w-7xl">
+        <!-- Platform Overview -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold mb-6">
+                <i class="fas fa-shield-alt text-red-500 mr-4"></i>
+                Security Platform
+            </h1>
+            <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+                Advanced hashcat integration with distributed GPU computing for legitimate security testing and password auditing.
+                Powered by the HashNHedge network.
+            </p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap justify-center mb-12 bg-gray-800 rounded-lg p-2">
+            <button onclick="showTab('dashboard')" id="tab-dashboard" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-red-600 text-white">
+                <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+            </button>
+            <button onclick="showTab('hashcat')" id="tab-hashcat" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-key mr-2"></i> Hashcat Engine
+            </button>
+            <button onclick="showTab('wordlists')" id="tab-wordlists" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-list mr-2"></i> Wordlists
+            </button>
+            <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-chart-line mr-2"></i> Analytics
+            </button>
+            <button onclick="showTab('compliance')" id="tab-compliance" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-clipboard-check mr-2"></i> Compliance
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="content-dashboard" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <!-- GPU Network Status -->
+                <div class="security-card p-6 rounded-xl">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-microchip text-blue-400 text-3xl mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">GPU Network</h3>
+                            <p class="text-gray-400">Distributed Computing Power</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Active Nodes:</span>
+                            <span id="active-nodes" class="text-green-400 font-bold">147</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Total GPU Power:</span>
+                            <span id="gpu-power" class="text-blue-400 font-bold">2.8 TH/s</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Queue Length:</span>
+                            <span id="queue-length" class="text-yellow-400 font-bold">3 jobs</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 78%"></div>
+                        </div>
+                        <p class="text-sm text-gray-400">Network utilization: 78%</p>
+                    </div>
+                </div>
+
+                <!-- Security Jobs -->
+                <div class="security-card p-6 rounded-xl">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-tasks text-orange-400 text-3xl mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">Active Jobs</h3>
+                            <p class="text-gray-400">Security Testing Tasks</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="bg-gray-800 p-3 rounded">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">MD5 Dictionary Attack</span>
+                                <span class="text-green-400 text-sm">Running</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-1 mt-2">
+                                <div class="bg-green-500 h-1 rounded-full animate-pulse-custom" style="width: 45%"></div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">SHA256 Brute Force</span>
+                                <span class="text-yellow-400 text-sm">Queued</span>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">WPA2 Handshake</span>
+                                <span class="text-blue-400 text-sm">Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Metrics -->
+                <div class="security-card p-6 rounded-xl">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-chart-bar text-purple-400 text-3xl mr-4"></i>
+                        <div>
+                            <h3 class="text-xl font-bold">Performance</h3>
+                            <p class="text-gray-400">Real-time Metrics</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Hashes/Second:</span>
+                            <span id="hash-rate" class="text-purple-400 font-bold">2.8 GH/s</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Passwords Cracked:</span>
+                            <span id="cracked-count" class="text-green-400 font-bold">1,247</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Success Rate:</span>
+                            <span id="success-rate" class="text-blue-400 font-bold">23.4%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Avg. Crack Time:</span>
+                            <span id="avg-time" class="text-yellow-400 font-bold">4.2 min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="security-card p-8 rounded-xl mb-8">
+                <h2 class="text-2xl font-bold mb-6">
+                    <i class="fas fa-history text-gray-400 mr-3"></i>
+                    Recent Security Tests
+                </h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="pb-3 text-gray-400">Timestamp</th>
+                                <th class="pb-3 text-gray-400">Hash Type</th>
+                                <th class="pb-3 text-gray-400">Target</th>
+                                <th class="pb-3 text-gray-400">Status</th>
+                                <th class="pb-3 text-gray-400">Result</th>
+                                <th class="pb-3 text-gray-400">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-log">
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-gray-300">14:32:15</td>
+                                <td class="py-3"><span class="bg-blue-600 px-2 py-1 rounded text-xs">MD5</span></td>
+                                <td class="py-3 font-mono text-sm">5d41402a...</td>
+                                <td class="py-3"><span class="text-green-400">✓ Cracked</span></td>
+                                <td class="py-3 font-mono text-sm">hello</td>
+                                <td class="py-3 text-gray-400">0.3s</td>
+                            </tr>
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-gray-300">14:31:42</td>
+                                <td class="py-3"><span class="bg-purple-600 px-2 py-1 rounded text-xs">SHA256</span></td>
+                                <td class="py-3 font-mono text-sm">e3b0c442...</td>
+                                <td class="py-3"><span class="text-green-400">✓ Cracked</span></td>
+                                <td class="py-3 font-mono text-sm">password123</td>
+                                <td class="py-3 text-gray-400">12.7s</td>
+                            </tr>
+                            <tr class="border-b border-gray-800">
+                                <td class="py-3 text-gray-300">14:28:19</td>
+                                <td class="py-3"><span class="bg-red-600 px-2 py-1 rounded text-xs">bcrypt</span></td>
+                                <td class="py-3 font-mono text-sm">$2b$12$...</td>
+                                <td class="py-3"><span class="text-red-400">✗ Failed</span></td>
+                                <td class="py-3 text-gray-500">N/A</td>
+                                <td class="py-3 text-gray-400">5.2 min</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hashcat Engine Tab -->
+        <div id="content-hashcat" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Hashcat Configuration -->
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-cogs text-red-400 mr-3"></i>
+                        Hashcat Configuration
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Attack Mode</label>
+                            <select id="attack-mode" class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600">
+                                <option value="0">Dictionary Attack (0)</option>
+                                <option value="1">Combination Attack (1)</option>
+                                <option value="3">Brute Force Attack (3)</option>
+                                <option value="6">Hybrid Dictionary + Mask (6)</option>
+                                <option value="7">Hybrid Mask + Dictionary (7)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Hash Type</label>
+                            <select id="hash-type" class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600">
+                                <option value="0">MD5</option>
+                                <option value="100">SHA1</option>
+                                <option value="1400">SHA256</option>
+                                <option value="1700">SHA512</option>
+                                <option value="3200">bcrypt</option>
+                                <option value="22000">WPA-PBKDF2-PMKID+EAPOL</option>
+                                <option value="1000">NTLM</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Target Hash(es)</label>
+                            <textarea id="target-hash" rows="4"
+                                     class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600"
+                                     placeholder="Enter hash(es) to crack, one per line..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Wordlist</label>
+                            <select id="wordlist" class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600">
+                                <option value="rockyou">RockYou (14M passwords)</option>
+                                <option value="common">Common Passwords (10K)</option>
+                                <option value="leaked">Leaked Databases (100M)</option>
+                                <option value="custom">Custom Wordlist</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Max Runtime (minutes)</label>
+                                <input type="number" id="max-runtime" value="60" min="1" max="1440"
+                                       class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">GPU Nodes</label>
+                                <input type="number" id="gpu-nodes" value="10" min="1" max="100"
+                                       class="w-full p-3 bg-gray-700 rounded-lg border border-gray-600">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button onclick="startHashcatJob()"
+                                   class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold transition">
+                                <i class="fas fa-play mr-2"></i> Start Attack
+                            </button>
+                            <button onclick="stopHashcatJob()"
+                                   class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg font-semibold transition">
+                                <i class="fas fa-stop mr-2"></i> Stop
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Output -->
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-terminal text-green-400 mr-3"></i>
+                        Live Terminal Output
+                    </h2>
+
+                    <div class="terminal rounded-lg p-4 h-96 overflow-y-auto">
+                        <div id="terminal-output" class="command-output text-sm">
+                            <div class="text-gray-400">HashNHedge Security Platform v2.1</div>
+                            <div class="text-gray-400">Connected to distributed GPU network</div>
+                            <div class="text-green-400">Ready for security testing operations</div>
+                            <div class="text-yellow-400">⚠️ Ensure you have authorization before proceeding</div>
+                            <div class="text-blue-400">Type 'help' for available commands</div>
+                            <div class="mt-2">
+                                <span class="text-red-400">hashcat@hashnhedge:~$</span>
+                                <span class="animate-pulse">_</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex gap-2">
+                        <input type="text" id="terminal-input"
+                               class="flex-1 p-2 bg-gray-800 rounded border border-gray-600 font-mono text-sm"
+                               placeholder="Enter command..."
+                               onkeypress="handleTerminalInput(event)">
+                        <button onclick="executeCommand()"
+                               class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wordlists Tab -->
+        <div id="content-wordlists" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="security-card p-8 rounded-xl">
+                        <h2 class="text-2xl font-bold mb-6">
+                            <i class="fas fa-database text-blue-400 mr-3"></i>
+                            Available Wordlists
+                        </h2>
+
+                        <div class="space-y-4">
+                            <div class="bg-gray-800 p-4 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-semibold">RockYou.txt</h3>
+                                    <span class="bg-green-600 px-2 py-1 rounded text-xs">Popular</span>
+                                </div>
+                                <p class="text-gray-400 text-sm mb-2">14,344,391 passwords from the famous breach</p>
+                                <div class="flex justify-between text-sm">
+                                    <span>Size: 139 MB</span>
+                                    <span>Success Rate: 67%</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800 p-4 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-semibold">SecLists Common</h3>
+                                    <span class="bg-blue-600 px-2 py-1 rounded text-xs">Fast</span>
+                                </div>
+                                <p class="text-gray-400 text-sm mb-2">10,000 most common passwords</p>
+                                <div class="flex justify-between text-sm">
+                                    <span>Size: 87 KB</span>
+                                    <span>Success Rate: 34%</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800 p-4 rounded-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="text-lg font-semibold">Leaked Databases</h3>
+                                    <span class="bg-red-600 px-2 py-1 rounded text-xs">Premium</span>
+                                </div>
+                                <p class="text-gray-400 text-sm mb-2">100M+ passwords from various breaches</p>
+                                <div class="flex justify-between text-sm">
+                                    <span>Size: 15.7 GB</span>
+                                    <span>Success Rate: 89%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold mb-4">Upload Custom Wordlist</h3>
+                            <div class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                <p class="text-gray-400 mb-4">Drop your wordlist file here or click to browse</p>
+                                <input type="file" id="wordlist-upload" class="hidden" accept=".txt,.dic,.lst">
+                                <button onclick="document.getElementById('wordlist-upload').click()"
+                                       class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded transition">
+                                    Choose File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="security-card p-6 rounded-xl mb-6">
+                        <h3 class="text-lg font-bold mb-4">Wordlist Statistics</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span>Total Lists:</span>
+                                <span class="font-bold">247</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Total Passwords:</span>
+                                <span class="font-bold">2.1B</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Storage Used:</span>
+                                <span class="font-bold">847 GB</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Last Updated:</span>
+                                <span class="font-bold">2 hours ago</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="security-card p-6 rounded-xl">
+                        <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button class="w-full bg-purple-600 hover:bg-purple-700 py-2 px-4 rounded transition">
+                                <i class="fas fa-sync mr-2"></i> Update All Lists
+                            </button>
+                            <button class="w-full bg-green-600 hover:bg-green-700 py-2 px-4 rounded transition">
+                                <i class="fas fa-download mr-2"></i> Download Popular
+                            </button>
+                            <button class="w-full bg-yellow-600 hover:bg-yellow-700 py-2 px-4 rounded transition">
+                                <i class="fas fa-chart-bar mr-2"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="content-analytics" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">Performance Analytics</h2>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">Success Rate by Hash Type</h2>
+                    <canvas id="successChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Tab -->
+        <div id="content-compliance" class="tab-content hidden">
+            <div class="space-y-8">
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-gavel text-yellow-400 mr-3"></i>
+                        Legal & Compliance Framework
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 text-green-400">✓ Authorized Use Cases</h3>
+                            <ul class="space-y-2 text-gray-300">
+                                <li>• Penetration testing with written authorization</li>
+                                <li>• Internal security audits and assessments</li>
+                                <li>• Password policy validation</li>
+                                <li>• Digital forensics investigations</li>
+                                <li>• Academic research with proper approval</li>
+                                <li>• Vulnerability assessments</li>
+                                <li>• Incident response activities</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 text-red-400">✗ Prohibited Activities</h3>
+                            <ul class="space-y-2 text-gray-300">
+                                <li>• Unauthorized access to any system</li>
+                                <li>• Testing systems without explicit permission</li>
+                                <li>• Criminal activities or malicious hacking</li>
+                                <li>• Violation of terms of service</li>
+                                <li>• Attacking third-party systems</li>
+                                <li>• Commercial password cracking services</li>
+                                <li>• Any illegal or unethical activities</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-file-contract text-blue-400 mr-3"></i>
+                        Terms of Use Agreement
+                    </h2>
+
+                    <div class="bg-gray-800 p-6 rounded-lg mb-6 max-h-64 overflow-y-auto">
+                        <div class="text-sm text-gray-300 space-y-4">
+                            <p><strong>1. Authorized Use:</strong> This platform is intended solely for legitimate security testing, penetration testing, and authorized research purposes.</p>
+
+                            <p><strong>2. User Responsibility:</strong> Users must ensure they have explicit written authorization before testing any system or network.</p>
+
+                            <p><strong>3. Legal Compliance:</strong> All activities must comply with local, national, and international laws and regulations.</p>
+
+                            <p><strong>4. Data Protection:</strong> Users must respect privacy laws and regulations when handling sensitive data.</p>
+
+                            <p><strong>5. Ethical Guidelines:</strong> All testing must be conducted ethically and responsibly with minimal impact on target systems.</p>
+
+                            <p><strong>6. Liability:</strong> HashNHedge is not liable for any misuse of this platform or violations of law by users.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <input type="checkbox" id="terms-agreement" class="w-4 h-4">
+                        <label for="terms-agreement" class="text-sm">
+                            I acknowledge that I have read, understood, and agree to comply with all terms and conditions above.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="security-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-shield-alt text-purple-400 mr-3"></i>
+                        Security Measures
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="text-center">
+                            <i class="fas fa-lock text-3xl text-green-400 mb-3"></i>
+                            <h3 class="font-semibold mb-2">Encrypted Communications</h3>
+                            <p class="text-sm text-gray-400">All data transmissions are encrypted using TLS 1.3</p>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-eye text-3xl text-blue-400 mb-3"></i>
+                            <h3 class="font-semibold mb-2">Activity Monitoring</h3>
+                            <p class="text-sm text-gray-400">All platform activities are logged and monitored</p>
+                        </div>
+
+                        <div class="text-center">
+                            <i class="fas fa-user-shield text-3xl text-purple-400 mb-3"></i>
+                            <h3 class="font-semibold mb-2">Access Control</h3>
+                            <p class="text-sm text-gray-400">Multi-factor authentication and role-based access</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Reset all buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('bg-red-600', 'text-white');
+                button.classList.add('bg-gray-700', 'text-gray-300');
+            });
+
+            // Show selected content
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+            // Highlight selected button
+            const selectedButton = document.getElementById(`tab-${tabName}`);
+            selectedButton.classList.remove('bg-gray-700', 'text-gray-300');
+            selectedButton.classList.add('bg-red-600', 'text-white');
+        }
+
+        // Terminal functionality
+        function handleTerminalInput(event) {
+            if (event.key === 'Enter') {
+                executeCommand();
+            }
+        }
+
+        function executeCommand() {
+            const input = document.getElementById('terminal-input');
+            const output = document.getElementById('terminal-output');
+            const command = input.value.trim();
+
+            if (command) {
+                // Add command to output
+                output.innerHTML += `<div class="mt-2"><span class="text-red-400">hashcat@hashnhedge:~$</span> ${command}</div>`;
+
+                // Process command
+                const response = processCommand(command);
+                output.innerHTML += `<div class="text-green-400">${response}</div>`;
+
+                // Clear input and scroll
+                input.value = '';
+                output.scrollTop = output.scrollHeight;
+
+                // Add new prompt
+                output.innerHTML += `<div class="mt-2"><span class="text-red-400">hashcat@hashnhedge:~$</span> <span class="animate-pulse">_</span></div>`;
+            }
+        }
+
+        function processCommand(command) {
+            const cmd = command.toLowerCase().split(' ')[0];
+
+            switch(cmd) {
+                case 'help':
+                    return `Available commands:
+• status - Show system status
+• jobs - List active jobs
+• nodes - Show GPU node information
+• clear - Clear terminal
+• hashcat - Run hashcat with parameters
+• stop - Stop current job`;
+
+                case 'status':
+                    return `System Status: ✓ Online
+GPU Nodes: 147 active
+Network Hash Rate: 2.8 TH/s
+Queue: 3 jobs pending`;
+
+                case 'jobs':
+                    return `Active Jobs:
+[1] MD5 Dictionary Attack - 45% complete
+[2] SHA256 Brute Force - Queued
+[3] WPA2 Handshake - Pending`;
+
+                case 'nodes':
+                    return `GPU Node Status:
+147 nodes online (RTX 4090, RTX 3080, RTX 3070)
+Total CUDA Cores: 1,247,680
+Average Temperature: 67°C`;
+
+                case 'clear':
+                    document.getElementById('terminal-output').innerHTML = '';
+                    return '';
+
+                case 'hashcat':
+                    return `Starting distributed hashcat session...
+Connecting to 10 GPU nodes...
+Attack mode: Dictionary (0)
+Hash type: MD5 (0)
+Target loaded: 1 hash
+Wordlist: rockyou.txt (14M passwords)
+Status: Running`;
+
+                case 'stop':
+                    return `Stopping all hashcat processes...
+Disconnecting from GPU nodes...
+Session stopped.`;
+
+                default:
+                    return `Command not found: ${command}
+Type 'help' for available commands.`;
+            }
+        }
+
+        // Hashcat job management
+        function startHashcatJob() {
+            const attackMode = document.getElementById('attack-mode').value;
+            const hashType = document.getElementById('hash-type').value;
+            const targetHash = document.getElementById('target-hash').value;
+            const wordlist = document.getElementById('wordlist').value;
+            const maxRuntime = document.getElementById('max-runtime').value;
+            const gpuNodes = document.getElementById('gpu-nodes').value;
+
+            if (!targetHash.trim()) {
+                alert('Please enter at least one target hash');
+                return;
+            }
+
+            if (!document.getElementById('terms-agreement').checked) {
+                alert('You must agree to the terms of use before starting any security tests');
+                showTab('compliance');
+                return;
+            }
+
+            // Simulate job start
+            const output = document.getElementById('terminal-output');
+            output.innerHTML += `<div class="mt-2 text-yellow-400">⚠️ Starting authorized security test...</div>`;
+            output.innerHTML += `<div class="text-blue-400">Configuration:</div>`;
+            output.innerHTML += `<div class="text-gray-300">• Attack Mode: ${attackMode}</div>`;
+            output.innerHTML += `<div class="text-gray-300">• Hash Type: ${hashType}</div>`;
+            output.innerHTML += `<div class="text-gray-300">• GPU Nodes: ${gpuNodes}</div>`;
+            output.innerHTML += `<div class="text-gray-300">• Max Runtime: ${maxRuntime} minutes</div>`;
+            output.innerHTML += `<div class="text-green-400">Job queued successfully!</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function stopHashcatJob() {
+            const output = document.getElementById('terminal-output');
+            output.innerHTML += `<div class="mt-2 text-red-400">Stopping all running jobs...</div>`;
+            output.innerHTML += `<div class="text-green-400">All jobs stopped.</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Emergency stop
+        document.getElementById('emergencyStop').addEventListener('click', function() {
+            if (confirm('This will immediately stop all running security tests and disconnect from the network. Continue?')) {
+                alert('Emergency stop activated. All operations halted.');
+            }
+        });
+
+        // Update real-time stats
+        function updateStats() {
+            // Simulate real-time updates
+            const hashRate = (Math.random() * 0.5 + 2.5).toFixed(1);
+            const crackedCount = Math.floor(Math.random() * 100) + 1200;
+            const successRate = (Math.random() * 10 + 20).toFixed(1);
+
+            document.getElementById('hash-rate').textContent = hashRate + ' GH/s';
+            document.getElementById('cracked-count').textContent = crackedCount.toLocaleString();
+            document.getElementById('success-rate').textContent = successRate + '%';
+        }
+
+        // Initialize
+        setInterval(updateStats, 5000);
+
+        // Security warning on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (!document.getElementById('terms-agreement').checked) {
+                    alert('⚠️ SECURITY NOTICE: This platform is for authorized security testing only. Ensure you have proper authorization before proceeding.');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
