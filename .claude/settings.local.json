@@ -17,7 +17,20 @@
       "Bash(taskkill:*)",
       "Bash(cmd /c:*)",
       "WebFetch(domain:hashnhedge-pool.onrender.com)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(npx netlify:*)",
+      "Bash(git config:*)",
+      "Bash(git rm:*)",
+      "Bash(timeout:*)",
+      "Bash(ipconfig)",
+      "Bash(set PORT=10001)",
+      "Bash(set SERVER_ID=test-server)",
+      "Bash(set SERVER_NAME=\"Test Server\")",
+      "Bash(bash:*)",
+      "Bash(netlify:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARMgeddon Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <a href="../index.html" class="text-2xl font-bold text-red-400">
+                        <i class="fas fa-chart-line mr-2"></i> ARMgeddon Dashboard
+                    </a>
+                    <p class="text-sm text-gray-400">Real-time Mining Analytics</p>
+                </div>
+                <div class="flex gap-4">
+                    <a href="../pool/index.html" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-server mr-1"></i> Pool
+                    </a>
+                    <a href="../index.html" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-home mr-1"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="container mx-auto px-6 py-8">
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card p-6 rounded-xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="text-4xl text-red-400">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <span class="text-xs text-green-400">
+                        <i class="fas fa-arrow-up mr-1"></i> Live
+                    </span>
+                </div>
+                <div id="totalHashrate" class="text-3xl font-bold mb-1">0 H/s</div>
+                <div class="text-sm text-gray-400">Network Hashrate</div>
+            </div>
+
+            <div class="stat-card p-6 rounded-xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="text-4xl text-orange-400">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div id="activeMinerCount" class="text-3xl font-bold mb-1">0</div>
+                <div class="text-sm text-gray-400">Active Miners</div>
+            </div>
+
+            <div class="stat-card p-6 rounded-xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="text-4xl text-yellow-400">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                </div>
+                <div id="totalBlocks" class="text-3xl font-bold mb-1">0</div>
+                <div class="text-sm text-gray-400">Blocks Mined</div>
+            </div>
+
+            <div class="stat-card p-6 rounded-xl">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="text-4xl text-green-400">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                </div>
+                <div id="networkDifficulty" class="text-3xl font-bold mb-1">20</div>
+                <div class="text-sm text-gray-400">Difficulty</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="stat-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-chart-area text-red-400 mr-2"></i>
+                    Hashrate History
+                </h3>
+                <div class="chart-container">
+                    <canvas id="hashrateChart"></canvas>
+                </div>
+            </div>
+
+            <div class="stat-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4">
+                    <i class="fas fa-chart-pie text-orange-400 mr-2"></i>
+                    Miner Distribution
+                </h3>
+                <div class="chart-container">
+                    <canvas id="minerChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Miners Table -->
+        <div class="stat-card p-6 rounded-xl mb-8">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-mobile-alt text-red-400 mr-2"></i>
+                Active Miners
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="border-b border-gray-700">
+                        <tr class="text-left text-gray-400 text-sm">
+                            <th class="pb-3">Miner ID</th>
+                            <th class="pb-3">Hashrate</th>
+                            <th class="pb-3">Shares</th>
+                            <th class="pb-3">Last Share</th>
+                            <th class="pb-3">Uptime</th>
+                        </tr>
+                    </thead>
+                    <tbody id="minersTable" class="text-sm">
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Loading miners...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Blocks -->
+        <div class="stat-card p-6 rounded-xl">
+            <h3 class="text-xl font-bold mb-4">
+                <i class="fas fa-cubes text-yellow-400 mr-2"></i>
+                Recent Blocks
+            </h3>
+            <div id="blocksTable" class="space-y-3">
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Loading blocks...</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 py-6 mt-12">
+        <div class="container mx-auto px-6 text-center text-gray-400">
+            <p>&copy; 2024 ARMgeddon | Part of HashNHedge Ecosystem</p>
+        </div>
+    </footer>
+
+    <script>
+        const POOL_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3002'
+            : 'https://your-pool-url.com';
+
+        let hashrateChart, minerChart;
+        const hashrateData = [];
+        const maxDataPoints = 20;
+
+        function initCharts() {
+            const hashrateCtx = document.getElementById('hashrateChart').getContext('2d');
+            hashrateChart = new Chart(hashrateCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Hashrate (KH/s)',
+                        data: [],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            });
+
+            const minerCtx = document.getElementById('minerChart').getContext('2d');
+            minerChart = new Chart(minerCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#ef4444', '#f97316', '#f59e0b', '#10b981',
+                            '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function updateDashboard() {
+            try {
+                const [statsRes, minersRes] = await Promise.all([
+                    fetch(`${POOL_URL}/api/stats`),
+                    fetch(`${POOL_URL}/api/miners`)
+                ]);
+
+                const stats = await statsRes.json();
+                const miners = await minersRes.json();
+
+                document.getElementById('totalHashrate').textContent =
+                    stats.totalHashrate > 1000
+                        ? `${(stats.totalHashrate/1000).toFixed(2)} KH/s`
+                        : `${stats.totalHashrate.toFixed(0)} H/s`;
+                document.getElementById('activeMinerCount').textContent = stats.miners;
+                document.getElementById('totalBlocks').textContent = stats.blocks;
+                document.getElementById('networkDifficulty').textContent = stats.difficulty;
+
+                const now = new Date().toLocaleTimeString();
+                hashrateData.push({ time: now, value: stats.totalHashrate / 1000 });
+                if (hashrateData.length > maxDataPoints) hashrateData.shift();
+
+                hashrateChart.data.labels = hashrateData.map(d => d.time);
+                hashrateChart.data.datasets[0].data = hashrateData.map(d => d.value);
+                hashrateChart.update();
+
+                if (miners.miners && miners.miners.length > 0) {
+                    minerChart.data.labels = miners.miners.slice(0, 8).map((m, i) =>
+                        `Miner ${i+1}`
+                    );
+                    minerChart.data.datasets[0].data = miners.miners.slice(0, 8).map(m =>
+                        m.hashrate || 1
+                    );
+                    minerChart.update();
+
+                    const minersTableHtml = miners.miners.map(m => {
+                        const uptime = Math.floor((Date.now() - m.connected) / 1000 / 60);
+                        const lastShare = Math.floor((Date.now() - m.lastShare) / 1000);
+                        return `
+                            <tr class="border-b border-gray-800 hover:bg-gray-800">
+                                <td class="py-3 font-mono text-xs">${m.id.substring(0, 16)}...</td>
+                                <td class="py-3">${(m.hashrate/1000).toFixed(2)} KH/s</td>
+                                <td class="py-3">${m.shares}</td>
+                                <td class="py-3">${lastShare}s ago</td>
+                                <td class="py-3">${uptime}m</td>
+                            </tr>
+                        `;
+                    }).join('');
+                    document.getElementById('minersTable').innerHTML = minersTableHtml;
+                }
+
+                if (stats.recentBlocks && stats.recentBlocks.length > 0) {
+                    const blocksHtml = stats.recentBlocks.map(block => `
+                        <div class="bg-gray-800 p-4 rounded-lg flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">Block #${block.height}</div>
+                                <div class="text-xs text-gray-400 font-mono">${block.hash.substring(0, 32)}...</div>
+                                <div class="text-sm text-gray-400 mt-1">Miner: ${block.minerId.substring(0, 16)}...</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-green-400 font-bold text-xl">+${block.reward} ARM</div>
+                                <div class="text-xs text-gray-500">${new Date(block.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('blocksTable').innerHTML = blocksHtml;
+                } else {
+                    document.getElementById('blocksTable').innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2"></i>
+                            <p>No blocks found yet</p>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        initCharts();
+        updateDashboard();
+        setInterval(updateDashboard, 3000);
+    </script>
+
+</body>
+</html>

@@ -90,7 +90,7 @@ class AdaptiveMinerClient {
         try {
             console.log(`🔗 Connecting to HashNHedge pool: ${this.config.poolUrl}`);
 
-            const response = await fetch(`${this.config.poolUrl}/.netlify/functions/miner/connect`, {
+            const response = await fetch(`${this.config.poolUrl}/api/connect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -123,7 +123,7 @@ class AdaptiveMinerClient {
     // Check for available jobs
     async checkForJobs() {
         try {
-            const response = await fetch(`${this.config.poolUrl}/.netlify/functions/marketplace/jobs`);
+            const response = await fetch(`${this.config.poolUrl}/marketplace/jobs`);
             const data = await response.json();
 
             const availableJobs = data.availableJobs.filter(job =>
@@ -286,7 +286,7 @@ class AdaptiveMinerClient {
     // Submit mining share
     async submitShare(hash, nonce) {
         try {
-            const response = await fetch(`${this.config.poolUrl}/.netlify/functions/miner/submit-share`, {
+            const response = await fetch(`${this.config.poolUrl}/api/submit-share`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -375,7 +375,7 @@ class AdaptiveMinerClient {
 
 // Usage example
 const config = {
-    poolUrl: 'http://localhost:3001',
+    poolUrl: 'http://localhost:10000',
     walletAddress: 'CB9tPfNgfxsTZpNkVWaohabFqWUCNd5RH6w8bvzZemVd',
     workerName: 'adaptive_worker_001',
     capabilities: {

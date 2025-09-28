@@ -9,9 +9,15 @@
 </head>
 <body class="bg-gray-900 text-white">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center mb-8 gradient-text">
-            HashNHedge Mining Pool
-        </h1>
+        <div class="flex justify-between items-center mb-8">
+            <a href="../index.html" class="bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Home
+            </a>
+            <h1 class="text-4xl font-bold gradient-text">
+                HashNHedge Mining Pool
+            </h1>
+            <div></div> <!-- Spacer for center alignment -->
+        </div>
 
         <!-- Live Stats -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -33,11 +39,14 @@
             </div>
         </div>
 
-        <!-- Pool Connection Info -->
+        <!-- Multi-Server Status -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
-            <h2 class="text-2xl font-bold mb-4">🔗 Connect Your Miner</h2>
+            <h2 class="text-2xl font-bold mb-4">🌐 Multi-Server Pool Status</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" id="serverStatus">
+                <!-- Server status will be populated here -->
+            </div>
             <div class="bg-black p-4 rounded-lg font-mono text-sm">
-                <p class="text-green-400">Pool URL: https://hashnhedge-pool.onrender.com</p>
+                <p class="text-green-400">Active Server: <span id="activeServerUrl">Detecting...</span></p>
                 <p class="text-blue-400">Algorithm: SHA256</p>
                 <p class="text-yellow-400">Reward: 1 HNH per share</p>
                 <p class="text-purple-400">Pool Fee: 3%</p>
@@ -66,13 +75,29 @@
     </div>
 
     <script>
-        // Your pool API URL
-        const POOL_API = window.location.origin;
+        // Multi-server pool configuration
+        const SERVERS = [
+            { name: 'OnRender Primary', url: 'http://localhost:10000', status: 'unknown' },
+            { name: 'OnRender Secondary', url: 'https://hashnhedge-pool.onrender.com', status: 'unknown' },
+            { name: 'Local Network', url: 'http://localhost:3001', status: 'unknown' }
+        ];
 
-        // Fetch and update stats
+        let activeServer = null;
+
+        // Fetch and update stats from active server
         async function updateStats() {
             try {
-                const response = await fetch(`${POOL_API}/.netlify/functions/stats`);
+                // Find the first available server
+                if (!activeServer) {
+                    activeServer = await findActiveServer();
+                }
+
+                if (!activeServer) {
+                    console.log('No servers available');
+                    return;
+                }
+
+                const response = await fetch(`${activeServer}/api/stats`);
                 const data = await response.json();
 
                 document.getElementById('activeMiners').textContent = data.activeMiners || 0;
@@ -104,15 +129,67 @@
             }
         }
 
+        // Find the first available server
+        async function findActiveServer() {
+            for (const server of SERVERS) {
+                try {
+                    const response = await fetch(`${server.url}/api/stats`, {
+                        method: 'GET',
+                        timeout: 3000
+                    });
+                    if (response.ok) {
+                        server.status = 'online';
+                        updateServerStatus();
+                        document.getElementById('activeServerUrl').textContent = server.url;
+                        return server.url;
+                    }
+                } catch (error) {
+                    server.status = 'offline';
+                    console.log(`Server ${server.name} is offline:`, error.message);
+                }
+            }
+            updateServerStatus();
+            return null;
+        }
+
+        // Update server status display
+        function updateServerStatus() {
+            const statusContainer = document.getElementById('serverStatus');
+            statusContainer.innerHTML = '';
+
+            SERVERS.forEach(server => {
+                const statusClass = server.status === 'online' ? 'bg-green-600' :
+                                  server.status === 'offline' ? 'bg-red-600' : 'bg-yellow-600';
+                const statusText = server.status === 'online' ? '● ONLINE' :
+                                 server.status === 'offline' ? '● OFFLINE' : '● CHECKING';
+
+                const serverDiv = document.createElement('div');
+                serverDiv.className = 'bg-gray-700 p-3 rounded-lg';
+                serverDiv.innerHTML = `
+                    <div class="text-sm font-semibold">${server.name}</div>
+                    <div class="text-xs text-gray-400">${server.url}</div>
+                    <div class="mt-2">
+                        <span class="px-2 py-1 rounded text-xs ${statusClass}">${statusText}</span>
+                    </div>
+                `;
+                statusContainer.appendChild(serverDiv);
+            });
+        }
+
         function formatHashrate(hashrate) {
             if (hashrate >= 1000000) return `${(hashrate / 1000000).toFixed(2)} MH/s`;
             if (hashrate >= 1000) return `${(hashrate / 1000).toFixed(2)} KH/s`;
             return `${hashrate} H/s`;
         }
 
-        // Update stats every 5 seconds
+        // Initialize and update stats every 5 seconds
+        updateServerStatus();
         updateStats();
         setInterval(updateStats, 5000);
+        setInterval(() => {
+            // Re-check server status every 30 seconds
+            activeServer = null;
+        }, 30000);
     </script>
 </body>
 </html>

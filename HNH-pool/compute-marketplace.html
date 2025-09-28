@@ -246,13 +246,45 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin;
+        // Multi-server API configuration
+        const SERVERS = [
+            { name: 'OnRender Primary', url: 'http://localhost:10000' },
+            { name: 'OnRender Secondary', url: 'https://hashnhedge-pool.onrender.com' },
+            { name: 'Local Network', url: 'http://localhost:3001' }
+        ];
+
+        let activeServer = null;
         let marketplaceData = null;
+
+        // Find active server
+        async function findActiveServer() {
+            for (const server of SERVERS) {
+                try {
+                    const response = await fetch(`${server.url}/marketplace/jobs`, { timeout: 3000 });
+                    if (response.ok) {
+                        return server.url;
+                    }
+                } catch (error) {
+                    console.log(`Server ${server.name} unavailable`);
+                }
+            }
+            return null;
+        }
 
         // Load marketplace data
         async function loadMarketplace() {
             try {
-                const response = await fetch(`${API_BASE}/.netlify/functions/marketplace/jobs`);
+                if (!activeServer) {
+                    activeServer = await findActiveServer();
+                }
+
+                if (!activeServer) {
+                    console.log('No servers available');
+                    showError('No servers available');
+                    return;
+                }
+
+                const response = await fetch(`${activeServer}/marketplace/jobs`);
                 marketplaceData = await response.json();
                 updateDashboard();
             } catch (error) {
@@ -348,7 +380,15 @@
         // Create new job
         async function createJob(jobData) {
             try {
-                const response = await fetch(`${API_BASE}/.netlify/functions/marketplace/jobs`, {
+                if (!activeServer) {
+                    activeServer = await findActiveServer();
+                }
+
+                if (!activeServer) {
+                    throw new Error('No servers available');
+                }
+
+                const response = await fetch(`${activeServer}/marketplace/jobs`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(jobData)

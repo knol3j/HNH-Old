@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "ARMgeddon Miner",
+    "slug": "armageddon-miner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#111827"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.armageddon.miner"
+    },
+    "android": {
+      "package": "com.armageddon.miner",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
