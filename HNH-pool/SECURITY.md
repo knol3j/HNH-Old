@@ -108,7 +108,8 @@ The admin token is automatically generated on server startup and displayed in co
 ## Reporting a Vulnerability
 
 ### Contact Information
-- **Security Email**: security@hashnhedge.com
+- **Security Email**: nolij@ik.me
+- **General Contact**: ugbuni@proton.me
 - **Response Time**: 24-48 hours for initial response
 - **Severity Assessment**: Within 72 hours
 

@@ -12,42 +12,27 @@ app.use(express.json());
 app.use(express.static('.'));
 
 // In-memory data store (replace with database in production)
-// Pre-launch testnet state - limited nodes for development and testing
+// Real network data - all zeros until actual miners connect
 let networkData = {
-    totalNodes: 12,  // Development team + early partners
-    activeGPUs: 28,  // Small testnet for development
-    totalTFLOPS: 4.2,  // Limited computing power for testing
-    networkUtilization: 45.8,  // Lower utilization during testing phase
+    totalNodes: 0,  // Actual connected miners
+    activeGPUs: 0,  // Real GPU count from connected miners
+    totalTFLOPS: 0,  // Calculated from real hardware
+    networkUtilization: 0,  // Real network utilization
     rewardsDistributed: 0,  // No rewards until token launch
-    uptime: 99.2,  // High uptime for testnet
-    phase: "testnet",  // Development phase indicator
+    uptime: 0,  // Real uptime tracking
+    phase: "pre-launch",  // Pre-launch phase
     tokenLaunched: false
 };
 
-// Testnet farms - development and partner nodes only
-let farmData = [
-    { id: 1, name: "Dev Team Alpha Node", gpus: 8, location: "Development Lab", status: "online", owner: "0x742d...bEb7", type: "testnet" },
-    { id: 2, name: "Partner Beta Node", gpus: 12, location: "Early Partner", status: "online", owner: "0x123a...4567", type: "testnet" },
-    { id: 3, name: "Testing Node Gamma", gpus: 4, location: "QA Environment", status: "testing", owner: "0x890b...cdef", type: "testnet" },
-    { id: 4, name: "Research Node Delta", gpus: 4, location: "R&D Lab", status: "online", owner: "0x456c...789e", type: "testnet" }
-];
+// Real farms - populated when users register their farms
+let farmData = [];
 
-// Testnet nodes - limited development nodes
-let nodeData = [
-    { id: "TESTNET-001", status: "active", hashRate: 25, earnings: 0, tasks: 8, type: "development" },
-    { id: "TESTNET-002", status: "active", hashRate: 18, earnings: 0, tasks: 5, type: "partner" },
-    { id: "TESTNET-003", status: "testing", hashRate: 12, earnings: 0, tasks: 3, type: "qa" },
-    { id: "TESTNET-004", status: "active", hashRate: 20, earnings: 0, tasks: 6, type: "research" }
-];
+// Real nodes - populated when miners connect
+let nodeData = [];
 
 // API Routes
 app.get('/api/network-stats', (req, res) => {
-    // Simulate small testnet fluctuations (much smaller changes)
-    networkData.totalNodes = Math.max(8, Math.min(15, networkData.totalNodes + Math.floor((Math.random() - 0.5) * 2)));
-    networkData.activeGPUs = Math.max(20, Math.min(35, networkData.activeGPUs + Math.floor((Math.random() - 0.5) * 3)));
-    networkData.totalTFLOPS = Math.max(3.0, Math.min(6.0, networkData.totalTFLOPS + (Math.random() - 0.5) * 0.5));
-    networkData.networkUtilization = Math.max(30, Math.min(70, networkData.networkUtilization + (Math.random() - 0.5) * 3));
-
+    // Return real network data without fake fluctuations
     res.json(networkData);
 });
 

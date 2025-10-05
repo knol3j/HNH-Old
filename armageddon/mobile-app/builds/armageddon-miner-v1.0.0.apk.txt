@@ -31,5 +31,6 @@ npm run build:apk
 ```
 
 ## Support
-For technical support: https://hashnhedge.com/support
-GitHub Issues: https://github.com/knol3j/hashnhedge/issues
+- **General Support**: ugbuni@proton.me
+- **Technical Support**: nolij@ik.me
+- **GitHub Issues**: https://github.com/knol3j/hashnhedge/issues

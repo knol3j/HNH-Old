@@ -19,38 +19,27 @@ app.use((req, res, next) => {
     next();
 });
 
-// Pre-launch testnet data
+// Real network data - all zeros until actual miners connect
 let networkData = {
-    totalNodes: 12,
-    activeGPUs: 28,
-    totalTFLOPS: 4.2,
-    networkUtilization: 45.8,
+    totalNodes: 0,
+    activeGPUs: 0,
+    totalTFLOPS: 0,
+    networkUtilization: 0,
     rewardsDistributed: 0,
-    uptime: 99.2,
-    phase: "testnet",
+    uptime: 0,
+    phase: "pre-launch",
     tokenLaunched: false
 };
 
-let farmData = [
-    { id: 1, name: "Dev Team Alpha Node", gpus: 8, location: "Development Lab", status: "online", owner: "0x742d...bEb7", type: "testnet" },
-    { id: 2, name: "Partner Beta Node", gpus: 12, location: "Early Partner", status: "online", owner: "0x123a...4567", type: "testnet" },
-    { id: 3, name: "Testing Node Gamma", gpus: 4, location: "QA Environment", status: "testing", owner: "0x890b...cdef", type: "testnet" },
-    { id: 4, name: "Research Node Delta", gpus: 4, location: "R&D Lab", status: "online", owner: "0x456c...789e", type: "testnet" }
-];
+// Real farms - populated when users register their farms
+let farmData = [];
 
-let nodeData = [
-    { id: "TESTNET-001", status: "active", hashRate: 25, earnings: 0, tasks: 8, type: "development" },
-    { id: "TESTNET-002", status: "active", hashRate: 18, earnings: 0, tasks: 5, type: "partner" },
-    { id: "TESTNET-003", status: "testing", hashRate: 12, earnings: 0, tasks: 3, type: "qa" },
-    { id: "TESTNET-004", status: "active", hashRate: 20, earnings: 0, tasks: 6, type: "research" }
-];
+// Real nodes - populated when miners connect
+let nodeData = [];
 
 // API Routes
 app.get('/api/network-stats', (req, res) => {
-    networkData.totalNodes = Math.max(8, Math.min(15, networkData.totalNodes + Math.floor((Math.random() - 0.5) * 2)));
-    networkData.activeGPUs = Math.max(20, Math.min(35, networkData.activeGPUs + Math.floor((Math.random() - 0.5) * 3)));
-    networkData.totalTFLOPS = Math.max(3.0, Math.min(6.0, networkData.totalTFLOPS + (Math.random() - 0.5) * 0.5));
-    networkData.networkUtilization = Math.max(30, Math.min(70, networkData.networkUtilization + (Math.random() - 0.5) * 3));
+    // Return real network data without fake fluctuations
     res.json(networkData);
 });
 

@@ -1,0 +1,26 @@
+{
+  "name": "hashnhedge-hybrid-pool",
+  "version": "1.0.0",
+  "description": "Hybrid GPU compute pool - AI jobs priority, mining fallback",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "NODE_ENV=development node index.js",
+    "test": "node test-orchestrator.js"
+  },
+  "keywords": [
+    "mining",
+    "stratum",
+    "ai",
+    "gpu",
+    "compute"
+  ],
+  "author": "HashNHedge",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

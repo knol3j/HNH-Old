@@ -285,7 +285,8 @@ The combination of strong tokenomics, clear utility, and massive addressable mar
 - **Twitter:** @hashnhedge
 - **Discord:** https://discord.gg/hashnhedge
 - **GitHub:** https://github.com/hashnhedge
-- **Email:** token@hashnhedge.com
+- **Email:** ugbuni@proton.me
+- **Technical Contact:** nolij@ik.me
 
 ## Legal Disclaimer
 
