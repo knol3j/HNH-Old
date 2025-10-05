@@ -3,16 +3,36 @@ services:
     name: hashnhedge-pool
     env: node
     plan: free
+    rootDir: hybrid-pool
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /api/stats
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: ADMIN_TOKEN
+      - key: STRATUM_PORT
+        value: 3333
+      - key: STRATUM_HOST
+        value: 0.0.0.0
+      - key: ADMIN_API_KEY
         generateValue: true
-      - key: SOLANA_NETWORK
-        value: devnet
+      - key: POOL_FEE_AI
+        value: 0.30
+      - key: POOL_FEE_MINING
+        value: 0.03
+      - key: MIN_PAYOUT
+        value: 0.01
+      - key: DATABASE_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+      - key: S3_BUCKET_NAME
+        value: hashnhedge-pool-backups
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SENDGRID_FROM_EMAIL
+        value: noreply@hashnhedge.com
     autoDeploy: true

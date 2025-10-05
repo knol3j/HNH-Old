@@ -34,7 +34,7 @@ class HybridPool {
             // Admin API settings
             adminAPI: {
                 enabled: true,
-                port: 3334,
+                port: process.env.PORT || 3334,
                 host: '0.0.0.0',
                 apiKey: process.env.ADMIN_API_KEY || 'change-me'
             },
