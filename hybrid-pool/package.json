@@ -1,26 +1,48 @@
 {
   "name": "hashnhedge-hybrid-pool",
   "version": "1.0.0",
-  "description": "Hybrid GPU compute pool - AI jobs priority, mining fallback",
+  "description": "HashNHedge Hybrid AI/Mining Pool - Production Ready Infrastructure with PostgreSQL, S3, and SendGrid",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "NODE_ENV=development node index.js",
-    "test": "node test-orchestrator.js"
+    "prod": "NODE_ENV=production node index.js",
+    "test": "node test-orchestrator.js",
+    "db:init": "psql -U pool_user -d hashnhedge_pool -f database/schema.sql",
+    "deploy": "bash deploy-production.sh"
   },
   "keywords": [
     "mining",
+    "pool",
     "stratum",
     "ai",
+    "hybrid",
     "gpu",
-    "compute"
+    "hashnhedge",
+    "postgresql",
+    "s3",
+    "sendgrid"
   ],
-  "author": "HashNHedge",
-  "license": "MIT",
+  "author": "HashNHedge Team",
+  "license": "PROPRIETARY",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "@sendgrid/mail": "^8.1.0",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "dotenv": "^16.3.1"
   },
   "engines": {
-    "node": ">=16.0.0"
-  }
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hashnhedge/consolidated.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hashnhedge/pool/issues",
+    "email": "support@hashnhedge.com"
+  },
+  "homepage": "https://hashnhedge.com"
 }
