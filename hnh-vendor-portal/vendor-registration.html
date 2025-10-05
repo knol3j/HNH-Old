@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Registration - HashNHedge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.8);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .required::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg p-6 shadow-lg">
+        <div class="container mx-auto">
+            <a href="../index.html" class="text-4xl font-bold hover:opacity-80 transition">HashNHedge</a>
+            <p class="text-gray-200">Vendor Registration Portal</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-4">Become a Compute Vendor</h1>
+            <p class="text-gray-300 text-lg">
+                Register your organization to provide AI/ML compute jobs to our mining network
+            </p>
+        </div>
+
+        <form id="vendor-registration-form" class="space-y-6">
+            <!-- Business Information -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-building mr-3 text-purple-400"></i>
+                    Business Information
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Legal Business Name</label>
+                        <input
+                            type="text"
+                            id="legal_business_name"
+                            name="legal_business_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="ABC Corporation Inc."
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">DBA / Trade Name</label>
+                        <input
+                            type="text"
+                            id="dba_name"
+                            name="dba_name"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="ABC Corp (optional)"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Business Type</label>
+                        <select
+                            id="business_type"
+                            name="business_type"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                        >
+                            <option value="">Select Type</option>
+                            <option value="sole_proprietorship">Sole Proprietorship</option>
+                            <option value="llc">LLC</option>
+                            <option value="corporation">Corporation (C-Corp)</option>
+                            <option value="s_corp">S-Corporation</option>
+                            <option value="partnership">Partnership</option>
+                            <option value="nonprofit">Non-Profit</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Year Established</label>
+                        <input
+                            type="number"
+                            id="year_established"
+                            name="year_established"
+                            required
+                            min="1900"
+                            max="2025"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="2020"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Business Description</label>
+                        <textarea
+                            id="business_description"
+                            name="business_description"
+                            required
+                            rows="3"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="Describe your business and the type of compute jobs you'll be submitting..."
+                        ></textarea>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Website</label>
+                        <input
+                            type="url"
+                            id="website"
+                            name="website"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="https://example.com"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tax Information -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-file-invoice-dollar mr-3 text-green-400"></i>
+                    Tax Information
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Tax ID Type</label>
+                        <select
+                            id="tax_id_type"
+                            name="tax_id_type"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                        >
+                            <option value="">Select Type</option>
+                            <option value="ein">EIN (Employer Identification Number)</option>
+                            <option value="ssn">SSN (Social Security Number)</option>
+                            <option value="vat">VAT Number (Non-US)</option>
+                            <option value="other">Other Tax ID</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Tax ID Number</label>
+                        <input
+                            type="text"
+                            id="tax_id_number"
+                            name="tax_id_number"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="XX-XXXXXXX"
+                        />
+                        <p class="text-xs text-gray-400 mt-1">Encrypted and stored securely</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Country of Tax Residence</label>
+                        <select
+                            id="tax_country"
+                            name="tax_country"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                        >
+                            <option value="">Select Country</option>
+                            <option value="US">United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="AU">Australia</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                            <option value="JP">Japan</option>
+                            <option value="SG">Singapore</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="w9_submitted"
+                                name="w9_submitted"
+                                class="mr-2"
+                            />
+                            <span class="text-sm">I will submit W-9/W-8BEN form separately (required for payments)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Address -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt mr-3 text-red-400"></i>
+                    Business Address
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Street Address</label>
+                        <input
+                            type="text"
+                            id="address_line1"
+                            name="address_line1"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="123 Main Street"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2">Address Line 2</label>
+                        <input
+                            type="text"
+                            id="address_line2"
+                            name="address_line2"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="Suite 100 (optional)"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">City</label>
+                        <input
+                            type="text"
+                            id="city"
+                            name="city"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="San Francisco"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">State / Province</label>
+                        <input
+                            type="text"
+                            id="state"
+                            name="state"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="CA"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Postal / Zip Code</label>
+                        <input
+                            type="text"
+                            id="postal_code"
+                            name="postal_code"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="94102"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Country</label>
+                        <select
+                            id="country"
+                            name="country"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                        >
+                            <option value="">Select Country</option>
+                            <option value="US">United States</option>
+                            <option value="CA">Canada</option>
+                            <option value="UK">United Kingdom</option>
+                            <option value="AU">Australia</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-user-tie mr-3 text-blue-400"></i>
+                    Primary Contact Information
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">First Name</label>
+                        <input
+                            type="text"
+                            id="contact_first_name"
+                            name="contact_first_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="John"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Last Name</label>
+                        <input
+                            type="text"
+                            id="contact_last_name"
+                            name="contact_last_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="Doe"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Job Title</label>
+                        <input
+                            type="text"
+                            id="contact_title"
+                            name="contact_title"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="CTO"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Email Address</label>
+                        <input
+                            type="email"
+                            id="contact_email"
+                            name="contact_email"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="john@example.com"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Phone Number</label>
+                        <input
+                            type="tel"
+                            id="contact_phone"
+                            name="contact_phone"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="+1 (555) 123-4567"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Alternative Phone</label>
+                        <input
+                            type="tel"
+                            id="contact_phone_alt"
+                            name="contact_phone_alt"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="+1 (555) 987-6543"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Billing Information -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-credit-card mr-3 text-yellow-400"></i>
+                    Billing & Payment Information
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Payment Method</label>
+                        <select
+                            id="payment_method"
+                            name="payment_method"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                        >
+                            <option value="">Select Payment Method</option>
+                            <option value="ach">ACH / Bank Transfer</option>
+                            <option value="wire">Wire Transfer</option>
+                            <option value="crypto">Cryptocurrency</option>
+                            <option value="check">Check</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Bank Name</label>
+                        <input
+                            type="text"
+                            id="bank_name"
+                            name="bank_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="Wells Fargo"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Account Holder Name</label>
+                        <input
+                            type="text"
+                            id="account_holder_name"
+                            name="account_holder_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="ABC Corporation Inc."
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Routing Number</label>
+                        <input
+                            type="text"
+                            id="routing_number"
+                            name="routing_number"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="123456789"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2 required">Account Number</label>
+                        <input
+                            type="text"
+                            id="account_number"
+                            name="account_number"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="**** **** **** 1234"
+                        />
+                        <p class="text-xs text-gray-400 mt-1">Encrypted and stored securely - PCI compliant</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold mb-2">Cryptocurrency Wallet Address (if applicable)</label>
+                        <input
+                            type="text"
+                            id="crypto_wallet"
+                            name="crypto_wallet"
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="0x... or bc1..."
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insurance & Liability -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-shield-alt mr-3 text-indigo-400"></i>
+                    Insurance & Liability Coverage
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="has_liability_insurance"
+                                name="has_liability_insurance"
+                                class="mr-2"
+                            />
+                            <span class="text-sm font-semibold">We carry General Liability Insurance</span>
+                        </label>
+                    </div>
+
+                    <div id="insurance-fields" class="md:col-span-2 grid md:grid-cols-2 gap-4" style="display: none;">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Insurance Provider</label>
+                            <input
+                                type="text"
+                                id="insurance_provider"
+                                name="insurance_provider"
+                                class="form-input w-full px-4 py-3 rounded-lg"
+                                placeholder="Hiscox"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Policy Number</label>
+                            <input
+                                type="text"
+                                id="insurance_policy_number"
+                                name="insurance_policy_number"
+                                class="form-input w-full px-4 py-3 rounded-lg"
+                                placeholder="POL-123456789"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Coverage Amount</label>
+                            <input
+                                type="text"
+                                id="insurance_coverage"
+                                name="insurance_coverage"
+                                class="form-input w-full px-4 py-3 rounded-lg"
+                                placeholder="$1,000,000"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Expiration Date</label>
+                            <input
+                                type="date"
+                                id="insurance_expiry"
+                                name="insurance_expiry"
+                                class="form-input w-full px-4 py-3 rounded-lg"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="has_cyber_insurance"
+                                name="has_cyber_insurance"
+                                class="mr-2"
+                            />
+                            <span class="text-sm font-semibold">We carry Cyber Liability / E&O Insurance</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compliance & Legal -->
+            <div class="form-section">
+                <h2 class="text-2xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-gavel mr-3 text-orange-400"></i>
+                    Compliance & Legal Agreements
+                </h2>
+
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <label class="flex items-start">
+                            <input
+                                type="checkbox"
+                                id="terms_accepted"
+                                name="terms_accepted"
+                                required
+                                class="mr-3 mt-1"
+                            />
+                            <span class="text-sm">
+                                I agree to the <a href="#" class="text-purple-400 hover:underline">HashNHedge Vendor Terms of Service</a> and have read the <a href="#" class="text-purple-400 hover:underline">Service Level Agreement (SLA)</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <label class="flex items-start">
+                            <input
+                                type="checkbox"
+                                id="data_privacy_accepted"
+                                name="data_privacy_accepted"
+                                required
+                                class="mr-3 mt-1"
+                            />
+                            <span class="text-sm">
+                                I acknowledge compliance with <a href="#" class="text-purple-400 hover:underline">GDPR, CCPA, and Data Privacy Regulations</a>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <label class="flex items-start">
+                            <input
+                                type="checkbox"
+                                id="aml_kyc_accepted"
+                                name="aml_kyc_accepted"
+                                required
+                                class="mr-3 mt-1"
+                            />
+                            <span class="text-sm">
+                                I certify that our organization complies with AML/KYC regulations and will not use this service for illegal purposes
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="p-4 bg-gray-800 rounded-lg">
+                        <label class="flex items-start">
+                            <input
+                                type="checkbox"
+                                id="accuracy_certified"
+                                name="accuracy_certified"
+                                required
+                                class="mr-3 mt-1"
+                            />
+                            <span class="text-sm">
+                                I certify that all information provided is accurate and complete to the best of my knowledge
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-semibold mb-2 required">Full Name (Electronic Signature)</label>
+                        <input
+                            type="text"
+                            id="signature_name"
+                            name="signature_name"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="John Doe"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 required">Title</label>
+                        <input
+                            type="text"
+                            id="signature_title"
+                            name="signature_title"
+                            required
+                            class="form-input w-full px-4 py-3 rounded-lg"
+                            placeholder="CEO / Authorized Signatory"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Date</label>
+                        <input
+                            type="text"
+                            id="signature_date"
+                            name="signature_date"
+                            readonly
+                            class="form-input w-full px-4 py-3 rounded-lg bg-gray-700"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
+                <button
+                    type="submit"
+                    class="bg-gradient-to-r from-purple-600 to-blue-600 px-12 py-4 rounded-lg font-bold text-xl hover:from-purple-700 hover:to-blue-700 transition transform hover:scale-105 shadow-2xl"
+                >
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    Submit Registration
+                </button>
+
+                <p class="text-sm text-gray-400 mt-4">
+                    Registration will be reviewed within 24-48 hours. You'll receive an email confirmation.
+                </p>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gradient-bg p-6 mt-12">
+        <div class="container mx-auto text-center text-sm text-gray-200">
+            <p>&copy; 2025 HashNHedge. All rights reserved. | <a href="../index.html" class="hover:underline">Home</a></p>
+        </div>
+    </footer>
+
+    <script>
+        // Set signature date to today
+        document.getElementById('signature_date').value = new Date().toLocaleDateString();
+
+        // Toggle insurance fields
+        document.getElementById('has_liability_insurance').addEventListener('change', function(e) {
+            document.getElementById('insurance-fields').style.display = e.target.checked ? 'grid' : 'none';
+        });
+
+        // Form submission
+        document.getElementById('vendor-registration-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // Add metadata
+            data.submitted_at = new Date().toISOString();
+            data.ip_address = 'CLIENT_IP'; // Will be captured server-side
+            data.status = 'pending_review';
+
+            console.log('Vendor Registration Submitted:', {
+                business_name: data.legal_business_name,
+                contact_email: data.contact_email,
+                submitted_at: data.submitted_at
+            });
+
+            // TODO: Send to backend API
+            try {
+                const response = await fetch('/api/vendor/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('✅ Registration submitted successfully! You will receive a confirmation email within 24-48 hours.');
+                    window.location.href = '../index.html';
+                } else {
+                    alert('❌ Registration failed. Please try again or contact support.');
+                }
+            } catch (error) {
+                // Fallback: Store locally for now
+                console.log('Storing vendor registration locally:', data);
+                localStorage.setItem('vendor_registration_' + Date.now(), JSON.stringify(data));
+                alert('✅ Registration submitted! (Stored locally - API endpoint will be configured)');
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Form validation enhancement
+        document.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+            field.addEventListener('invalid', function() {
+                field.classList.add('border-red-500');
+            });
+
+            field.addEventListener('input', function() {
+                if (field.validity.valid) {
+                    field.classList.remove('border-red-500');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

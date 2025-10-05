@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Management - HashNHedge Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Auth check
+        if (!sessionStorage.getItem('admin_authenticated')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .vendor-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .vendor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status-approved {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .status-rejected {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold">Vendor Management</h1>
+                <p class="text-gray-200">Approve and manage compute vendors</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <span class="text-sm">
+                    <i class="fas fa-user-shield mr-2"></i>
+                    <span id="admin-username"></span>
+                </span>
+                <a href="marketplace.html" class="bg-white text-purple-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                    <i class="fas fa-shopping-cart mr-2"></i> Marketplace
+                </a>
+                <button onclick="logout()" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-br from-yellow-600 to-orange-600 p-6 rounded-xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-yellow-100">Pending Review</p>
+                        <p class="text-4xl font-bold mt-2" id="stat-pending">0</p>
+                    </div>
+                    <i class="fas fa-clock text-3xl text-yellow-100"></i>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-green-600 to-emerald-600 p-6 rounded-xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-green-100">Approved Vendors</p>
+                        <p class="text-4xl font-bold mt-2" id="stat-approved">0</p>
+                    </div>
+                    <i class="fas fa-check-circle text-3xl text-green-100"></i>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-blue-100">Total Jobs</p>
+                        <p class="text-4xl font-bold mt-2" id="stat-jobs">0</p>
+                    </div>
+                    <i class="fas fa-tasks text-3xl text-blue-100"></i>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-600 to-pink-600 p-6 rounded-xl">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-purple-100">Total Revenue</p>
+                        <p class="text-4xl font-bold mt-2" id="stat-revenue">$0</p>
+                    </div>
+                    <i class="fas fa-dollar-sign text-3xl text-purple-100"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-gray-800 rounded-t-xl border-b border-gray-700 flex">
+            <button
+                class="tab-button active"
+                data-tab="pending"
+                onclick="switchTab('pending')"
+            >
+                <i class="fas fa-clock mr-2"></i> Pending Review
+                <span class="ml-2 bg-yellow-600 px-2 py-1 rounded-full text-xs" id="pending-count">0</span>
+            </button>
+            <button
+                class="tab-button"
+                data-tab="approved"
+                onclick="switchTab('approved')"
+            >
+                <i class="fas fa-check mr-2"></i> Approved
+                <span class="ml-2 bg-green-600 px-2 py-1 rounded-full text-xs" id="approved-count">0</span>
+            </button>
+            <button
+                class="tab-button"
+                data-tab="rejected"
+                onclick="switchTab('rejected')"
+            >
+                <i class="fas fa-times mr-2"></i> Rejected
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-gray-800 rounded-b-xl p-6">
+            <!-- Pending Vendors -->
+            <div id="tab-pending" class="tab-content">
+                <div class="mb-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Vendors Awaiting Approval</h3>
+                    <input
+                        type="text"
+                        id="search-pending"
+                        placeholder="Search vendors..."
+                        class="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-purple-500"
+                    />
+                </div>
+
+                <div id="pending-vendors" class="space-y-4">
+                    <p class="text-gray-400 text-center py-8">No pending vendors</p>
+                </div>
+            </div>
+
+            <!-- Approved Vendors -->
+            <div id="tab-approved" class="tab-content hidden">
+                <div class="mb-4 flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Active Vendors</h3>
+                    <input
+                        type="text"
+                        id="search-approved"
+                        placeholder="Search vendors..."
+                        class="bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-purple-500"
+                    />
+                </div>
+
+                <div id="approved-vendors" class="space-y-4">
+                    <p class="text-gray-400 text-center py-8">No approved vendors</p>
+                </div>
+            </div>
+
+            <!-- Rejected Vendors -->
+            <div id="tab-rejected" class="tab-content hidden">
+                <div class="mb-4">
+                    <h3 class="text-xl font-bold">Rejected Registrations</h3>
+                </div>
+
+                <div id="rejected-vendors" class="space-y-4">
+                    <p class="text-gray-400 text-center py-8">No rejected vendors</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Detail Modal -->
+    <div id="vendor-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <h2 class="text-2xl font-bold" id="modal-vendor-name"></h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <div id="modal-content" class="space-y-6">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let vendors = {
+            pending: [],
+            approved: [],
+            rejected: []
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = sessionStorage.getItem('admin_user') || 'Admin';
+            document.getElementById('admin-username').textContent = username;
+
+            loadVendors();
+        });
+
+        // Load vendors
+        async function loadVendors() {
+            try {
+                // Load from localStorage for demo (replace with API calls)
+                const allVendors = Object.keys(localStorage)
+                    .filter(key => key.startsWith('vendor_registration_'))
+                    .map(key => JSON.parse(localStorage.getItem(key)));
+
+                vendors.pending = allVendors.filter(v => v.status === 'pending_review' || !v.status);
+                vendors.approved = allVendors.filter(v => v.status === 'approved');
+                vendors.rejected = allVendors.filter(v => v.status === 'rejected');
+
+                updateStats();
+                renderVendors();
+            } catch (err) {
+                console.error('Error loading vendors:', err);
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('stat-pending').textContent = vendors.pending.length;
+            document.getElementById('stat-approved').textContent = vendors.approved.length;
+            document.getElementById('pending-count').textContent = vendors.pending.length;
+            document.getElementById('approved-count').textContent = vendors.approved.length;
+
+            // Calculate totals
+            const totalJobs = vendors.approved.reduce((sum, v) => sum + (v.stats?.total_jobs || 0), 0);
+            const totalRevenue = vendors.approved.reduce((sum, v) => sum + (v.stats?.total_spend || 0), 0);
+
+            document.getElementById('stat-jobs').textContent = totalJobs;
+            document.getElementById('stat-revenue').textContent = '$' + totalRevenue.toLocaleString();
+        }
+
+        // Render vendors
+        function renderVendors() {
+            renderPending();
+            renderApproved();
+        }
+
+        // Render pending vendors
+        function renderPending() {
+            const container = document.getElementById('pending-vendors');
+
+            if (vendors.pending.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">No pending vendors</p>';
+                return;
+            }
+
+            container.innerHTML = vendors.pending.map(vendor => `
+                <div class="vendor-card p-6 rounded-xl">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h4 class="text-xl font-bold mb-2">${vendor.legal_business_name}</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm text-gray-300">
+                                <div><i class="fas fa-building mr-2 text-purple-400"></i> ${vendor.business_type}</div>
+                                <div><i class="fas fa-envelope mr-2 text-blue-400"></i> ${vendor.contact_email}</div>
+                                <div><i class="fas fa-phone mr-2 text-green-400"></i> ${vendor.contact_phone}</div>
+                                <div><i class="fas fa-calendar mr-2 text-yellow-400"></i> ${new Date(vendor.submitted_at).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2 ml-4">
+                            <button
+                                onclick="viewVendor('${vendor.submitted_at}')"
+                                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
+                            >
+                                <i class="fas fa-eye mr-2"></i> View
+                            </button>
+                            <button
+                                onclick="approveVendor('${vendor.submitted_at}')"
+                                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition"
+                            >
+                                <i class="fas fa-check mr-2"></i> Approve
+                            </button>
+                            <button
+                                onclick="rejectVendor('${vendor.submitted_at}')"
+                                class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+                            >
+                                <i class="fas fa-times mr-2"></i> Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render approved vendors
+        function renderApproved() {
+            const container = document.getElementById('approved-vendors');
+
+            if (vendors.approved.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">No approved vendors</p>';
+                return;
+            }
+
+            container.innerHTML = vendors.approved.map(vendor => `
+                <div class="vendor-card p-6 rounded-xl">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <h4 class="text-xl font-bold">${vendor.legal_business_name}</h4>
+                                <span class="status-badge status-approved">
+                                    <i class="fas fa-check-circle mr-1"></i> Active
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-sm text-gray-300 mt-4">
+                                <div><i class="fas fa-tasks mr-2 text-blue-400"></i> ${vendor.stats?.total_jobs || 0} jobs</div>
+                                <div><i class="fas fa-dollar-sign mr-2 text-green-400"></i> $${(vendor.stats?.total_spend || 0).toLocaleString()}</div>
+                                <div><i class="fas fa-calendar-check mr-2 text-purple-400"></i> ${new Date(vendor.approved_at || vendor.submitted_at).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+
+                        <button
+                            onclick="viewVendor('${vendor.submitted_at}')"
+                            class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
+                        >
+                            <i class="fas fa-eye mr-2"></i> Manage
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Switch tab
+        function switchTab(tab) {
+            // Update buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+        }
+
+        // View vendor details
+        function viewVendor(timestamp) {
+            const vendor = [...vendors.pending, ...vendors.approved].find(v => v.submitted_at === timestamp);
+            if (!vendor) return;
+
+            const modal = document.getElementById('vendor-modal');
+            document.getElementById('modal-vendor-name').textContent = vendor.legal_business_name;
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-bold mb-2 text-purple-400">Business Information</h3>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>Legal Name:</strong> ${vendor.legal_business_name}</p>
+                            <p><strong>Type:</strong> ${vendor.business_type}</p>
+                            <p><strong>Website:</strong> <a href="${vendor.website}" target="_blank" class="text-blue-400">${vendor.website}</a></p>
+                            <p><strong>Description:</strong> ${vendor.business_description}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold mb-2 text-green-400">Contact Information</h3>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>Name:</strong> ${vendor.contact_first_name} ${vendor.contact_last_name}</p>
+                            <p><strong>Title:</strong> ${vendor.contact_title}</p>
+                            <p><strong>Email:</strong> ${vendor.contact_email}</p>
+                            <p><strong>Phone:</strong> ${vendor.contact_phone}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold mb-2 text-blue-400">Address</h3>
+                        <div class="space-y-2 text-sm">
+                            <p>${vendor.address_line1}</p>
+                            ${vendor.address_line2 ? `<p>${vendor.address_line2}</p>` : ''}
+                            <p>${vendor.city}, ${vendor.state} ${vendor.postal_code}</p>
+                            <p>${vendor.country}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold mb-2 text-yellow-400">Tax Information</h3>
+                        <div class="space-y-2 text-sm">
+                            <p><strong>Tax ID Type:</strong> ${vendor.tax_id_type}</p>
+                            <p><strong>Tax ID:</strong> ${vendor.tax_id_number.replace(/./g, '*').slice(0, -4) + vendor.tax_id_number.slice(-4)}</p>
+                            <p><strong>Country:</strong> ${vendor.tax_country}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <h3 class="font-bold mb-4 text-red-400">Payment Information (Sensitive)</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <p><strong>Payment Method:</strong> ${vendor.payment_method}</p>
+                        <p><strong>Bank:</strong> ${vendor.bank_name}</p>
+                        <p><strong>Account Holder:</strong> ${vendor.account_holder_name}</p>
+                        <p><strong>Routing:</strong> ${vendor.routing_number}</p>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('vendor-modal').classList.add('hidden');
+            document.getElementById('vendor-modal').classList.remove('flex');
+        }
+
+        // Approve vendor
+        async function approveVendor(timestamp) {
+            if (!confirm('Are you sure you want to approve this vendor?')) return;
+
+            const vendor = vendors.pending.find(v => v.submitted_at === timestamp);
+            if (!vendor) return;
+
+            vendor.status = 'approved';
+            vendor.approved_at = new Date().toISOString();
+            vendor.stats = { total_jobs: 0, total_spend: 0 };
+
+            // Update localStorage
+            localStorage.setItem('vendor_registration_' + timestamp, JSON.stringify(vendor));
+
+            // Reload
+            await loadVendors();
+        }
+
+        // Reject vendor
+        async function rejectVendor(timestamp) {
+            const reason = prompt('Enter rejection reason:');
+            if (!reason) return;
+
+            const vendor = vendors.pending.find(v => v.submitted_at === timestamp);
+            if (!vendor) return;
+
+            vendor.status = 'rejected';
+            vendor.rejected_at = new Date().toISOString();
+            vendor.rejection_reason = reason;
+
+            // Update localStorage
+            localStorage.setItem('vendor_registration_' + timestamp, JSON.stringify(vendor));
+
+            // Reload
+            await loadVendors();
+        }
+
+        // Logout
+        function logout() {
+            sessionStorage.removeItem('admin_authenticated');
+            sessionStorage.removeItem('admin_user');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
