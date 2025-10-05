@@ -194,3 +194,379 @@ FROM pool_stats
 WHERE timestamp > CURRENT_TIMESTAMP - INTERVAL '7 days'
 GROUP BY DATE_TRUNC('hour', timestamp)
 ORDER BY hour DESC;
+
+-- ============================================================
+-- COMMUNITY REGISTRATION TABLES
+-- ============================================================
+
+-- Community Members Table
+CREATE TABLE community_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    full_name VARCHAR(255),
+    wallet_address VARCHAR(255),
+    discord_username VARCHAR(255),
+    telegram_username VARCHAR(255),
+    twitter_username VARCHAR(255),
+    github_username VARCHAR(255),
+
+    -- Profile info
+    bio TEXT,
+    avatar_url VARCHAR(500),
+    country VARCHAR(100),
+    timezone VARCHAR(100),
+
+    -- Interests and skills
+    interests TEXT[], -- Array of interests
+    skills TEXT[], -- Array of skills
+    contribution_areas TEXT[], -- mining, development, marketing, etc.
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'pending', -- pending, active, suspended
+    email_verified BOOLEAN DEFAULT false,
+    wallet_verified BOOLEAN DEFAULT false,
+
+    -- Engagement metrics
+    reputation_score INT DEFAULT 0,
+    contributions_count INT DEFAULT 0,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+
+    -- Metadata
+    metadata JSONB,
+
+    INDEX idx_email (email),
+    INDEX idx_username (username),
+    INDEX idx_status (status),
+    INDEX idx_wallet (wallet_address),
+    INDEX idx_created_at (created_at)
+);
+
+-- Community Events/Activities
+CREATE TABLE community_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    event_type VARCHAR(50) NOT NULL, -- webinar, meetup, hackathon, workshop
+    event_url VARCHAR(500),
+
+    -- Timing
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    timezone VARCHAR(100),
+
+    -- Location (if physical)
+    location_type VARCHAR(50) DEFAULT 'online', -- online, physical, hybrid
+    location_address TEXT,
+
+    -- Registration
+    max_participants INT,
+    registration_required BOOLEAN DEFAULT true,
+    registration_url VARCHAR(500),
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'upcoming', -- upcoming, ongoing, completed, cancelled
+
+    -- Organizer
+    organizer_id UUID REFERENCES community_members(id),
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    metadata JSONB,
+
+    INDEX idx_event_type (event_type),
+    INDEX idx_status (status),
+    INDEX idx_start_time (start_time)
+);
+
+-- Event Registrations
+CREATE TABLE event_registrations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id UUID REFERENCES community_events(id) ON DELETE CASCADE,
+    member_id UUID REFERENCES community_members(id) ON DELETE CASCADE,
+
+    registration_status VARCHAR(50) DEFAULT 'registered', -- registered, attended, cancelled
+    attended BOOLEAN DEFAULT false,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(event_id, member_id),
+    INDEX idx_event (event_id),
+    INDEX idx_member (member_id)
+);
+
+-- Community Contributions
+CREATE TABLE community_contributions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    member_id UUID REFERENCES community_members(id) ON DELETE CASCADE,
+
+    contribution_type VARCHAR(50) NOT NULL, -- code, documentation, design, community-help, bug-report
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+
+    -- Links
+    github_pr_url VARCHAR(500),
+    external_link VARCHAR(500),
+
+    -- Review
+    status VARCHAR(50) DEFAULT 'pending', -- pending, approved, rejected
+    reviewed_by UUID REFERENCES community_members(id),
+    review_notes TEXT,
+
+    -- Rewards
+    reputation_awarded INT DEFAULT 0,
+    bounty_awarded DECIMAL(20, 8) DEFAULT 0,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP,
+
+    metadata JSONB,
+
+    INDEX idx_member (member_id),
+    INDEX idx_type (contribution_type),
+    INDEX idx_status (status)
+);
+
+-- ============================================================
+-- VENDOR REGISTRATION TABLES
+-- ============================================================
+
+-- Vendors Table
+CREATE TABLE vendors (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- Company Info
+    company_name VARCHAR(255) UNIQUE NOT NULL,
+    legal_name VARCHAR(255),
+    registration_number VARCHAR(100),
+    tax_id VARCHAR(100),
+
+    -- Contact Info
+    contact_email VARCHAR(255) UNIQUE NOT NULL,
+    contact_phone VARCHAR(50),
+    website_url VARCHAR(500),
+
+    -- Contact Person
+    contact_person_name VARCHAR(255) NOT NULL,
+    contact_person_title VARCHAR(100),
+    contact_person_email VARCHAR(255),
+
+    -- Business Details
+    business_type VARCHAR(100), -- hardware-manufacturer, software-provider, service-provider, mining-pool, etc.
+    industry_sector VARCHAR(100),
+    company_size VARCHAR(50), -- startup, small, medium, enterprise
+    established_year INT,
+
+    -- Address
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    city VARCHAR(100),
+    state_province VARCHAR(100),
+    postal_code VARCHAR(50),
+    country VARCHAR(100),
+
+    -- Wallet
+    payment_wallet_address VARCHAR(255),
+    payment_wallet_verified BOOLEAN DEFAULT false,
+
+    -- Partnership Details
+    partnership_type VARCHAR(50), -- technology, reseller, integration, sponsor
+    products_services TEXT, -- Description of offerings
+    integration_interest TEXT[], -- Array of integration areas
+    expected_volume VARCHAR(50), -- low, medium, high, enterprise
+
+    -- Compliance
+    kyb_verified BOOLEAN DEFAULT false, -- Know Your Business
+    kyb_documents JSONB, -- Document references
+    terms_accepted BOOLEAN DEFAULT false,
+    terms_accepted_at TIMESTAMP,
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'pending', -- pending, approved, active, suspended, rejected
+    approval_notes TEXT,
+    approved_by VARCHAR(255),
+    approved_at TIMESTAMP,
+
+    -- Engagement
+    total_transactions INT DEFAULT 0,
+    total_volume DECIMAL(20, 8) DEFAULT 0,
+    rating DECIMAL(3, 2) DEFAULT 0, -- Average rating 0.00 to 5.00
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_active TIMESTAMP,
+
+    -- Metadata
+    metadata JSONB,
+
+    INDEX idx_company_name (company_name),
+    INDEX idx_email (contact_email),
+    INDEX idx_status (status),
+    INDEX idx_type (business_type),
+    INDEX idx_partnership (partnership_type),
+    INDEX idx_created_at (created_at)
+);
+
+-- Vendor Products/Services
+CREATE TABLE vendor_offerings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vendor_id UUID REFERENCES vendors(id) ON DELETE CASCADE,
+
+    offering_type VARCHAR(50) NOT NULL, -- hardware, software, service, support
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(100),
+
+    -- Pricing
+    pricing_model VARCHAR(50), -- fixed, subscription, usage-based, custom
+    base_price DECIMAL(20, 8),
+    currency VARCHAR(10) DEFAULT 'USD',
+
+    -- Links
+    documentation_url VARCHAR(500),
+    demo_url VARCHAR(500),
+    purchase_url VARCHAR(500),
+
+    -- Status
+    is_active BOOLEAN DEFAULT true,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    metadata JSONB,
+
+    INDEX idx_vendor (vendor_id),
+    INDEX idx_type (offering_type),
+    INDEX idx_active (is_active)
+);
+
+-- Vendor Transactions/Integrations
+CREATE TABLE vendor_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vendor_id UUID REFERENCES vendors(id) ON DELETE CASCADE,
+
+    transaction_type VARCHAR(50) NOT NULL, -- sale, integration, support, partnership
+    amount DECIMAL(20, 8),
+    currency VARCHAR(10) DEFAULT 'USD',
+
+    description TEXT,
+    reference_id VARCHAR(255), -- External transaction reference
+
+    status VARCHAR(50) DEFAULT 'pending', -- pending, completed, failed, refunded
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+
+    metadata JSONB,
+
+    INDEX idx_vendor (vendor_id),
+    INDEX idx_type (transaction_type),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+);
+
+-- Vendor Reviews/Ratings
+CREATE TABLE vendor_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vendor_id UUID REFERENCES vendors(id) ON DELETE CASCADE,
+    reviewer_id UUID, -- Could reference community_members or workers
+    reviewer_type VARCHAR(50), -- community, customer, partner
+
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    title VARCHAR(255),
+    review_text TEXT,
+
+    -- Helpful votes
+    helpful_count INT DEFAULT 0,
+
+    -- Verification
+    verified_purchase BOOLEAN DEFAULT false,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_vendor (vendor_id),
+    INDEX idx_rating (rating),
+    INDEX idx_created_at (created_at)
+);
+
+-- Documentation/Resources
+CREATE TABLE documentation (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    doc_type VARCHAR(50) NOT NULL, -- guide, api-docs, tutorial, faq, whitepaper
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) UNIQUE NOT NULL,
+    content TEXT NOT NULL,
+
+    -- Categorization
+    category VARCHAR(100),
+    tags TEXT[],
+
+    -- Author
+    author_type VARCHAR(50), -- team, community, vendor
+    author_id UUID, -- References different tables based on author_type
+    author_name VARCHAR(255),
+
+    -- Status
+    status VARCHAR(50) DEFAULT 'draft', -- draft, published, archived
+    is_featured BOOLEAN DEFAULT false,
+
+    -- SEO
+    meta_description TEXT,
+    meta_keywords TEXT[],
+
+    -- Engagement
+    view_count INT DEFAULT 0,
+    helpful_count INT DEFAULT 0,
+
+    -- Versioning
+    version VARCHAR(50),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    published_at TIMESTAMP,
+
+    metadata JSONB,
+
+    INDEX idx_slug (slug),
+    INDEX idx_type (doc_type),
+    INDEX idx_status (status),
+    INDEX idx_category (category)
+);
+
+-- Triggers for updated_at timestamps
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_community_members_updated_at
+BEFORE UPDATE ON community_members
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_vendors_updated_at
+BEFORE UPDATE ON vendors
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_vendor_offerings_updated_at
+BEFORE UPDATE ON vendor_offerings
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_documentation_updated_at
+BEFORE UPDATE ON documentation
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at();
