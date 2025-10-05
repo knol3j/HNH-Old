@@ -1,0 +1,87 @@
+# Netlify Configuration for HashNHedge Hybrid Pool
+# Uses Netlify Functions + Neon PostgreSQL Database
+
+[build]
+  command = "npm install"
+  functions = "netlify/functions"
+  publish = "."
+
+[build.environment]
+  NODE_ENV = "production"
+
+# Netlify Functions configuration
+[functions]
+  node_bundler = "esbuild"
+
+  # Increase timeout for long-running operations
+  [functions."pool-api"]
+    timeout = 26
+
+# Environment variables (set in Netlify UI)
+# DATABASE_URL - Neon PostgreSQL connection string (auto-configured via Netlify integration)
+# ADMIN_API_KEY - Generated secret for admin API access
+# POOL_FEE_AI - AI job fee (default: 0.30)
+# POOL_FEE_MINING - Mining fee (default: 0.03)
+
+# Redirects for API endpoints
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/pool-api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/pool-api/health"
+  status = 200
+
+[[redirects]]
+  from = "/stats"
+  to = "/.netlify/functions/pool-api/stats"
+  status = 200
+
+[[redirects]]
+  from = "/metrics"
+  to = "/.netlify/functions/pool-api/metrics"
+  status = 200
+
+# Static file serving
+[[redirects]]
+  from = "/gui"
+  to = "/miner-gui.html"
+  status = 200
+
+# CORS headers for API
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-API-Key"
+    Access-Control-Max-Age = "86400"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Development settings
+[dev]
+  command = "npm run dev"
+  port = 3334
+  targetPort = 3334
+  publish = "."
+  autoLaunch = true
+
+# Context-specific environment variables
+[context.production.environment]
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "staging"
+
+[context.branch-deploy.environment]
+  NODE_ENV = "development"

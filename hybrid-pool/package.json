@@ -30,7 +30,8 @@
     "pg": "^8.11.3",
     "@sendgrid/mail": "^8.1.0",
     "@aws-sdk/client-s3": "^3.490.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "serverless-http": "^3.2.0"
   },
   "engines": {
     "node": ">=18.0.0",
