@@ -171,15 +171,17 @@ The HTML GUI provides:
 - **Real-time status** - Current coin, profit, and mining status
 - **Statistics** - Uptime, switches, hashrate, daily profit
 - **Wallet management** - Enable/disable coins, edit addresses
-- **Phantom Wallet Integration** - Quick connect to auto-populate Solana addresses
+- **Phantom & Exodus Wallet Integration** - Quick connect to auto-populate wallet addresses
 - **Settings** - Adjust check interval, profit thresholds, electricity cost
 - **Activity log** - View recent switches and events
 
 Open `miner-gui.html` in your browser or it will auto-open when using `START-SMART-MINER.bat`.
 
-### Phantom Wallet Integration
+### Wallet Integration
 
-Click the "👻 Connect Phantom Wallet" button to:
+#### 👻 Phantom Wallet
+
+Click the "👻 Connect Phantom" button to:
 
 1. Connect your Phantom wallet browser extension
 2. Auto-populate Solana-based wallet addresses
@@ -187,6 +189,22 @@ Click the "👻 Connect Phantom Wallet" button to:
 4. Receive notifications when wallet account changes
 
 **Note**: Phantom provides Solana addresses. For EVM chains (ETC, ETHW) and other blockchains (RVN, ERGO, FIRO, CFX, ALPH), you'll need to manually configure those wallet addresses.
+
+#### 🌊 Exodus Wallet
+
+Click the "🌊 Connect Exodus" button to:
+
+1. Connect your Exodus wallet browser extension or desktop app
+2. **Auto-populate ETC and ETHW addresses** (Ethereum-compatible chains)
+3. Detect Bitcoin, Solana, and other chain addresses
+4. Manage multi-chain wallets from a single interface
+
+**Auto-populated addresses:**
+- ✅ **ETC** (Ethereum Classic) - Uses your ETH address
+- ✅ **ETHW** (Ethereum PoW) - Uses your ETH address
+- ⚠️ **RVN, ERGO, FIRO, CFX, ALPH** - Require manual configuration
+
+**Multi-chain support:** Exodus can provide addresses for Ethereum, Bitcoin, Solana, and 100+ other chains. The miner will auto-detect and display available addresses.
 
 ## How It Works
 

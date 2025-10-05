@@ -355,14 +355,19 @@
 
         <!-- Wallets Configuration -->
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                 <div>
                     <h2>💰 Wallet Configuration</h2>
                     <p style="opacity: 0.8; margin-top: 5px;">Click to edit wallet addresses. Toggle to enable/disable coins.</p>
                 </div>
-                <button class="btn" id="btnConnectPhantom" style="background: linear-gradient(135deg, #AB47BC 0%, #7B1FA2 100%); color: white;">
-                    👻 Connect Phantom Wallet
-                </button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn" id="btnConnectPhantom" style="background: linear-gradient(135deg, #AB47BC 0%, #7B1FA2 100%); color: white;">
+                        👻 Connect Phantom
+                    </button>
+                    <button class="btn" id="btnConnectExodus" style="background: linear-gradient(135deg, #1E88E5 0%, #0D47A1 100%); color: white;">
+                        🌊 Connect Exodus
+                    </button>
+                </div>
             </div>
             <div id="phantomStatus" style="display: none; padding: 15px; background: rgba(76, 175, 80, 0.2); border-radius: 8px; margin-bottom: 15px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -372,6 +377,16 @@
                         <div style="font-size: 0.9em; opacity: 0.8;" id="phantomAddress">Loading...</div>
                     </div>
                     <button class="btn btn-stop" id="btnDisconnectPhantom" style="margin-left: auto; padding: 8px 20px; font-size: 0.9em;">Disconnect</button>
+                </div>
+            </div>
+            <div id="exodusStatus" style="display: none; padding: 15px; background: rgba(30, 136, 229, 0.2); border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2em;">✅</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold;">Exodus Wallet Connected</div>
+                        <div style="font-size: 0.85em; opacity: 0.8; margin-top: 5px;" id="exodusAddresses">Loading addresses...</div>
+                    </div>
+                    <button class="btn btn-stop" id="btnDisconnectExodus" style="margin-left: auto; padding: 8px 20px; font-size: 0.9em;">Disconnect</button>
                 </div>
             </div>
             <div class="wallets-grid" id="walletsGrid"></div>
@@ -584,6 +599,168 @@
             renderWallets();
         }
 
+        // Exodus Wallet Integration
+        let exodusConnected = false;
+        let exodusAddresses = {};
+
+        // Connect to Exodus Wallet
+        async function connectExodus() {
+            try {
+                // Check if Exodus is installed
+                const isExodusInstalled = window.exodus && window.exodus.ethereum;
+
+                if (!isExodusInstalled) {
+                    alert('Exodus wallet not detected! Please install Exodus from https://exodus.com');
+                    window.open('https://exodus.com/download', '_blank');
+                    return;
+                }
+
+                addLog('Connecting to Exodus wallet...');
+
+                // Request connection to Ethereum provider first
+                const ethAccounts = await window.exodus.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                if (ethAccounts && ethAccounts.length > 0) {
+                    exodusAddresses.ethereum = ethAccounts[0];
+                    exodusConnected = true;
+
+                    addLog(`Exodus wallet connected: ${ethAccounts[0].substring(0, 8)}...`);
+
+                    // Try to get other chain addresses if available
+                    await getExodusMultiChainAddresses();
+
+                    // Show connected status
+                    document.getElementById('exodusStatus').style.display = 'block';
+                    document.getElementById('btnConnectExodus').style.display = 'none';
+                    updateExodusStatusDisplay();
+
+                    // Auto-populate wallets
+                    autoPopulateExodusWallets();
+                } else {
+                    throw new Error('No accounts found in Exodus wallet');
+                }
+
+            } catch (error) {
+                console.error('Exodus connection error:', error);
+                addLog(`Failed to connect Exodus: ${error.message}`);
+                alert('Failed to connect to Exodus wallet. Please try again.');
+            }
+        }
+
+        // Get multi-chain addresses from Exodus
+        async function getExodusMultiChainAddresses() {
+            try {
+                // Exodus supports multiple chains - try to get addresses for configured coins
+                // Note: Exodus API varies by chain, this shows the concept
+
+                // For Bitcoin-like chains (RVN uses similar addressing)
+                if (window.exodus.bitcoin) {
+                    try {
+                        const btcAccounts = await window.exodus.bitcoin.request({
+                            method: 'getAccounts'
+                        });
+                        if (btcAccounts && btcAccounts.length > 0) {
+                            exodusAddresses.bitcoin = btcAccounts[0];
+                            addLog('Bitcoin address detected');
+                        }
+                    } catch (e) {
+                        console.log('Bitcoin chain not available:', e);
+                    }
+                }
+
+                // For Solana
+                if (window.exodus.solana) {
+                    try {
+                        const solAccounts = await window.exodus.solana.request({
+                            method: 'connect'
+                        });
+                        if (solAccounts && solAccounts.publicKey) {
+                            exodusAddresses.solana = solAccounts.publicKey.toString();
+                            addLog('Solana address detected');
+                        }
+                    } catch (e) {
+                        console.log('Solana chain not available:', e);
+                    }
+                }
+
+            } catch (error) {
+                console.log('Multi-chain detection error:', error);
+            }
+        }
+
+        // Update Exodus status display
+        function updateExodusStatusDisplay() {
+            const addressDiv = document.getElementById('exodusAddresses');
+            let addressHTML = '';
+
+            if (exodusAddresses.ethereum) {
+                addressHTML += `<div><strong>ETH/ETC/ETHW:</strong> ${exodusAddresses.ethereum.substring(0, 10)}...${exodusAddresses.ethereum.substring(exodusAddresses.ethereum.length - 8)}</div>`;
+            }
+            if (exodusAddresses.bitcoin) {
+                addressHTML += `<div><strong>BTC/RVN:</strong> ${exodusAddresses.bitcoin.substring(0, 10)}...</div>`;
+            }
+            if (exodusAddresses.solana) {
+                addressHTML += `<div><strong>SOL:</strong> ${exodusAddresses.solana.substring(0, 10)}...</div>`;
+            }
+
+            addressDiv.innerHTML = addressHTML || 'ETH: ' + (exodusAddresses.ethereum || 'Unknown');
+        }
+
+        // Disconnect Exodus Wallet
+        async function disconnectExodus() {
+            try {
+                exodusConnected = false;
+                exodusAddresses = {};
+
+                document.getElementById('exodusStatus').style.display = 'none';
+                document.getElementById('btnConnectExodus').style.display = 'inline-block';
+
+                addLog('Exodus wallet disconnected');
+            } catch (error) {
+                console.error('Exodus disconnect error:', error);
+            }
+        }
+
+        // Auto-populate wallet addresses from Exodus
+        function autoPopulateExodusWallets() {
+            addLog('Auto-populating wallet addresses from Exodus...');
+
+            let populated = 0;
+
+            // ETC, ETHW use Ethereum addresses
+            if (exodusAddresses.ethereum) {
+                if (config.wallets.ETC) {
+                    config.wallets.ETC.address = exodusAddresses.ethereum;
+                    populated++;
+                    addLog('✓ Auto-populated ETC address');
+                }
+                if (config.wallets.ETHW) {
+                    config.wallets.ETHW.address = exodusAddresses.ethereum;
+                    populated++;
+                    addLog('✓ Auto-populated ETHW address');
+                }
+            }
+
+            // RVN can use Bitcoin-compatible address if available
+            if (exodusAddresses.bitcoin && config.wallets.RVN) {
+                // Note: In production, you'd need to derive the actual RVN address
+                addLog('ℹ RVN address detected (manual verification recommended)');
+            }
+
+            // ERGO, FIRO, CFX, ALPH use their own address formats
+            // These would need to be manually configured or derived if Exodus provides APIs
+            if (config.wallets.ERGO || config.wallets.FIRO || config.wallets.CFX || config.wallets.ALPH) {
+                addLog('ℹ ERGO, FIRO, CFX, ALPH require manual wallet configuration');
+            }
+
+            if (populated > 0) {
+                addLog(`✅ Auto-populated ${populated} wallet address(es)`);
+                renderWallets();
+            }
+        }
+
         // Setup event listeners
         function setupEventListeners() {
             document.getElementById('btnStart').addEventListener('click', startMining);
@@ -592,6 +769,8 @@
             document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
             document.getElementById('btnConnectPhantom').addEventListener('click', connectPhantom);
             document.getElementById('btnDisconnectPhantom').addEventListener('click', disconnectPhantom);
+            document.getElementById('btnConnectExodus').addEventListener('click', connectExodus);
+            document.getElementById('btnDisconnectExodus').addEventListener('click', disconnectExodus);
 
             // Listen for Phantom account changes
             if (window.solana) {
@@ -607,6 +786,24 @@
 
                 window.solana.on('disconnect', () => {
                     disconnectPhantom();
+                });
+            }
+
+            // Listen for Exodus account changes
+            if (window.exodus && window.exodus.ethereum) {
+                window.exodus.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts && accounts.length > 0) {
+                        exodusAddresses.ethereum = accounts[0];
+                        updateExodusStatusDisplay();
+                        addLog(`Exodus account switched: ${accounts[0].substring(0, 8)}...`);
+                        autoPopulateExodusWallets();
+                    } else {
+                        disconnectExodus();
+                    }
+                });
+
+                window.exodus.ethereum.on('disconnect', () => {
+                    disconnectExodus();
                 });
             }
         }
