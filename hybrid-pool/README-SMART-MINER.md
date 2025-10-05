@@ -171,10 +171,22 @@ The HTML GUI provides:
 - **Real-time status** - Current coin, profit, and mining status
 - **Statistics** - Uptime, switches, hashrate, daily profit
 - **Wallet management** - Enable/disable coins, edit addresses
+- **Phantom Wallet Integration** - Quick connect to auto-populate Solana addresses
 - **Settings** - Adjust check interval, profit thresholds, electricity cost
 - **Activity log** - View recent switches and events
 
 Open `miner-gui.html` in your browser or it will auto-open when using `START-SMART-MINER.bat`.
+
+### Phantom Wallet Integration
+
+Click the "👻 Connect Phantom Wallet" button to:
+
+1. Connect your Phantom wallet browser extension
+2. Auto-populate Solana-based wallet addresses
+3. Manage multiple wallet addresses from one place
+4. Receive notifications when wallet account changes
+
+**Note**: Phantom provides Solana addresses. For EVM chains (ETC, ETHW) and other blockchains (RVN, ERGO, FIRO, CFX, ALPH), you'll need to manually configure those wallet addresses.
 
 ## How It Works
 

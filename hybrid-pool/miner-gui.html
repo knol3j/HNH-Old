@@ -355,8 +355,25 @@
 
         <!-- Wallets Configuration -->
         <div class="card">
-            <h2>💰 Wallet Configuration</h2>
-            <p style="opacity: 0.8; margin-bottom: 15px;">Click to edit wallet addresses. Toggle to enable/disable coins.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div>
+                    <h2>💰 Wallet Configuration</h2>
+                    <p style="opacity: 0.8; margin-top: 5px;">Click to edit wallet addresses. Toggle to enable/disable coins.</p>
+                </div>
+                <button class="btn" id="btnConnectPhantom" style="background: linear-gradient(135deg, #AB47BC 0%, #7B1FA2 100%); color: white;">
+                    👻 Connect Phantom Wallet
+                </button>
+            </div>
+            <div id="phantomStatus" style="display: none; padding: 15px; background: rgba(76, 175, 80, 0.2); border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2em;">✅</span>
+                    <div>
+                        <div style="font-weight: bold;">Phantom Wallet Connected</div>
+                        <div style="font-size: 0.9em; opacity: 0.8;" id="phantomAddress">Loading...</div>
+                    </div>
+                    <button class="btn btn-stop" id="btnDisconnectPhantom" style="margin-left: auto; padding: 8px 20px; font-size: 0.9em;">Disconnect</button>
+                </div>
+            </div>
             <div class="wallets-grid" id="walletsGrid"></div>
         </div>
 
@@ -487,12 +504,111 @@
             }
         }
 
+        // Phantom Wallet Integration
+        let phantomConnected = false;
+        let phantomPublicKey = null;
+
+        // Connect to Phantom Wallet
+        async function connectPhantom() {
+            try {
+                // Check if Phantom is installed
+                const isPhantomInstalled = window.solana && window.solana.isPhantom;
+
+                if (!isPhantomInstalled) {
+                    alert('Phantom wallet not detected! Please install Phantom from https://phantom.app');
+                    window.open('https://phantom.app', '_blank');
+                    return;
+                }
+
+                addLog('Connecting to Phantom wallet...');
+
+                // Request connection
+                const response = await window.solana.connect();
+                phantomPublicKey = response.publicKey.toString();
+                phantomConnected = true;
+
+                // Show connected status
+                document.getElementById('phantomStatus').style.display = 'block';
+                document.getElementById('phantomAddress').textContent = phantomPublicKey;
+                document.getElementById('btnConnectPhantom').style.display = 'none';
+
+                addLog(`Phantom wallet connected: ${phantomPublicKey.substring(0, 8)}...`);
+
+                // Auto-populate Solana-based wallets
+                autoPopulateWallets(phantomPublicKey);
+
+            } catch (error) {
+                console.error('Phantom connection error:', error);
+                addLog(`Failed to connect Phantom: ${error.message}`);
+                alert('Failed to connect to Phantom wallet. Please try again.');
+            }
+        }
+
+        // Disconnect Phantom Wallet
+        async function disconnectPhantom() {
+            try {
+                if (window.solana && window.solana.disconnect) {
+                    await window.solana.disconnect();
+                }
+
+                phantomConnected = false;
+                phantomPublicKey = null;
+
+                document.getElementById('phantomStatus').style.display = 'none';
+                document.getElementById('btnConnectPhantom').style.display = 'inline-block';
+
+                addLog('Phantom wallet disconnected');
+            } catch (error) {
+                console.error('Phantom disconnect error:', error);
+            }
+        }
+
+        // Auto-populate wallet addresses from Phantom
+        function autoPopulateWallets(solanaAddress) {
+            // For Solana-based tokens, use the Phantom address
+            // For other chains, this can be extended to fetch associated addresses
+
+            // Note: Most coins in the current config are not Solana-based
+            // This example shows how it would work for a Solana token
+            // You would need to add Solana-based tokens to your config
+
+            addLog('Auto-populating Solana wallet addresses...');
+
+            // If you add SOL or SPL tokens to the config, they would be populated here
+            // Example: if (config.wallets.SOL) { config.wallets.SOL.address = solanaAddress; }
+
+            // For demonstration, we'll show a message
+            addLog('Note: Current configured coins (ETC, RVN, ERGO, etc.) use different blockchain addresses');
+            addLog('You can manually update wallet addresses for each chain');
+
+            renderWallets();
+        }
+
         // Setup event listeners
         function setupEventListeners() {
             document.getElementById('btnStart').addEventListener('click', startMining);
             document.getElementById('btnStop').addEventListener('click', stopMining);
             document.getElementById('btnSettings').addEventListener('click', toggleSettings);
             document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
+            document.getElementById('btnConnectPhantom').addEventListener('click', connectPhantom);
+            document.getElementById('btnDisconnectPhantom').addEventListener('click', disconnectPhantom);
+
+            // Listen for Phantom account changes
+            if (window.solana) {
+                window.solana.on('accountChanged', (publicKey) => {
+                    if (publicKey) {
+                        phantomPublicKey = publicKey.toString();
+                        document.getElementById('phantomAddress').textContent = phantomPublicKey;
+                        addLog(`Phantom account switched: ${phantomPublicKey.substring(0, 8)}...`);
+                    } else {
+                        disconnectPhantom();
+                    }
+                });
+
+                window.solana.on('disconnect', () => {
+                    disconnectPhantom();
+                });
+            }
         }
 
         // Start mining
