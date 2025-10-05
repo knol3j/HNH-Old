@@ -1,0 +1,159 @@
+{
+  "wallets": {
+    "ETC": {
+      "address": "0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2",
+      "coin": "Ethereum Classic",
+      "algorithm": "etchash",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://etc.2miners.com:1010",
+          "name": "2miners",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://etc.ethermine.org:4444",
+          "name": "Ethermine",
+          "priority": 2
+        },
+        {
+          "url": "stratum+tcp://etc.woolypooly.com:35000",
+          "name": "WoolyPooly",
+          "priority": 3
+        }
+      ]
+    },
+    "RVN": {
+      "address": "RNm4LMBGyfH8ddCGvncQKrMtxEydxwhUJL",
+      "coin": "Ravencoin",
+      "algorithm": "kawpow",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://rvn.2miners.com:6060",
+          "name": "2miners",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://stratum-ravencoin.flypool.org:3333",
+          "name": "Flypool",
+          "priority": 2
+        },
+        {
+          "url": "stratum+tcp://rvn.woolypooly.com:55555",
+          "name": "WoolyPooly",
+          "priority": 3
+        }
+      ]
+    },
+    "ERGO": {
+      "address": "9g1p6UU8XoAeU4yGPLpbTHYiG8aBHwfCFzQqJZrfzuLnmF3zb7P",
+      "coin": "Ergo",
+      "algorithm": "autolykos2",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://ergo.2miners.com:8888",
+          "name": "2miners",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://ergo.herominers.com:1180",
+          "name": "HeroMiners",
+          "priority": 2
+        },
+        {
+          "url": "stratum+tcp://ergo.woolypooly.com:3100",
+          "name": "WoolyPooly",
+          "priority": 3
+        }
+      ]
+    },
+    "ETHW": {
+      "address": "0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2",
+      "coin": "Ethereum PoW",
+      "algorithm": "ethash",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://pool.woolypooly.com:3096",
+          "name": "WoolyPooly",
+          "priority": 1
+        }
+      ]
+    },
+    "FIRO": {
+      "address": "aJFbcSiYmqC9e8N6SByzeFzkU2q7UtLsva",
+      "coin": "Firo",
+      "algorithm": "firopow",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://firo.2miners.com:8181",
+          "name": "2miners",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://firo.mintpond.com:3000",
+          "name": "MintPond",
+          "priority": 2
+        }
+      ]
+    },
+    "CFX": {
+      "address": "cfx:aajpfza5n5y1mdgu94qxw73wf3z0gjnxhyjhhhhhhh",
+      "coin": "Conflux",
+      "algorithm": "octopus",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://cfx-us.minerpool.org:3360",
+          "name": "MinerPool",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://cfx.woolypooly.com:3094",
+          "name": "WoolyPooly",
+          "priority": 2
+        }
+      ]
+    },
+    "ALPH": {
+      "address": "1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH",
+      "coin": "Alephium",
+      "algorithm": "blake3",
+      "enabled": true,
+      "pools": [
+        {
+          "url": "stratum+tcp://alph.herominers.com:1199",
+          "name": "HeroMiners",
+          "priority": 1
+        },
+        {
+          "url": "stratum+tcp://alph.woolypooly.com:3106",
+          "name": "WoolyPooly",
+          "priority": 2
+        }
+      ]
+    }
+  },
+  "settings": {
+    "profitability_check_interval": 300000,
+    "min_profit_difference": 0.10,
+    "default_worker_name": "HNH-Rig",
+    "electricity_cost": 0.12,
+    "power_consumption": 250,
+    "enable_auto_switch": true,
+    "enable_hybrid_pool": true,
+    "hybrid_pool_url": "localhost:3333"
+  },
+  "gpu_hashrates": {
+    "etchash": 98,
+    "kawpow": 48,
+    "autolykos2": 140,
+    "ethash": 100,
+    "firopow": 35,
+    "octopus": 75,
+    "blake3": 4500
+  }
+}

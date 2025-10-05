@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashNHedge Smart Miner - Auto-Profit Switcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .current-mining {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .mining-info {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .mining-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .coin-display {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .profit-display {
+            font-size: 1.3em;
+            color: #4CAF50;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-settings {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-settings:hover {
+            background: #0b7dda;
+        }
+
+        .wallets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .wallet-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .wallet-card:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .wallet-card.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .wallet-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .wallet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .coin-name {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .coin-toggle {
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .coin-toggle.active {
+            background: #4CAF50;
+        }
+
+        .coin-toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: 0.3s;
+        }
+
+        .coin-toggle.active::after {
+            left: 27px;
+        }
+
+        .wallet-address {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        .wallet-profit {
+            font-size: 1.2em;
+            color: #4CAF50;
+            margin-top: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .settings-panel {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .setting-input {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1em;
+        }
+
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 HashNHedge Smart Miner</h1>
+            <p>Intelligent Auto-Profit Switching Mining</p>
+        </div>
+
+        <!-- Current Mining Status -->
+        <div class="card">
+            <h2>⛏️ Current Mining Status</h2>
+            <div class="current-mining">
+                <div class="mining-info">
+                    <div class="mining-status">
+                        <div class="status-indicator" id="statusIndicator"></div>
+                        <span id="statusText">Stopped</span>
+                    </div>
+                    <div class="coin-display" id="currentCoin">Not Mining</div>
+                    <div class="profit-display" id="currentProfit">$0.00 / day</div>
+                    <div style="margin-top: 10px; opacity: 0.8;">
+                        Next check in: <span id="nextCheck">--</span>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-start" id="btnStart">Start Auto-Switch</button>
+                    <button class="btn btn-stop" id="btnStop" style="display: none;">Stop Mining</button>
+                    <button class="btn btn-settings" id="btnSettings">Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="card">
+            <h2>📊 Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statUptime">0h 0m</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statSwitches">0</div>
+                    <div class="stat-label">Coin Switches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statHashrate">0 MH/s</div>
+                    <div class="stat-label">Hashrate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statProfit">$0.00</div>
+                    <div class="stat-label">Est. Daily Profit</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallets Configuration -->
+        <div class="card">
+            <h2>💰 Wallet Configuration</h2>
+            <p style="opacity: 0.8; margin-bottom: 15px;">Click to edit wallet addresses. Toggle to enable/disable coins.</p>
+            <div class="wallets-grid" id="walletsGrid"></div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="card">
+                <h2>⚙️ Advanced Settings</h2>
+                <div class="setting-row">
+                    <label>Check Interval (seconds)</label>
+                    <input type="number" class="setting-input" id="checkInterval" value="300">
+                </div>
+                <div class="setting-row">
+                    <label>Min Profit Difference (%)</label>
+                    <input type="number" class="setting-input" id="minProfit" value="10">
+                </div>
+                <div class="setting-row">
+                    <label>Electricity Cost ($/kWh)</label>
+                    <input type="number" step="0.01" class="setting-input" id="electricityCost" value="0.12">
+                </div>
+                <div class="setting-row">
+                    <label>Power Consumption (W)</label>
+                    <input type="number" class="setting-input" id="powerConsumption" value="250">
+                </div>
+                <div class="setting-row">
+                    <label>Worker Name</label>
+                    <input type="text" class="setting-input" id="workerName" value="HNH-Rig">
+                </div>
+                <button class="btn btn-start" style="margin-top: 20px;" id="btnSaveSettings">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="card">
+            <h2>📝 Activity Log</h2>
+            <div class="log-container" id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let config = null;
+        let mining = false;
+        let currentInterval = null;
+        let uptimeStart = null;
+        let stats = {
+            switches: 0,
+            uptime: 0
+        };
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            renderWallets();
+            setupEventListeners();
+            addLog('Application started');
+        });
+
+        // Load configuration
+        function loadConfig() {
+            // In real implementation, this would load from wallets.json
+            config = {
+                wallets: {
+                    ETC: { address: '0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2', enabled: true, profit: 3.45 },
+                    RVN: { address: 'RNm4LMBGyfH8ddCGvncQKrMtxEydxwhUJL', enabled: true, profit: 2.89 },
+                    ERGO: { address: '9g1p6UU8XoAeU4yGPLpbTHYiG8aBHwfCFzQqJZrfzuLnmF3zb7P', enabled: true, profit: 4.12 },
+                    ETHW: { address: '0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2', enabled: false, profit: 2.34 },
+                    FIRO: { address: 'aJFbcSiYmqC9e8N6SByzeFzkU2q7UtLsva', enabled: false, profit: 1.87 },
+                    CFX: { address: 'cfx:aajpfza5n5y1mdgu94qxw73wf3z0gjnxhyjhhhhhhh', enabled: false, profit: 2.56 },
+                    ALPH: { address: '1DrDyTr9RpRsQnDnXo2YRiPzPW4ooHX5LLoqXrqfMrpQH', enabled: true, profit: 3.78 }
+                },
+                settings: {
+                    checkInterval: 300,
+                    minProfit: 10,
+                    electricityCost: 0.12,
+                    powerConsumption: 250,
+                    workerName: 'HNH-Rig'
+                }
+            };
+        }
+
+        // Render wallets grid
+        function renderWallets() {
+            const grid = document.getElementById('walletsGrid');
+            grid.innerHTML = '';
+
+            Object.entries(config.wallets).forEach(([coin, data]) => {
+                const card = document.createElement('div');
+                card.className = `wallet-card ${data.enabled ? '' : 'disabled'}`;
+                card.innerHTML = `
+                    <div class="wallet-header">
+                        <div class="coin-name">${coin}</div>
+                        <div class="coin-toggle ${data.enabled ? 'active' : ''}" data-coin="${coin}"></div>
+                    </div>
+                    <div class="wallet-address">${data.address}</div>
+                    <div class="wallet-profit">$${data.profit.toFixed(2)}/day</div>
+                `;
+                grid.appendChild(card);
+
+                // Toggle handler
+                card.querySelector('.coin-toggle').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleCoin(coin);
+                });
+
+                // Edit wallet address
+                card.addEventListener('click', () => {
+                    if (!card.classList.contains('disabled')) {
+                        editWallet(coin);
+                    }
+                });
+            });
+        }
+
+        // Toggle coin enabled/disabled
+        function toggleCoin(coin) {
+            config.wallets[coin].enabled = !config.wallets[coin].enabled;
+            renderWallets();
+            addLog(`${coin} ${config.wallets[coin].enabled ? 'enabled' : 'disabled'}`);
+        }
+
+        // Edit wallet address
+        function editWallet(coin) {
+            const newAddress = prompt(`Enter wallet address for ${coin}:`, config.wallets[coin].address);
+            if (newAddress && newAddress.trim()) {
+                config.wallets[coin].address = newAddress.trim();
+                renderWallets();
+                addLog(`Updated ${coin} wallet address`);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('btnStart').addEventListener('click', startMining);
+            document.getElementById('btnStop').addEventListener('click', stopMining);
+            document.getElementById('btnSettings').addEventListener('click', toggleSettings);
+            document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
+        }
+
+        // Start mining
+        function startMining() {
+            if (mining) return;
+
+            mining = true;
+            uptimeStart = Date.now();
+
+            document.getElementById('btnStart').style.display = 'none';
+            document.getElementById('btnStop').style.display = 'inline-block';
+            document.getElementById('statusIndicator').classList.add('active');
+            document.getElementById('statusText').textContent = 'Mining';
+
+            addLog('Auto-switching started');
+            checkAndSwitch();
+
+            // Schedule periodic checks
+            currentInterval = setInterval(checkAndSwitch, config.settings.checkInterval * 1000);
+            updateUptime();
+        }
+
+        // Stop mining
+        function stopMining() {
+            if (!mining) return;
+
+            mining = false;
+
+            if (currentInterval) {
+                clearInterval(currentInterval);
+                currentInterval = null;
+            }
+
+            document.getElementById('btnStart').style.display = 'inline-block';
+            document.getElementById('btnStop').style.display = 'none';
+            document.getElementById('statusIndicator').classList.remove('active');
+            document.getElementById('statusText').textContent = 'Stopped';
+            document.getElementById('currentCoin').textContent = 'Not Mining';
+
+            addLog('Mining stopped');
+        }
+
+        // Check profitability and switch
+        function checkAndSwitch() {
+            // Find most profitable enabled coin
+            const enabledCoins = Object.entries(config.wallets)
+                .filter(([_, data]) => data.enabled)
+                .sort(([_, a], [__, b]) => b.profit - a.profit);
+
+            if (enabledCoins.length === 0) {
+                addLog('No enabled coins to mine');
+                return;
+            }
+
+            const [coin, data] = enabledCoins[0];
+            const currentCoin = document.getElementById('currentCoin').textContent;
+
+            if (currentCoin !== coin) {
+                document.getElementById('currentCoin').textContent = coin;
+                document.getElementById('currentProfit').textContent = `$${data.profit.toFixed(2)} / day`;
+                stats.switches++;
+                document.getElementById('statSwitches').textContent = stats.switches;
+                addLog(`Switched to ${coin} ($${data.profit.toFixed(2)}/day)`);
+            }
+
+            document.getElementById('statProfit').textContent = `$${data.profit.toFixed(2)}`;
+            updateNextCheck();
+        }
+
+        // Update uptime display
+        function updateUptime() {
+            if (!mining) return;
+
+            setInterval(() => {
+                const elapsed = Date.now() - uptimeStart;
+                const hours = Math.floor(elapsed / 3600000);
+                const minutes = Math.floor((elapsed % 3600000) / 60000);
+                document.getElementById('statUptime').textContent = `${hours}h ${minutes}m`;
+            }, 1000);
+        }
+
+        // Update next check countdown
+        function updateNextCheck() {
+            let seconds = config.settings.checkInterval;
+            const interval = setInterval(() => {
+                if (!mining) {
+                    clearInterval(interval);
+                    return;
+                }
+                seconds--;
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                document.getElementById('nextCheck').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                if (seconds <= 0) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+
+        // Toggle settings panel
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+        }
+
+        // Save settings
+        function saveSettings() {
+            config.settings.checkInterval = parseInt(document.getElementById('checkInterval').value);
+            config.settings.minProfit = parseInt(document.getElementById('minProfit').value);
+            config.settings.electricityCost = parseFloat(document.getElementById('electricityCost').value);
+            config.settings.powerConsumption = parseInt(document.getElementById('powerConsumption').value);
+            config.settings.workerName = document.getElementById('workerName').value;
+
+            addLog('Settings saved');
+            alert('Settings saved successfully!');
+
+            // Restart interval if mining
+            if (mining) {
+                clearInterval(currentInterval);
+                currentInterval = setInterval(checkAndSwitch, config.settings.checkInterval * 1000);
+            }
+        }
+
+        // Add log entry
+        function addLog(message) {
+            const logContainer = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-time">${time}</span>${message}`;
+            logContainer.insertBefore(entry, logContainer.firstChild);
+
+            // Keep only last 50 entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+    </script>
+</body>
+</html>
