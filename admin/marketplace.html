@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Compute Marketplace - HashNHedge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Auth check
+        if (!sessionStorage.getItem('admin_authenticated')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .marketplace-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .marketplace-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        .resource-meter {
+            background: linear-gradient(90deg, #10b981 0%, #fbbf24 70%, #ef4444 100%);
+        }
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg p-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <a href="../index.html" class="text-4xl font-bold hover:opacity-80 transition">HashNHedge</a>
+                <p class="text-gray-200">Admin - Compute Marketplace</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <span class="text-sm text-gray-200">
+                    <i class="fas fa-user-shield mr-2"></i>
+                    <span id="admin-username"></span>
+                </span>
+                <button onclick="logout()" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </button>
+                <button id="wallet-connect" class="bg-white text-purple-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                    <i class="fas fa-wallet mr-2"></i> Connect Wallet
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Marketplace Overview -->
+    <main class="container mx-auto px-6 py-12 max-w-7xl">
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold mb-6">
+                <i class="fas fa-network-wired text-blue-400 mr-4"></i>
+                Compute Marketplace
+            </h1>
+            <p class="text-xl text-gray-300 max-w-4xl mx-auto">
+                Unified computing network combining GPU farms and mobile ARM processors.
+                Buy compute power for AI/ML, rendering, and scientific workloads or contribute your devices to earn HNH tokens.
+            </p>
+        </div>
+
+        <!-- Network Status Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div class="marketplace-card p-6 rounded-xl text-center">
+                <div class="text-4xl mb-4">🖥️</div>
+                <h3 class="text-xl font-bold mb-2">GPU Nodes</h3>
+                <div class="text-3xl font-bold text-blue-400" id="gpu-nodes">147</div>
+                <p class="text-gray-400 text-sm">Active GPU Miners</p>
+                <div class="mt-3">
+                    <div class="text-lg font-semibold text-green-400" id="gpu-power">2.8 TH/s</div>
+                    <p class="text-xs text-gray-500">Computing Power</p>
+                </div>
+            </div>
+
+            <div class="marketplace-card p-6 rounded-xl text-center">
+                <div class="text-4xl mb-4">📱</div>
+                <h3 class="text-xl font-bold mb-2">ARM Devices</h3>
+                <div class="text-3xl font-bold text-red-400" id="arm-devices">3,247</div>
+                <p class="text-gray-400 text-sm">Mobile Miners</p>
+                <div class="mt-3">
+                    <div class="text-lg font-semibold text-green-400" id="arm-power">847 MH/s</div>
+                    <p class="text-xs text-gray-500">PhoneProof Power</p>
+                </div>
+            </div>
+
+            <div class="marketplace-card p-6 rounded-xl text-center">
+                <div class="text-4xl mb-4">💰</div>
+                <h3 class="text-xl font-bold mb-2">Compute Sales</h3>
+                <div class="text-3xl font-bold text-yellow-400" id="revenue">$12,847</div>
+                <p class="text-gray-400 text-sm">Daily Revenue</p>
+                <div class="mt-3">
+                    <div class="text-lg font-semibold text-green-400" id="utilization">78%</div>
+                    <p class="text-xs text-gray-500">Network Utilization</p>
+                </div>
+            </div>
+
+            <div class="marketplace-card p-6 rounded-xl text-center">
+                <div class="text-4xl mb-4">⚡</div>
+                <h3 class="text-xl font-bold mb-2">Active Jobs</h3>
+                <div class="text-3xl font-bold text-purple-400" id="active-jobs">23</div>
+                <p class="text-gray-400 text-sm">Running Tasks</p>
+                <div class="mt-3">
+                    <div class="text-lg font-semibold text-green-400" id="queue-length">7</div>
+                    <p class="text-xs text-gray-500">Jobs Queued</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap justify-center mb-12 bg-gray-800 rounded-lg p-2">
+            <button onclick="showTab('buy')" id="tab-buy" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-blue-600 text-white">
+                <i class="fas fa-shopping-cart mr-2"></i> Buy Compute
+            </button>
+            <button onclick="showTab('sell')" id="tab-sell" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-server mr-2"></i> Sell Resources
+            </button>
+            <button onclick="showTab('mobile')" id="tab-mobile" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-mobile-alt mr-2"></i> Mobile Mining
+            </button>
+            <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button px-6 py-3 rounded-lg mx-1 mb-2 bg-gray-700 text-gray-300 hover:bg-gray-600">
+                <i class="fas fa-chart-line mr-2"></i> Analytics
+            </button>
+        </div>
+
+        <!-- Buy Compute Tab -->
+        <div id="content-buy" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Compute Packages -->
+                <div class="lg:col-span-2">
+                    <div class="marketplace-card p-8 rounded-xl mb-8">
+                        <h2 class="text-2xl font-bold mb-6">
+                            <i class="fas fa-rocket text-blue-400 mr-3"></i>
+                            Available Compute Packages
+                        </h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- GPU Compute -->
+                            <div class="bg-gray-800 p-6 rounded-lg border border-blue-500">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-microchip text-blue-400 text-2xl mr-3"></i>
+                                    <div>
+                                        <h3 class="text-xl font-bold">GPU Computing</h3>
+                                        <p class="text-gray-400 text-sm">High-performance parallel processing</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3 mb-6">
+                                    <div class="flex justify-between">
+                                        <span>Available Power:</span>
+                                        <span class="text-blue-400 font-bold">2.8 TH/s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Active Nodes:</span>
+                                        <span class="text-green-400">147</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price per Hour:</span>
+                                        <span class="text-yellow-400 font-bold">$0.45/TH·h</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 mb-6">
+                                    <h4 class="font-semibold text-sm">Best For:</h4>
+                                    <ul class="text-sm text-gray-400 space-y-1">
+                                        <li>• AI/ML model training</li>
+                                        <li>• 3D rendering & animation</li>
+                                        <li>• Cryptocurrency mining</li>
+                                        <li>• Scientific simulations</li>
+                                    </ul>
+                                </div>
+
+                                <button onclick="selectCompute('gpu')"
+                                       class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition">
+                                    Select GPU Computing
+                                </button>
+                            </div>
+
+                            <!-- ARM Mobile Compute -->
+                            <div class="bg-gray-800 p-6 rounded-lg border border-red-500">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-mobile-alt text-red-400 text-2xl mr-3"></i>
+                                    <div>
+                                        <h3 class="text-xl font-bold">ARM Computing</h3>
+                                        <p class="text-gray-400 text-sm">Distributed mobile processing</p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3 mb-6">
+                                    <div class="flex justify-between">
+                                        <span>Available Power:</span>
+                                        <span class="text-red-400 font-bold">847 MH/s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Mobile Devices:</span>
+                                        <span class="text-green-400">3,247</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Price per Hour:</span>
+                                        <span class="text-yellow-400 font-bold">$0.12/GH·h</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2 mb-6">
+                                    <h4 class="font-semibold text-sm">Best For:</h4>
+                                    <ul class="text-sm text-gray-400 space-y-1">
+                                        <li>• Distributed hash cracking</li>
+                                        <li>• IoT data processing</li>
+                                        <li>• Edge computing tasks</li>
+                                        <li>• Blockchain verification</li>
+                                    </ul>
+                                </div>
+
+                                <button onclick="selectCompute('arm')"
+                                       class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-lg font-semibold transition">
+                                    Select ARM Computing
+                                </button>
+                            </div>
+
+                            <!-- Hybrid Computing -->
+                            <div class="md:col-span-2 bg-gray-800 p-6 rounded-lg border border-purple-500">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-network-wired text-purple-400 text-2xl mr-3"></i>
+                                    <div>
+                                        <h3 class="text-xl font-bold">Hybrid Computing</h3>
+                                        <p class="text-gray-400 text-sm">Combined GPU + ARM network power</p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-purple-400">3.6 TH/s</div>
+                                        <div class="text-sm text-gray-400">Combined Power</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-400">3,394</div>
+                                        <div class="text-sm text-gray-400">Total Nodes</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-yellow-400">$0.35/TH·h</div>
+                                        <div class="text-sm text-gray-400">Blended Rate</div>
+                                    </div>
+                                </div>
+
+                                <p class="text-sm text-gray-400 mb-4">
+                                    Optimal for large-scale distributed computing tasks that can leverage both high-performance GPUs and massive mobile device parallelization.
+                                </p>
+
+                                <button onclick="selectCompute('hybrid')"
+                                       class="w-full bg-purple-600 hover:bg-purple-700 py-3 rounded-lg font-semibold transition">
+                                    Select Hybrid Computing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Configuration -->
+                <div>
+                    <div class="marketplace-card p-6 rounded-xl mb-6">
+                        <h3 class="text-lg font-bold mb-4">
+                            <i class="fas fa-cog text-gray-400 mr-2"></i>
+                            Configure Order
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Compute Type</label>
+                                <select id="compute-type" class="w-full p-3 bg-gray-700 rounded-lg">
+                                    <option value="">Select compute type...</option>
+                                    <option value="gpu">GPU Computing</option>
+                                    <option value="arm">ARM Mobile</option>
+                                    <option value="hybrid">Hybrid Network</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Duration (Hours)</label>
+                                <input type="number" id="duration" value="1" min="0.1" step="0.1"
+                                       class="w-full p-3 bg-gray-700 rounded-lg">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Power Required</label>
+                                <input type="number" id="power-required" value="100" min="1"
+                                       class="w-full p-3 bg-gray-700 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">In GH/s for ARM, TH/s for GPU</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Priority</label>
+                                <select id="priority" class="w-full p-3 bg-gray-700 rounded-lg">
+                                    <option value="normal">Normal (+0%)</option>
+                                    <option value="high">High Priority (+25%)</option>
+                                    <option value="urgent">Urgent (+50%)</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-gray-800 p-4 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span>Base Cost:</span>
+                                    <span id="base-cost">$0.00</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Priority Fee:</span>
+                                    <span id="priority-fee">$0.00</span>
+                                </div>
+                                <div class="flex justify-between font-bold text-lg border-t border-gray-600 pt-2">
+                                    <span>Total:</span>
+                                    <span id="total-cost" class="text-green-400">$0.00</span>
+                                </div>
+                            </div>
+
+                            <button onclick="purchaseCompute()"
+                                   class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold transition">
+                                <i class="fas fa-credit-card mr-2"></i> Purchase Compute
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="marketplace-card p-6 rounded-xl">
+                        <h3 class="text-lg font-bold mb-4">Quick Stats</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span>Your Balance:</span>
+                                <span class="text-green-400 font-bold">$247.83</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Active Orders:</span>
+                                <span>3</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Total Spent:</span>
+                                <span>$1,247.92</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sell Resources Tab -->
+        <div id="content-sell" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-server text-green-400 mr-3"></i>
+                        Contribute GPU Resources
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div class="bg-gray-800 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold mb-4">GPU Farm Setup</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">GPU Count</label>
+                                    <input type="number" id="gpu-count" value="1" min="1"
+                                           class="w-full p-3 bg-gray-700 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">GPU Model</label>
+                                    <select id="gpu-model" class="w-full p-3 bg-gray-700 rounded-lg">
+                                        <option value="rtx4090">RTX 4090 (~130 MH/s)</option>
+                                        <option value="rtx4080">RTX 4080 (~100 MH/s)</option>
+                                        <option value="rtx3080">RTX 3080 (~95 MH/s)</option>
+                                        <option value="rtx3070">RTX 3070 (~62 MH/s)</option>
+                                        <option value="other">Other (specify)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Availability</label>
+                                    <select id="gpu-availability" class="w-full p-3 bg-gray-700 rounded-lg">
+                                        <option value="24/7">24/7 (Maximum earnings)</option>
+                                        <option value="business">Business hours (9-5)</option>
+                                        <option value="night">Night hours (6PM-6AM)</option>
+                                        <option value="custom">Custom schedule</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-green-900 bg-opacity-30 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span>Estimated Daily Earnings:</span>
+                                    <span class="text-green-400 font-bold" id="gpu-earnings">$23.45</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Your Share (70%):</span>
+                                    <span class="text-green-400 font-bold" id="gpu-share">$16.42</span>
+                                </div>
+                            </div>
+
+                            <button onclick="joinGPUNetwork()"
+                                   class="w-full mt-4 bg-green-600 hover:bg-green-700 py-3 rounded-lg font-semibold transition">
+                                Join GPU Network
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-chart-bar text-blue-400 mr-3"></i>
+                        Current Network Status
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3">Network Demand</h3>
+                            <canvas id="demandChart" width="400" height="200"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-800 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-green-400">$0.45</div>
+                                <div class="text-sm text-gray-400">GPU Rate/TH·h</div>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-red-400">$0.12</div>
+                                <div class="text-sm text-gray-400">ARM Rate/GH·h</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-900 bg-opacity-30 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">💡 Pro Tip</h4>
+                            <p class="text-sm text-gray-300">
+                                Peak demand hours are 9 AM - 11 PM UTC. Contributors earn up to 40% more during these periods.
+                            </p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span>Total Miners Online:</span>
+                                <span class="text-green-400">3,394</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Average Uptime:</span>
+                                <span class="text-blue-400">97.2%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Daily Volume:</span>
+                                <span class="text-yellow-400">$12,847</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Mining Tab -->
+        <div id="content-mobile" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-mobile-alt text-red-400 mr-3"></i>
+                        ARMgeddon Mobile Integration
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div class="bg-gray-800 p-6 rounded-lg">
+                            <h3 class="text-lg font-semibold mb-4">Mobile Compute Contribution</h3>
+
+                            <div class="grid grid-cols-2 gap-4 mb-6">
+                                <div class="text-center">
+                                    <div class="text-3xl mb-2">📱</div>
+                                    <div class="text-2xl font-bold text-red-400">3,247</div>
+                                    <div class="text-sm text-gray-400">Active Devices</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-3xl mb-2">⚡</div>
+                                    <div class="text-2xl font-bold text-green-400">847 MH/s</div>
+                                    <div class="text-sm text-gray-400">Total Power</div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Device Type</label>
+                                    <select id="device-type" class="w-full p-3 bg-gray-700 rounded-lg">
+                                        <option value="flagship">Flagship Phone (A15/Snapdragon 8)</option>
+                                        <option value="midrange">Mid-range (A13/Snapdragon 7)</option>
+                                        <option value="budget">Budget Phone (A11/Snapdragon 6)</option>
+                                        <option value="tablet">Tablet (M1/M2)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Contribution Level</label>
+                                    <select id="contribution-level" class="w-full p-3 bg-gray-700 rounded-lg">
+                                        <option value="light">Light (10% CPU, minimal battery impact)</option>
+                                        <option value="moderate">Moderate (30% CPU, plugged in recommended)</option>
+                                        <option value="intensive">Intensive (60% CPU, charging required)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Active Hours</label>
+                                    <select id="mobile-schedule" class="w-full p-3 bg-gray-700 rounded-lg">
+                                        <option value="charging">Only while charging</option>
+                                        <option value="night">Night hours (11PM-7AM)</option>
+                                        <option value="idle">When phone is idle</option>
+                                        <option value="background">Background always</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-red-900 bg-opacity-30 rounded-lg">
+                                <div class="flex justify-between mb-2">
+                                    <span>Est. Daily HNH Earnings:</span>
+                                    <span class="text-red-400 font-bold" id="mobile-earnings">2.4 HNH</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>USD Value:</span>
+                                    <span class="text-green-400 font-bold" id="mobile-usd">$0.12</span>
+                                </div>
+                            </div>
+
+                            <button onclick="joinMobileNetwork()"
+                                   class="w-full mt-4 bg-red-600 hover:bg-red-700 py-3 rounded-lg font-semibold transition">
+                                <i class="fas fa-download mr-2"></i> Download ARMgeddon App
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">
+                        <i class="fas fa-chart-pie text-purple-400 mr-3"></i>
+                        Mobile Network Analytics
+                    </h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-3">Device Distribution</h3>
+                            <canvas id="deviceChart" width="400" height="200"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gray-800 p-3 rounded text-center">
+                                <div class="text-lg font-bold text-blue-400">iOS</div>
+                                <div class="text-2xl font-bold">62%</div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded text-center">
+                                <div class="text-lg font-bold text-green-400">Android</div>
+                                <div class="text-2xl font-bold">38%</div>
+                            </div>
+                            <div class="bg-gray-800 p-3 rounded text-center">
+                                <div class="text-lg font-bold text-purple-400">Tablets</div>
+                                <div class="text-2xl font-bold">12%</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-purple-900 bg-opacity-30 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">📊 Performance Insights</h4>
+                            <ul class="text-sm text-gray-300 space-y-1">
+                                <li>• Average device contributes 260 KH/s</li>
+                                <li>• Peak mobile hours: 8PM-12AM local time</li>
+                                <li>• Mobile miners provide 30% of total network power</li>
+                                <li>• ARMgeddon algorithm is 40x more efficient on mobile</li>
+                            </ul>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span>Avg. Session Time:</span>
+                                <span class="text-blue-400">4.2 hours</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Battery Impact:</span>
+                                <span class="text-green-400">3-8%/hour</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Daily Mobile Revenue:</span>
+                                <span class="text-yellow-400">$3,247</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="content-analytics" class="tab-content hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">Network Performance</h2>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+                <div class="marketplace-card p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold mb-6">Revenue Distribution</h2>
+                    <canvas id="revenueChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="marketplace-card p-8 rounded-xl">
+                <h2 class="text-2xl font-bold mb-6">Unified Network Metrics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-400">3.6 TH/s</div>
+                        <div class="text-gray-400">Combined Hashrate</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-400">$12,847</div>
+                        <div class="text-gray-400">Daily Revenue</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-400">3,394</div>
+                        <div class="text-gray-400">Active Contributors</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-yellow-400">78%</div>
+                        <div class="text-gray-400">Network Utilization</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab switching functionality
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('bg-blue-600', 'text-white');
+                button.classList.add('bg-gray-700', 'text-gray-300');
+            });
+
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const selectedButton = document.getElementById(`tab-${tabName}`);
+            selectedButton.classList.remove('bg-gray-700', 'text-gray-300');
+            selectedButton.classList.add('bg-blue-600', 'text-white');
+        }
+
+        // Compute selection
+        function selectCompute(type) {
+            document.getElementById('compute-type').value = type;
+            updateCostCalculation();
+        }
+
+        // Cost calculation
+        function updateCostCalculation() {
+            const type = document.getElementById('compute-type').value;
+            const duration = parseFloat(document.getElementById('duration').value) || 0;
+            const power = parseFloat(document.getElementById('power-required').value) || 0;
+            const priority = document.getElementById('priority').value;
+
+            let rate = 0;
+            switch(type) {
+                case 'gpu':
+                    rate = 0.45; // $0.45 per TH/hour
+                    break;
+                case 'arm':
+                    rate = 0.12; // $0.12 per GH/hour
+                    power = power / 1000; // Convert GH to TH equivalent
+                    break;
+                case 'hybrid':
+                    rate = 0.35; // $0.35 per TH/hour blended
+                    break;
+            }
+
+            const baseCost = rate * power * duration;
+            let priorityMultiplier = 1;
+
+            switch(priority) {
+                case 'high':
+                    priorityMultiplier = 1.25;
+                    break;
+                case 'urgent':
+                    priorityMultiplier = 1.5;
+                    break;
+            }
+
+            const priorityFee = baseCost * (priorityMultiplier - 1);
+            const totalCost = baseCost * priorityMultiplier;
+
+            document.getElementById('base-cost').textContent = `$${baseCost.toFixed(2)}`;
+            document.getElementById('priority-fee').textContent = `$${priorityFee.toFixed(2)}`;
+            document.getElementById('total-cost').textContent = `$${totalCost.toFixed(2)}`;
+        }
+
+        // Event listeners
+        document.getElementById('compute-type').addEventListener('change', updateCostCalculation);
+        document.getElementById('duration').addEventListener('input', updateCostCalculation);
+        document.getElementById('power-required').addEventListener('input', updateCostCalculation);
+        document.getElementById('priority').addEventListener('change', updateCostCalculation);
+
+        // Purchase compute
+        function purchaseCompute() {
+            const type = document.getElementById('compute-type').value;
+            if (!type) {
+                alert('Please select a compute type');
+                return;
+            }
+
+            alert(`Compute order placed! You'll receive connection details shortly.`);
+        }
+
+        // Join networks
+        function joinGPUNetwork() {
+            alert('GPU network registration initiated. Please download the HashNHedge miner.');
+        }
+
+        function joinMobileNetwork() {
+            alert('Redirecting to ARMgeddon app download...');
+            window.open('../armageddon/index.html', '_blank');
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Performance chart
+            const performanceCtx = document.getElementById('performanceChart')?.getContext('2d');
+            if (performanceCtx) {
+                new Chart(performanceCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'GPU Power (TH/s)',
+                            data: [1.2, 1.8, 2.1, 2.4, 2.6, 2.8],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                        }, {
+                            label: 'ARM Power (TH/s equivalent)',
+                            data: [0.1, 0.2, 0.4, 0.6, 0.7, 0.8],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: 'white' } } },
+                        scales: {
+                            x: { ticks: { color: 'white' } },
+                            y: { ticks: { color: 'white' } }
+                        }
+                    }
+                });
+            }
+
+            // Device distribution chart
+            const deviceCtx = document.getElementById('deviceChart')?.getContext('2d');
+            if (deviceCtx) {
+                new Chart(deviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['iPhone', 'Android', 'iPad', 'Other'],
+                        datasets: [{
+                            data: [45, 38, 12, 5],
+                            backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: 'white' } } }
+                    }
+                });
+            }
+        }
+
+        // Update real-time stats
+        function updateStats() {
+            // Simulate real-time updates
+            const gpuNodes = 147 + Math.floor(Math.random() * 10) - 5;
+            const armDevices = 3247 + Math.floor(Math.random() * 50) - 25;
+            const revenue = 12847 + Math.floor(Math.random() * 1000) - 500;
+
+            document.getElementById('gpu-nodes').textContent = gpuNodes;
+            document.getElementById('arm-devices').textContent = armDevices.toLocaleString();
+            document.getElementById('revenue').textContent = `$${revenue.toLocaleString()}`;
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('admin_authenticated');
+            sessionStorage.removeItem('admin_user');
+            window.location.href = 'index.html';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display admin username
+            const username = sessionStorage.getItem('admin_user') || 'Admin';
+            document.getElementById('admin-username').textContent = username;
+
+            initCharts();
+            updateCostCalculation();
+            setInterval(updateStats, 10000); // Update every 10 seconds
+        });
+    </script>
+</body>
+</html>

@@ -339,7 +339,11 @@ app.get('/api/miner/:walletAddress', (req, res) => {
 
 // Security dashboard endpoint (admin only)
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || crypto.randomBytes(32).toString('hex');
-console.log(`🔐 Admin token: ${ADMIN_TOKEN}`);
+if (!process.env.ADMIN_TOKEN) {
+    console.log(`🔐 Admin token generated (set ADMIN_TOKEN env to persist)`);
+} else {
+    console.log(`🔐 Admin token loaded from environment`);
+}
 
 function requireAuth(req, res, next) {
     const token = req.headers.authorization?.replace('Bearer ', '');
