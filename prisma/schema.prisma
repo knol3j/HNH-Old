@@ -1,0 +1,579 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ============================================================
+// MINING POOL MODELS
+// ============================================================
+
+model Worker {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workerId       String    @unique @map("worker_id")
+  walletAddress  String    @map("wallet_address")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastSeen       DateTime  @default(now()) @map("last_seen")
+  status         String    @default("active")
+  hardwareInfo   Json?     @map("hardware_info")
+  totalShares    BigInt    @default(0) @map("total_shares")
+  validShares    BigInt    @default(0) @map("valid_shares")
+  invalidShares  BigInt    @default(0) @map("invalid_shares")
+  totalEarnings  Decimal   @default(0) @map("total_earnings") @db.Decimal(20, 8)
+
+  // Relations
+  jobs           Job[]
+  shares         Share[]
+  payments       Payment[]
+  earnings       Earning[]
+  blocks         Block[]
+
+  @@index([walletAddress], map: "idx_workers_wallet_address")
+  @@index([status], map: "idx_workers_status")
+  @@index([workerId], map: "idx_workers_worker_id")
+  @@map("workers")
+}
+
+model Job {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  jobId          String    @unique @map("job_id")
+  jobType        String    @map("job_type")
+  algorithm      String?
+  difficulty     BigInt?
+  reward         Decimal?  @db.Decimal(20, 8)
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  completedAt    DateTime? @map("completed_at")
+  assignedWorker String?   @map("assigned_worker") @db.Uuid
+  metadata       Json?
+
+  // Relations
+  worker         Worker?   @relation(fields: [assignedWorker], references: [id])
+  shares         Share[]
+
+  @@index([jobType], map: "idx_jobs_job_type")
+  @@index([status], map: "idx_jobs_status")
+  @@index([createdAt], map: "idx_jobs_created_at")
+  @@map("jobs")
+}
+
+model Share {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workerId     String    @map("worker_id") @db.Uuid
+  jobId        String    @map("job_id") @db.Uuid
+  difficulty   BigInt
+  isValid      Boolean   @default(true) @map("is_valid")
+  jobType      String    @map("job_type")
+  submittedAt  DateTime  @default(now()) @map("submitted_at")
+  nonce        String?
+  hash         String?
+
+  // Relations
+  worker       Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  job          Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([workerId], map: "idx_shares_worker_id")
+  @@index([jobId], map: "idx_shares_job_id")
+  @@index([submittedAt], map: "idx_shares_submitted_at")
+  @@index([isValid], map: "idx_shares_is_valid")
+  @@map("shares")
+}
+
+model Payment {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workerId        String    @map("worker_id") @db.Uuid
+  walletAddress   String    @map("wallet_address")
+  amount          Decimal   @db.Decimal(20, 8)
+  currency        String    @default("HNH")
+  status          String    @default("pending")
+  transactionHash String?   @map("transaction_hash")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  paidAt          DateTime? @map("paid_at")
+  notes           String?
+
+  // Relations
+  worker          Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId], map: "idx_payments_worker_id")
+  @@index([walletAddress], map: "idx_payments_wallet_address")
+  @@index([status], map: "idx_payments_status")
+  @@index([createdAt], map: "idx_payments_created_at")
+  @@map("payments")
+}
+
+model Earning {
+  id          String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  workerId    String   @map("worker_id") @db.Uuid
+  amount      Decimal  @db.Decimal(20, 8)
+  jobType     String   @map("job_type")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId], map: "idx_earnings_worker_id")
+  @@index([createdAt], map: "idx_earnings_created_at")
+  @@map("earnings")
+}
+
+model PoolStats {
+  id                   String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  timestamp            DateTime @default(now())
+  totalWorkers         Int      @default(0) @map("total_workers")
+  activeWorkers        Int      @default(0) @map("active_workers")
+  totalHashrate        BigInt   @default(0) @map("total_hashrate")
+  aiJobsCompleted      Int      @default(0) @map("ai_jobs_completed")
+  miningJobsCompleted  Int      @default(0) @map("mining_jobs_completed")
+  poolRevenue          Decimal  @default(0) @map("pool_revenue") @db.Decimal(20, 8)
+  networkUtilization   Decimal  @default(0) @map("network_utilization") @db.Decimal(5, 2)
+  metadata             Json?
+
+  @@index([timestamp], map: "idx_pool_stats_timestamp")
+  @@map("pool_stats")
+}
+
+model Block {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  blockHeight   BigInt    @map("block_height")
+  blockHash     String    @map("block_hash")
+  algorithm     String
+  difficulty    BigInt
+  reward        Decimal   @db.Decimal(20, 8)
+  foundBy       String?   @map("found_by") @db.Uuid
+  foundAt       DateTime  @default(now()) @map("found_at")
+  confirmed     Boolean   @default(false)
+  confirmedAt   DateTime? @map("confirmed_at")
+
+  // Relations
+  worker        Worker?   @relation(fields: [foundBy], references: [id])
+
+  @@index([blockHeight], map: "idx_blocks_block_height")
+  @@index([foundAt], map: "idx_blocks_found_at")
+  @@index([confirmed], map: "idx_blocks_confirmed")
+  @@map("blocks")
+}
+
+model ApiKey {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  keyHash     String    @unique @map("key_hash")
+  name        String
+  permissions Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean   @default(true) @map("is_active")
+
+  @@index([isActive], map: "idx_api_keys_is_active")
+  @@map("api_keys")
+}
+
+model EmailQueue {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  toEmail      String    @map("to_email")
+  subject      String
+  body         String
+  templateId   String?   @map("template_id")
+  status       String    @default("pending")
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  sentAt       DateTime? @map("sent_at")
+  errorMessage String?   @map("error_message")
+
+  @@index([status], map: "idx_email_queue_status")
+  @@index([createdAt], map: "idx_email_queue_created_at")
+  @@map("email_queue")
+}
+
+// ============================================================
+// COMMUNITY MODELS
+// ============================================================
+
+model CommunityMember {
+  id                  String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email               String                   @unique
+  username            String                   @unique
+  fullName            String?                  @map("full_name")
+  walletAddress       String?                  @map("wallet_address")
+  discordUsername     String?                  @map("discord_username")
+  telegramUsername    String?                  @map("telegram_username")
+  twitterUsername     String?                  @map("twitter_username")
+  githubUsername      String?                  @map("github_username")
+
+  // Profile info
+  bio                 String?
+  avatarUrl           String?                  @map("avatar_url")
+  country             String?
+  timezone            String?
+
+  // Interests and skills
+  interests           String[]
+  skills              String[]
+  contributionAreas   String[]                 @map("contribution_areas")
+
+  // Status
+  status              String                   @default("pending")
+  emailVerified       Boolean                  @default(false) @map("email_verified")
+  walletVerified      Boolean                  @default(false) @map("wallet_verified")
+
+  // Engagement metrics
+  reputationScore     Int                      @default(0) @map("reputation_score")
+  contributionsCount  Int                      @default(0) @map("contributions_count")
+
+  // Stack Auth Integration
+  stackUserId         String?                  @unique @map("stack_user_id")
+
+  // Timestamps
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @default(now()) @updatedAt @map("updated_at")
+  lastLogin           DateTime?                @map("last_login")
+
+  // Metadata
+  metadata            Json?
+
+  // Relations
+  organizedEvents     CommunityEvent[]
+  eventRegistrations  EventRegistration[]
+  contributions       CommunityContribution[]  @relation("MemberContributions")
+  reviewedContributions CommunityContribution[] @relation("ReviewedContributions")
+
+  @@index([email], map: "idx_community_members_email")
+  @@index([username], map: "idx_community_members_username")
+  @@index([status], map: "idx_community_members_status")
+  @@index([walletAddress], map: "idx_community_members_wallet_address")
+  @@index([createdAt], map: "idx_community_members_created_at")
+  @@map("community_members")
+}
+
+model CommunityEvent {
+  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title               String
+  description         String?
+  eventType           String                @map("event_type")
+  eventUrl            String?               @map("event_url")
+
+  // Timing
+  startTime           DateTime              @map("start_time")
+  endTime             DateTime?             @map("end_time")
+  timezone            String?
+
+  // Location
+  locationType        String                @default("online") @map("location_type")
+  locationAddress     String?               @map("location_address")
+
+  // Registration
+  maxParticipants     Int?                  @map("max_participants")
+  registrationRequired Boolean              @default(true) @map("registration_required")
+  registrationUrl     String?               @map("registration_url")
+
+  // Status
+  status              String                @default("upcoming")
+
+  // Organizer
+  organizerId         String?               @map("organizer_id") @db.Uuid
+
+  // Timestamps
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @default(now()) @updatedAt @map("updated_at")
+
+  metadata            Json?
+
+  // Relations
+  organizer           CommunityMember?      @relation(fields: [organizerId], references: [id])
+  registrations       EventRegistration[]
+
+  @@index([eventType], map: "idx_community_events_event_type")
+  @@index([status], map: "idx_community_events_status")
+  @@index([startTime], map: "idx_community_events_start_time")
+  @@map("community_events")
+}
+
+model EventRegistration {
+  id                 String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  eventId            String          @map("event_id") @db.Uuid
+  memberId           String          @map("member_id") @db.Uuid
+
+  registrationStatus String          @default("registered") @map("registration_status")
+  attended           Boolean         @default(false)
+
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  event              CommunityEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member             CommunityMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
+  @@index([eventId], map: "idx_event_registrations_event_id")
+  @@index([memberId], map: "idx_event_registrations_member_id")
+  @@map("event_registrations")
+}
+
+model CommunityContribution {
+  id               String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  memberId         String           @map("member_id") @db.Uuid
+
+  contributionType String           @map("contribution_type")
+  title            String
+  description      String?
+
+  // Links
+  githubPrUrl      String?          @map("github_pr_url")
+  externalLink     String?          @map("external_link")
+
+  // Review
+  status           String           @default("pending")
+  reviewedBy       String?          @map("reviewed_by") @db.Uuid
+  reviewNotes      String?          @map("review_notes")
+
+  // Rewards
+  reputationAwarded Int             @default(0) @map("reputation_awarded")
+  bountyAwarded    Decimal          @default(0) @map("bounty_awarded") @db.Decimal(20, 8)
+
+  createdAt        DateTime         @default(now()) @map("created_at")
+  reviewedAt       DateTime?        @map("reviewed_at")
+
+  metadata         Json?
+
+  // Relations
+  member           CommunityMember  @relation("MemberContributions", fields: [memberId], references: [id], onDelete: Cascade)
+  reviewer         CommunityMember? @relation("ReviewedContributions", fields: [reviewedBy], references: [id])
+
+  @@index([memberId], map: "idx_community_contributions_member_id")
+  @@index([contributionType], map: "idx_community_contributions_contribution_type")
+  @@index([status], map: "idx_community_contributions_status")
+  @@map("community_contributions")
+}
+
+// ============================================================
+// VENDOR MODELS
+// ============================================================
+
+model Vendor {
+  id                    String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  // Company Info
+  companyName           String             @unique @map("company_name")
+  legalName             String?            @map("legal_name")
+  registrationNumber    String?            @map("registration_number")
+  taxId                 String?            @map("tax_id")
+
+  // Contact Info
+  contactEmail          String             @unique @map("contact_email")
+  contactPhone          String?            @map("contact_phone")
+  websiteUrl            String?            @map("website_url")
+
+  // Contact Person
+  contactPersonName     String             @map("contact_person_name")
+  contactPersonTitle    String?            @map("contact_person_title")
+  contactPersonEmail    String?            @map("contact_person_email")
+
+  // Business Details
+  businessType          String?            @map("business_type")
+  industrySector        String?            @map("industry_sector")
+  companySize           String?            @map("company_size")
+  establishedYear       Int?               @map("established_year")
+
+  // Address
+  addressLine1          String?            @map("address_line1")
+  addressLine2          String?            @map("address_line2")
+  city                  String?
+  stateProvince         String?            @map("state_province")
+  postalCode            String?            @map("postal_code")
+  country               String?
+
+  // Wallet
+  paymentWalletAddress  String?            @map("payment_wallet_address")
+  paymentWalletVerified Boolean            @default(false) @map("payment_wallet_verified")
+
+  // Partnership Details
+  partnershipType       String?            @map("partnership_type")
+  productsServices      String?            @map("products_services")
+  integrationInterest   String[]           @map("integration_interest")
+  expectedVolume        String?            @map("expected_volume")
+
+  // Compliance
+  kybVerified           Boolean            @default(false) @map("kyb_verified")
+  kybDocuments          Json?              @map("kyb_documents")
+  termsAccepted         Boolean            @default(false) @map("terms_accepted")
+  termsAcceptedAt       DateTime?          @map("terms_accepted_at")
+
+  // Status
+  status                String             @default("pending")
+  approvalNotes         String?            @map("approval_notes")
+  approvedBy            String?            @map("approved_by")
+  approvedAt            DateTime?          @map("approved_at")
+
+  // Engagement
+  totalTransactions     Int                @default(0) @map("total_transactions")
+  totalVolume           Decimal            @default(0) @map("total_volume") @db.Decimal(20, 8)
+  rating                Decimal            @default(0) @db.Decimal(3, 2)
+
+  // Stack Auth Integration
+  stackUserId           String?            @unique @map("stack_user_id")
+
+  // Timestamps
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @default(now()) @updatedAt @map("updated_at")
+  lastActive            DateTime?          @map("last_active")
+
+  // Metadata
+  metadata              Json?
+
+  // Relations
+  offerings             VendorOffering[]
+  transactions          VendorTransaction[]
+  reviews               VendorReview[]
+
+  @@index([companyName], map: "idx_vendors_company_name")
+  @@index([contactEmail], map: "idx_vendors_contact_email")
+  @@index([status], map: "idx_vendors_status")
+  @@index([businessType], map: "idx_vendors_business_type")
+  @@index([partnershipType], map: "idx_vendors_partnership_type")
+  @@index([createdAt], map: "idx_vendors_created_at")
+  @@map("vendors")
+}
+
+model VendorOffering {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendorId        String    @map("vendor_id") @db.Uuid
+
+  offeringType    String    @map("offering_type")
+  name            String
+  description     String?
+  category        String?
+
+  // Pricing
+  pricingModel    String?   @map("pricing_model")
+  basePrice       Decimal?  @map("base_price") @db.Decimal(20, 8)
+  currency        String    @default("USD")
+
+  // Links
+  documentationUrl String?  @map("documentation_url")
+  demoUrl         String?   @map("demo_url")
+  purchaseUrl     String?   @map("purchase_url")
+
+  // Status
+  isActive        Boolean   @default(true) @map("is_active")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  metadata        Json?
+
+  // Relations
+  vendor          Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId], map: "idx_vendor_offerings_vendor_id")
+  @@index([offeringType], map: "idx_vendor_offerings_offering_type")
+  @@index([isActive], map: "idx_vendor_offerings_is_active")
+  @@map("vendor_offerings")
+}
+
+model VendorTransaction {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendorId        String    @map("vendor_id") @db.Uuid
+
+  transactionType String    @map("transaction_type")
+  amount          Decimal?  @db.Decimal(20, 8)
+  currency        String    @default("USD")
+
+  description     String?
+  referenceId     String?   @map("reference_id")
+
+  status          String    @default("pending")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  completedAt     DateTime? @map("completed_at")
+
+  metadata        Json?
+
+  // Relations
+  vendor          Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId], map: "idx_vendor_transactions_vendor_id")
+  @@index([transactionType], map: "idx_vendor_transactions_transaction_type")
+  @@index([status], map: "idx_vendor_transactions_status")
+  @@index([createdAt], map: "idx_vendor_transactions_created_at")
+  @@map("vendor_transactions")
+}
+
+model VendorReview {
+  id               String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  vendorId         String   @map("vendor_id") @db.Uuid
+  reviewerId       String?  @map("reviewer_id") @db.Uuid
+  reviewerType     String?  @map("reviewer_type")
+
+  rating           Int
+  title            String?
+  reviewText       String?  @map("review_text")
+
+  // Helpful votes
+  helpfulCount     Int      @default(0) @map("helpful_count")
+
+  // Verification
+  verifiedPurchase Boolean  @default(false) @map("verified_purchase")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  vendor           Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId], map: "idx_vendor_reviews_vendor_id")
+  @@index([rating], map: "idx_vendor_reviews_rating")
+  @@index([createdAt], map: "idx_vendor_reviews_created_at")
+  @@map("vendor_reviews")
+}
+
+// ============================================================
+// DOCUMENTATION MODEL
+// ============================================================
+
+model Documentation {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  docType         String    @map("doc_type")
+  title           String
+  slug            String    @unique
+  content         String
+
+  // Categorization
+  category        String?
+  tags            String[]
+
+  // Author
+  authorType      String?   @map("author_type")
+  authorId        String?   @map("author_id") @db.Uuid
+  authorName      String?   @map("author_name")
+
+  // Status
+  status          String    @default("draft")
+  isFeatured      Boolean   @default(false) @map("is_featured")
+
+  // SEO
+  metaDescription String?   @map("meta_description")
+  metaKeywords    String[]  @map("meta_keywords")
+
+  // Engagement
+  viewCount       Int       @default(0) @map("view_count")
+  helpfulCount    Int       @default(0) @map("helpful_count")
+
+  // Versioning
+  version         String?
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+  publishedAt     DateTime? @map("published_at")
+
+  metadata        Json?
+
+  @@index([slug], map: "idx_documentation_slug")
+  @@index([docType], map: "idx_documentation_doc_type")
+  @@index([status], map: "idx_documentation_status")
+  @@index([category], map: "idx_documentation_category")
+  @@map("documentation")
+}

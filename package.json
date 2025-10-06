@@ -4,9 +4,11 @@
   "description": "HashNHedge - Decentralized GPU Computing Network",
   "main": "pool_server_file.js",
   "scripts": {
-    "start": "node pool_server_file.js",
+    "start": "node api/server.js",
+    "start:pool": "node pool_server_file.js",
     "start:phoneproof": "cd armageddon/pool && npm start:phoneproof",
-    "dev": "nodemon pool_server_file.js",
+    "dev": "nodemon api/server.js",
+    "dev:pool": "nodemon pool_server_file.js",
     "dev:phoneproof": "cd armageddon/pool && npm run dev:phoneproof",
     "static": "npx http-server HNH-pool -p 8080",
     "miner": "node miner_client_file.js",
@@ -14,16 +16,23 @@
     "build": "npm install && cd armageddon/pool && npm install",
     "deploy": "node deploy-production.bat",
     "test:deployment": "node test-deployment.js",
-    "health": "node test-deployment.js"
+    "health": "node test-deployment.js",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
+    "@prisma/client": "^6.16.3",
+    "@prisma/extension-accelerate": "^2.0.2",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
-    "express": "^4.18.2",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
     "express-rate-limit": "^8.1.0",
-    "helmet": "^8.1.0"
+    "helmet": "^8.1.0",
+    "prisma": "^6.16.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
