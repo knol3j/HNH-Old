@@ -69,8 +69,8 @@
                             📥 Download Windows Node
                         </button>
                         <div class="text-sm text-gray-400 text-center">
-                            <p>Size: 45.2 MB</p>
-                            <p>Version: v1.2.0</p>
+                            <p>Size: 17 MB</p>
+                            <p>Version: v2.0.0 (GUI Miner)</p>
                         </div>
                         
                         <!-- Requirements -->
@@ -429,8 +429,8 @@ echo`,
         }
 
         function downloadWindows() {
-            const nodeFile = createNodeExecutable('windows');
-            downloadFile(nodeFile.content, nodeFile.filename, 'Windows Node');
+            // Download actual Windows GUI Miner exe
+            window.location.href = '/downloads/miner/HashNHedge_Miner.exe';
         }
 
         function downloadLinux() {
