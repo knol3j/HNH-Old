@@ -7,6 +7,14 @@
   NODE_ENV = "production"
   POOL_API_URL = "https://phoneproof-pool.onrender.com"
 
+# Main API Server (Render)
+[[redirects]]
+  from = "/api/*"
+  to = "https://hashnhedge-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
 # PhoneProof Pool API redirects
 [[redirects]]
   from = "/phoneproof-api/*"
@@ -15,16 +23,10 @@
   force = true
   headers = {X-From = "Netlify"}
 
-# Neon Database API (via Stack Auth)
+# Neon Database API (via Stack Auth - legacy)
 [[redirects]]
   from = "/db/*"
   to = "/.netlify/functions/neon-db/:splat"
-  status = 200
-
-# Original API redirects
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
   status = 200
 
 # Static file handling
