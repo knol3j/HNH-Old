@@ -1,0 +1,314 @@
+// HashNHedge Production-Grade Prisma Schema
+// Enhanced security features and comprehensive data modeling
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "postgresqlExtensions"]
+}
+
+// ============================================================================
+// USER MANAGEMENT & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  walletAddress String?   @unique
+  role          UserRole  @default(MINER)
+
+  // Multi-Factor Authentication
+  mfaEnabled    Boolean   @default(false)
+  mfaSecret     String?   @db.Text
+  backupCodes   String[]  @default([])
+
+  // Security & Account Protection
+  passwordHash  String?   @db.Text
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  workers       Worker[]
+  sessions      Session[]
+
+  @@index([email])
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique @db.Text
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?  @db.Text
+
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ============================================================================
+// GPU WORKER NODES
+// ============================================================================
+
+model Worker {
+  id              String        @id @default(uuid())
+  userId          String
+  workerId        String        @unique
+  status          WorkerStatus  @default(PENDING)
+
+  // Hardware Specifications
+  gpuCount        Int
+  gpuModel        String?
+  cpuCores        Int?
+  ramGb           Int?
+
+  // Performance Metrics
+  totalHashrate   BigInt        @default(0)
+  avgHashrate24h  BigInt        @default(0)
+  sharesAccepted  Int           @default(0)
+  sharesRejected  Int           @default(0)
+  uptimeSeconds   Int           @default(0)
+
+  // Earnings
+  totalEarnings   Decimal       @default(0) @db.Decimal(20, 8)
+  pendingEarnings Decimal       @default(0) @db.Decimal(20, 8)
+
+  // Security
+  apiKey          String        @unique @default(uuid())
+  lastHeartbeat   DateTime?
+  ipAddress       String?
+
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs            Job[]
+  shares          Share[]
+  telemetry       Telemetry[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([lastHeartbeat])
+  @@map("workers")
+}
+
+model Telemetry {
+  id                String   @id @default(uuid())
+  workerId          String
+
+  // Hardware Metrics
+  gpuUtilization    Float    // 0-100
+  gpuTemperature    Float    // Celsius
+  gpuPowerWatts     Float
+  cpuUtilization    Float    // 0-100
+  ramUsageGb        Float
+
+  // Timestamp
+  timestamp         DateTime @default(now())
+
+  // Relations
+  worker            Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([timestamp])
+  @@map("telemetry")
+}
+
+// ============================================================================
+// COMPUTE JOBS & ORCHESTRATION
+// ============================================================================
+
+model Job {
+  id            String     @id @default(uuid())
+  workerId      String
+  jobType       JobType
+  status        JobStatus  @default(PENDING)
+
+  // Job Details
+  algorithm     String?
+  difficulty    BigInt?
+  target        String?    @db.Text
+  payload       Json?
+
+  // Timing
+  assignedAt    DateTime   @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  timeoutAt     DateTime?
+
+  // Results
+  result        Json?
+  proof         String?    @db.Text
+  reward        Decimal?   @db.Decimal(20, 8)
+
+  // Relations
+  worker        Worker     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([status])
+  @@index([assignedAt])
+  @@index([jobType])
+  @@map("jobs")
+}
+
+model Share {
+  id          String   @id @default(uuid())
+  workerId    String
+  jobId       String?
+
+  // Share Data
+  nonce       String
+  hash        String
+  difficulty  BigInt
+  valid       Boolean  @default(false)
+
+  // Timestamp
+  submittedAt DateTime @default(now())
+
+  // Relations
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([submittedAt])
+  @@index([valid])
+  @@map("shares")
+}
+
+// ============================================================================
+// VENDOR & MARKETPLACE
+// ============================================================================
+
+model Vendor {
+  id              String   @id @default(uuid())
+  companyName     String
+  contactEmail    String   @unique
+  walletAddress   String   @unique
+
+  // Vendor Details
+  description     String?  @db.Text
+  website         String?
+  verified        Boolean  @default(false)
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  offerings       Offering[]
+
+  @@index([contactEmail])
+  @@index([verified])
+  @@map("vendors")
+}
+
+model Offering {
+  id              String   @id @default(uuid())
+  vendorId        String
+  title           String
+  description     String   @db.Text
+
+  // Pricing
+  pricePerHour    Decimal  @db.Decimal(10, 4)
+  currency        String   @default("USD")
+
+  // Requirements
+  minGpuCount     Int
+  gpuModel        String?
+  minRamGb        Int?
+
+  // Status
+  active          Boolean  @default(true)
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  vendor          Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([active])
+  @@map("offerings")
+}
+
+// ============================================================================
+// COMMUNITY MEMBERS
+// ============================================================================
+
+model CommunityMember {
+  id              String   @id @default(uuid())
+  username        String   @unique
+  email           String   @unique
+  walletAddress   String?  @unique
+
+  // Profile
+  bio             String?  @db.Text
+  avatarUrl       String?
+
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([username])
+  @@index([email])
+  @@map("community_members")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  MINER
+  VENDOR
+  COMMUNITY
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum WorkerStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum JobType {
+  MINING_BTC
+  MINING_ETH
+  MINING_XMR
+  AI_TRAINING
+  RENDERING
+  VIDEO_ENCODING
+  SIMULATION
+}
+
+enum JobStatus {
+  PENDING
+  ASSIGNED
+  PROCESSING
+  COMPLETED
+  FAILED
+  TIMEOUT
+}
