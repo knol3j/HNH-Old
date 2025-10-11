@@ -86,11 +86,26 @@
             border-color: rgba(99, 102, 241, 0.5);
         }
     </style>
-    <meta name="wallet-secret" content="GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc" />
     <script>
-        // HashNHedge Official Solana Wallet Address
-        const WALLET_SECRET = "GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc";
-        const DEFAULT_WALLET = "GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc";
+        // HashNHedge Configuration - Wallet addresses fetched from secure API
+        // NEVER store private keys or secrets in frontend code
+        let OFFICIAL_WALLET = null;
+
+        // Fetch wallet address from secure backend
+        async function initializeWallet() {
+            try {
+                const response = await fetch('/api/config/wallet');
+                const data = await response.json();
+                if (data.success) {
+                    OFFICIAL_WALLET = data.walletAddress;
+                }
+            } catch (error) {
+                console.error('Failed to fetch wallet configuration');
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeWallet);
     </script>
 </head>
 <body class="bg-gray-900 text-white overflow-x-hidden">

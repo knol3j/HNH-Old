@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Support - HashNHedge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gradient-animate {
+            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        .tab-button.active {
+            background: linear-gradient(to right, #667eea, #764ba2);
+        }
+        
+        .feedback-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 py-4 px-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-bold gradient-animate bg-clip-text text-transparent">
+                <i class="fas fa-arrow-left mr-2"></i> HashNHedge
+            </a>
+            <div id="userMenu" class="hidden">
+                <span id="welcomeText" class="mr-4 text-gray-400"></span>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-12">
+        <!-- Page Title -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold mb-4 gradient-animate bg-clip-text text-transparent">
+                <i class="fas fa-users mr-3"></i> Community Support
+            </h1>
+            <p class="text-xl text-gray-400">Connect, share feedback, and grow with the HashNHedge community</p>
+        </div>
+
+        <!-- Auth Section (Login/Register) - Hidden when logged in -->
+        <div id="authSection" class="max-w-4xl mx-auto mb-12">
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-gray-700 mb-6">
+                <button onclick="showTab('login')" id="loginTab" class="tab-button flex-1 py-3 px-6 font-semibold transition active">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login
+                </button>
+                <button onclick="showTab('register')" id="registerTab" class="tab-button flex-1 py-3 px-6 font-semibold bg-gray-800 hover:bg-gray-700 transition">
+                    <i class="fas fa-user-plus mr-2"></i> Register
+                </button>
+            </div>
+
+            <!-- Login Form -->            <div id="loginForm" class="bg-gray-800 rounded-xl p-8">
+                <h2 class="text-2xl font-bold mb-6">Welcome Back!</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-envelope mr-2"></i> Email
+                        </label>
+                        <input type="email" id="loginEmail" required 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-lock mr-2"></i> Password
+                        </label>
+                        <input type="password" id="loginPassword" required 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="bg-gray-800 rounded-xl p-8 hidden">
+                <h2 class="text-2xl font-bold mb-6">Join Our Community</h2>
+                <form onsubmit="handleRegister(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-user mr-2"></i> Username
+                        </label>
+                        <input type="text" id="registerUsername" required minlength="3"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                        <p class="text-gray-500 text-sm mt-1">Minimum 3 characters</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-envelope mr-2"></i> Email
+                        </label>
+                        <input type="email" id="registerEmail" required 
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-lock mr-2"></i> Password
+                        </label>
+                        <input type="password" id="registerPassword" required minlength="6"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                        <p class="text-gray-500 text-sm mt-1">Minimum 6 characters</p>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 mb-2">
+                            <i class="fas fa-lock mr-2"></i> Confirm Password
+                        </label>
+                        <input type="password" id="registerConfirmPassword" required minlength="6"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                        <i class="fas fa-user-plus mr-2"></i> Create Account
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Community Content (Visible when logged in) -->
+        <div id="communityContent" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Submit Feedback Section -->
+                <div class="lg:col-span-2">
+                    <div class="bg-gray-800 rounded-xl p-8 mb-8">
+                        <h2 class="text-2xl font-bold mb-6">
+                            <i class="fas fa-comment-dots mr-2"></i> Share Your Feedback
+                        </h2>
+                        <form onsubmit="handleFeedbackSubmit(event)">
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Category</label>
+                                <select id="feedbackCategory" required 
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                                    <option value="">Select a category...</option>
+                                    <option value="feature">Feature Request</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="improvement">Improvement Suggestion</option>
+                                    <option value="question">Question</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Subject</label>
+                                <input type="text" id="feedbackSubject" required 
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                                    placeholder="Brief summary of your feedback">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-400 mb-2">Message</label>
+                                <textarea id="feedbackMessage" required rows="6"
+                                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition"
+                                    placeholder="Share your thoughts, ideas, or issues in detail..."></textarea>
+                            </div>
+                            <button type="submit" class="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 px-6 py-3 rounded-lg font-semibold transition transform hover:scale-105">
+                                <i class="fas fa-paper-plane mr-2"></i> Submit Feedback
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Community Feedback Feed -->
+                    <div class="bg-gray-800 rounded-xl p-8">
+                        <h2 class="text-2xl font-bold mb-6">
+                            <i class="fas fa-comments mr-2"></i> Community Feedback
+                        </h2>
+                        <div id="feedbackList" class="space-y-4">
+                            <!-- Feedback items will be dynamically added here -->
+                        </div>
+                        <div id="noFeedback" class="text-center text-gray-500 py-12">
+                            <i class="fas fa-inbox text-6xl mb-4 opacity-30"></i>
+                            <p>No feedback yet. Be the first to share!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-6">
+                    <!-- Stats Card -->
+                    <div class="bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-chart-bar mr-2"></i> Community Stats
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Total Members</span>
+                                <span id="totalUsers" class="font-bold text-purple-400">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Total Feedback</span>
+                                <span id="totalFeedback" class="font-bold text-blue-400">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Active Today</span>
+                                <span class="font-bold text-green-400">1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Panel (Only visible to admin) -->
+                    <div id="adminPanel" class="bg-gradient-to-br from-orange-900 to-red-900 rounded-xl p-6 hidden">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-shield-alt mr-2"></i> Admin Panel
+                        </h3>
+                        <p class="text-gray-300 mb-4 text-sm">Post announcements to the community</p>
+                        <button onclick="showAdminPost()" class="w-full bg-orange-600 hover:bg-orange-700 py-2 rounded-lg font-semibold transition">
+                            <i class="fas fa-bullhorn mr-2"></i> Post Announcement
+                        </button>
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-xl font-bold mb-4">
+                            <i class="fas fa-link mr-2"></i> Quick Links
+                        </h3>
+                        <ul class="space-y-2">
+                            <li>
+                                <a href="index.html" class="text-gray-400 hover:text-white transition">
+                                    <i class="fas fa-home mr-2"></i> Home
+                                </a>
+                            </li>
+                            <li>
+                                <a href="pages/whitepaper.html" class="text-gray-400 hover:text-white transition">
+                                    <i class="fas fa-file-alt mr-2"></i> Whitepaper
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/knol3j/hashnhedge" target="_blank" class="text-gray-400 hover:text-white transition">
+                                    <i class="fab fa-github mr-2"></i> GitHub
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Post Modal -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-8 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">
+                    <i class="fas fa-bullhorn mr-2"></i> Post Admin Announcement
+                </h2>
+                <button onclick="hideAdminPost()" class="text-gray-400 hover:text-white text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form onsubmit="handleAdminPost(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Announcement Type</label>
+                    <select id="adminCategory" required 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 transition">
+                        <option value="announcement">General Announcement</option>
+                        <option value="update">Platform Update</option>
+                        <option value="maintenance">Maintenance Notice</option>
+                        <option value="news">News</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-400 mb-2">Subject</label>
+                    <input type="text" id="adminSubject" required 
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 transition">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-400 mb-2">Message</label>
+                    <textarea id="adminMessage" required rows="6"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 transition"></textarea>
+                </div>
+                <button type="submit" class="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 px-6 py-3 rounded-lg font-semibold transition">
+                    <i class="fas fa-paper-plane mr-2"></i> Post Announcement
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadFeedback();
+            updateStats();
+        });
+
+        // Tab switching
+        function showTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTab');
+            const registerTab = document.getElementById('registerTab');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+            }
+        }
+
+        // Check if user is logged in
+        function checkAuth() {
+            const currentUser = localStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                showCommunityContent(user);
+            }
+        }
+
+        // Handle registration
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+
+            // Get existing users
+            let users = JSON.parse(localStorage.getItem('communityUsers') || '[]');
+            
+            // Check if email already exists
+            if (users.some(u => u.email === email)) {
+                alert('An account with this email already exists!');
+                return;
+            }
+
+            // Create new user
+            const newUser = {
+                id: Date.now().toString(),
+                username: username,
+                email: email,
+                password: password, // In production, this should be hashed!
+                joinedAt: new Date().toISOString(),
+                isAdmin: users.length === 0 // First user is admin
+            };
+
+            users.push(newUser);
+            localStorage.setItem('communityUsers', JSON.stringify(users));
+            
+            // Auto login
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            showCommunityContent(newUser);
+            
+            alert(`Welcome to the community, ${username}!`);
+        }
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+
+            const users = JSON.parse(localStorage.getItem('communityUsers') || '[]');
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showCommunityContent(user);
+            } else {
+                alert('Invalid email or password!');
+            }
+        }
+
+        // Show community content
+        function showCommunityContent(user) {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('communityContent').classList.remove('hidden');
+            document.getElementById('userMenu').classList.remove('hidden');
+            document.getElementById('welcomeText').textContent = `Welcome, ${user.username}!`;
+            
+            if (user.isAdmin) {
+                document.getElementById('adminPanel').classList.remove('hidden');
+            }
+            
+            loadFeedback();
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+
+        // Handle feedback submission
+        function handleFeedbackSubmit(event) {
+            event.preventDefault();
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            const feedback = {
+                id: Date.now().toString(),
+                userId: currentUser.id,
+                username: currentUser.username,
+                category: document.getElementById('feedbackCategory').value,
+                subject: document.getElementById('feedbackSubject').value,
+                message: document.getElementById('feedbackMessage').value,
+                timestamp: new Date().toISOString(),
+                isAdmin: false
+            };
+
+            let allFeedback = JSON.parse(localStorage.getItem('communityFeedback') || '[]');
+            allFeedback.unshift(feedback);
+            localStorage.setItem('communityFeedback', JSON.stringify(allFeedback));
+
+            // Clear form
+            document.getElementById('feedbackCategory').value = '';
+            document.getElementById('feedbackSubject').value = '';
+            document.getElementById('feedbackMessage').value = '';
+
+            loadFeedback();
+            updateStats();
+            
+            alert('Thank you for your feedback!');
+        }
+
+        // Load and display feedback
+        function loadFeedback() {
+            const feedbackList = document.getElementById('feedbackList');
+            const noFeedback = document.getElementById('noFeedback');
+            const allFeedback = JSON.parse(localStorage.getItem('communityFeedback') || '[]');
+
+            if (allFeedback.length === 0) {
+                feedbackList.innerHTML = '';
+                noFeedback.classList.remove('hidden');
+                return;
+            }
+
+            noFeedback.classList.add('hidden');
+            
+            const categoryIcons = {
+                'feature': 'fa-lightbulb',
+                'bug': 'fa-bug',
+                'improvement': 'fa-wrench',
+                'question': 'fa-question-circle',
+                'announcement': 'fa-bullhorn',
+                'update': 'fa-rocket',
+                'maintenance': 'fa-tools',
+                'news': 'fa-newspaper',
+                'other': 'fa-comment'
+            };
+
+            const categoryColors = {
+                'feature': 'text-yellow-400',
+                'bug': 'text-red-400',
+                'improvement': 'text-blue-400',
+                'question': 'text-green-400',
+                'announcement': 'text-orange-400',
+                'update': 'text-purple-400',
+                'maintenance': 'text-gray-400',
+                'news': 'text-pink-400',
+                'other': 'text-gray-400'
+            };
+
+            feedbackList.innerHTML = allFeedback.map(item => {
+                const date = new Date(item.timestamp).toLocaleString();
+                const icon = categoryIcons[item.category] || 'fa-comment';
+                const color = categoryColors[item.category] || 'text-gray-400';
+                const adminBadge = item.isAdmin ? '<span class="bg-orange-600 text-xs px-2 py-1 rounded-full ml-2">ADMIN</span>' : '';
+                
+                return `
+                    <div class="feedback-card p-6 rounded-lg">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center">
+                                <i class="fas ${icon} ${color} text-xl mr-3"></i>
+                                <div>
+                                    <h3 class="font-semibold text-lg">${item.subject}</h3>
+                                    <p class="text-sm text-gray-400">
+                                        by ${item.username} ${adminBadge}
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500 capitalize">${item.category}</span>
+                        </div>
+                        <p class="text-gray-300 mb-3">${item.message}</p>
+                        <p class="text-xs text-gray-500">${date}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Admin functions
+        function showAdminPost() {
+            document.getElementById('adminModal').classList.remove('hidden');
+        }
+
+        function hideAdminPost() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        function handleAdminPost(event) {
+            event.preventDefault();
+            
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !currentUser.isAdmin) return;
+
+            const feedback = {
+                id: Date.now().toString(),
+                userId: currentUser.id,
+                username: currentUser.username,
+                category: document.getElementById('adminCategory').value,
+                subject: document.getElementById('adminSubject').value,
+                message: document.getElementById('adminMessage').value,
+                timestamp: new Date().toISOString(),
+                isAdmin: true
+            };
+
+            let allFeedback = JSON.parse(localStorage.getItem('communityFeedback') || '[]');
+            allFeedback.unshift(feedback);
+            localStorage.setItem('communityFeedback', JSON.stringify(allFeedback));
+
+            // Clear form
+            document.getElementById('adminCategory').value = 'announcement';
+            document.getElementById('adminSubject').value = '';
+            document.getElementById('adminMessage').value = '';
+
+            hideAdminPost();
+            loadFeedback();
+            updateStats();
+            
+            alert('Announcement posted successfully!');
+        }
+
+        // Update stats
+        function updateStats() {
+            const users = JSON.parse(localStorage.getItem('communityUsers') || '[]');
+            const feedback = JSON.parse(localStorage.getItem('communityFeedback') || '[]');
+            
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalFeedback').textContent = feedback.length;
+        }
+    </script>
+</body>
+</html>

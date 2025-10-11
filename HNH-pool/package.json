@@ -2,13 +2,11 @@
   "name": "hashnhedge-pool",
   "version": "1.0.0",
   "description": "HashNHedge Mining Pool Server with Security Dashboard",
-  "main": "onrender-server.js",
+  "main": "pool_server_file.js",
   "scripts": {
-    "start": "node onrender-server.js",
-    "dev": "netlify dev",
-    "build": "npm install",
-    "serve": "netlify dev",
-    "deploy": "netlify deploy --prod"
+    "start": "node pool_server_file.js",
+    "dev": "nodemon pool_server_file.js",
+    "build": "npm install"
   },
   "repository": {
     "type": "git",
@@ -37,6 +35,6 @@
   },
   "devDependencies": {
     "eslint": "^9.36.0",
-    "netlify-cli": "^17.38.1"
+    "nodemon": "^3.0.1"
   }
 }

@@ -2,9 +2,32 @@
 
 ## Overview
 
-HashNHedge provides registration systems for community members and vendors, all stored in the Neon PostgreSQL database via Netlify Functions.
+HashNHedge provides registration systems for community members and vendors, all stored in the Neon PostgreSQL database via Netlify Functions with Stack Auth integration for secure authentication.
 
 **Base URL:** `https://your-site.netlify.app`
+
+## 🔐 Authentication
+
+The registration system uses **Stack Auth** for user authentication and session management:
+
+- **Email/Password Authentication**: Secure user registration with password hashing
+- **Email Verification**: Automatic email verification links sent to new users
+- **Session Management**: JWT-based session tokens for authenticated requests
+- **User Management**: Centralized user profiles linked to database records
+
+### Stack Auth Configuration
+
+```javascript
+// Server-side (Netlify Functions)
+const { stackServerApp } = require('@stackframe/stack');
+
+const stackApp = stackServerApp({
+    tokenStore: 'nextjs-cookie',
+    projectId: process.env.NEXT_PUBLIC_STACK_PROJECT_ID,
+    publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY,
+    secretServerKey: process.env.STACK_SECRET_SERVER_KEY
+});
+```
 
 ## 🌟 Community Member Registration
 
@@ -20,6 +43,7 @@ POST /api/community/register
 {
   "email": "user@example.com",
   "username": "johndoe",
+  "password": "securePassword123",
   "full_name": "John Doe",
   "wallet_address": "0x1234...",
   "discord_username": "johndoe#1234",
@@ -39,6 +63,7 @@ POST /api/community/register
 
 - `email` (string) - Valid email address
 - `username` (string) - Unique username
+- `password` (string) - Password for Stack Auth (minimum 8 characters)
 
 ### Optional Fields
 
@@ -94,10 +119,27 @@ curl -X POST https://your-site.netlify.app/api/community/register \
   -d '{
     "email": "john@example.com",
     "username": "johndoe",
+    "password": "securePassword123",
     "full_name": "John Doe",
     "interests": ["mining", "development"],
     "skills": ["JavaScript", "Node.js"]
   }'
+```
+
+### Stack Auth Integration
+
+When a user registers:
+
+1. **Stack Auth User Created**: A user account is created in Stack Auth with email/password
+2. **Email Verification**: Stack Auth automatically sends verification email
+3. **Database Record**: User data stored in PostgreSQL with `stack_user_id` reference
+4. **Session Token**: JWT session token issued for authenticated requests
+
+**Database Linking:**
+```sql
+-- Community member record includes Stack Auth user ID
+INSERT INTO community_members (email, username, stack_user_id, ...)
+VALUES ('user@example.com', 'johndoe', 'stack_user_abc123', ...);
 ```
 
 ### Database Table
@@ -134,6 +176,7 @@ POST /api/vendor/register
   "registration_number": "12345678",
   "tax_id": "98-7654321",
   "contact_email": "contact@example.com",
+  "password": "vendorSecure123",
   "contact_phone": "+1-555-0123",
   "website_url": "https://example.com",
   "contact_person_name": "Jane Smith",
@@ -164,6 +207,7 @@ POST /api/vendor/register
 - `company_name` (string) - Company name
 - `contact_email` (string) - Valid email address
 - `contact_person_name` (string) - Contact person's name
+- `password` (string) - Password for Stack Auth account (minimum 8 characters)
 
 ### Optional But Recommended
 
@@ -230,12 +274,29 @@ curl -X POST https://your-site.netlify.app/api/vendor/register \
   -d '{
     "company_name": "Example Hardware Inc",
     "contact_email": "sales@example-hardware.com",
+    "password": "vendorSecure123",
     "contact_person_name": "Jane Smith",
     "business_type": "hardware-manufacturer",
     "partnership_type": "technology",
     "products_services": "High-performance mining GPUs",
     "terms_accepted": true
   }'
+```
+
+### Stack Auth Integration
+
+Vendor registration also creates a Stack Auth account:
+
+1. **Vendor Contact Account**: Stack Auth user created for the contact person
+2. **Vendor Dashboard Access**: Login credentials for vendor portal
+3. **Database Linking**: Vendor record linked to Stack Auth via `stack_user_id`
+4. **KYB Verification**: Additional verification required before activation
+
+**Database Linking:**
+```sql
+-- Vendor record includes Stack Auth user ID for contact person
+INSERT INTO vendors (company_name, contact_email, stack_user_id, status, ...)
+VALUES ('Example Corp', 'contact@example.com', 'stack_vendor_xyz789', 'pending', ...);
 ```
 
 ### Database Table
@@ -368,20 +429,25 @@ CREATE TABLE vendors (
 
 ### Community Registration
 
-✅ **Email validation** - Format checking
+✅ **Stack Auth Integration** - Secure password hashing and user management
+✅ **Email validation** - Format checking + Stack Auth email verification
 ✅ **Unique constraints** - Email and username must be unique
 ✅ **Status management** - Pending verification by default
-✅ **Email verification** - (To be implemented with SendGrid)
+✅ **JWT Session Tokens** - Secure authenticated sessions
+✅ **Email verification** - Automatic verification emails via Stack Auth
 ✅ **Wallet verification** - Optional wallet linking
+✅ **Password Requirements** - Minimum 8 characters enforced
 
 ### Vendor Registration
 
-✅ **Email validation** - Format checking
+✅ **Stack Auth Integration** - Contact person account with secure authentication
+✅ **Email validation** - Format checking + Stack Auth verification
 ✅ **Unique constraints** - Company name and email must be unique
 ✅ **Manual approval** - All vendors reviewed before activation
 ✅ **KYB process** - Know Your Business verification
 ✅ **Terms acceptance** - Required for legal compliance
 ✅ **Status tracking** - Pending → Approved → Active
+✅ **Vendor Portal Access** - Secure dashboard for approved vendors
 
 ---
 

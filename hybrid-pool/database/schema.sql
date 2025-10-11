@@ -231,6 +231,9 @@ CREATE TABLE community_members (
     reputation_score INT DEFAULT 0,
     contributions_count INT DEFAULT 0,
 
+    -- Stack Auth Integration
+    stack_user_id VARCHAR(255) UNIQUE, -- Stack Auth user ID
+
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -397,6 +400,9 @@ CREATE TABLE vendors (
     total_transactions INT DEFAULT 0,
     total_volume DECIMAL(20, 8) DEFAULT 0,
     rating DECIMAL(3, 2) DEFAULT 0, -- Average rating 0.00 to 5.00
+
+    -- Stack Auth Integration
+    stack_user_id VARCHAR(255) UNIQUE, -- Stack Auth user ID for contact person
 
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -11,10 +11,35 @@ const PORT = process.env.API_PORT || 3000;
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - Production-ready with strict whitelisting
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : process.env.NODE_ENV === 'production'
+    ? [
+        'https://hashnhedge.com',
+        'https://www.hashnhedge.com',
+        'https://hashnhedge-pool.onrender.com',
+        'https://phoneproof-pool.onrender.com'
+      ]
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8080'];
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      callback(null, true);
+    } else {
+      console.warn(`[SECURITY] Blocked CORS request from: ${origin}`);
+      callback(new Error('Not allowed by CORS policy'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Worker-ID'],
+  exposedHeaders: ['X-Total-Count', 'X-RateLimit-Remaining'],
+  maxAge: 86400 // 24 hours
 }));
 
 // Rate limiting

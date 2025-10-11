@@ -1,0 +1,10 @@
+# HashNHedge Miner GUI - Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core dependencies
+requests>=2.31.0
+psutil>=5.9.0
+pyinstaller>=6.0.0
+
+# Windows-specific
+pywin32>=306 ; platform_system=='Windows'

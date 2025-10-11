@@ -1,0 +1,171 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: hashnhedge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hashnhedge_vendors
+      POSTGRES_USER: hashnhedge_app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./hnh-vendor-portal/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hashnhedge_app -d hashnhedge_vendors"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hashnhedge
+
+  # HashiCorp Vault
+  vault:
+    image: vault:1.15
+    container_name: hashnhedge-vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    volumes:
+      - vault_data:/vault/data
+      - ./hnh-vendor-portal/config/vault-config.hcl:/vault/config/vault.hcl
+    command: server
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hashnhedge
+
+  # Vendor Portal Application
+  vendor-portal:
+    build:
+      context: ./hnh-vendor-portal
+      dockerfile: Dockerfile
+    container_name: hashnhedge-vendor-portal
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    environment:
+      # Node
+      NODE_ENV: production
+      PORT: 3334
+
+      # Database
+      DATABASE_URL: postgresql://hashnhedge_app:${POSTGRES_PASSWORD}@postgres:5432/hashnhedge_vendors
+
+      # Vault
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_ROOT_TOKEN}
+
+      # AWS S3
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+      # SendGrid
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+
+      # Admin
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+
+      # Security
+      SESSION_SECRET: ${SESSION_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+
+      # URLs
+      BASE_URL: ${BASE_URL:-https://hashnhedge.com}
+      PORTAL_URL: ${PORTAL_URL:-https://hashnhedge.com/hnh-vendor-portal}
+    ports:
+      - "3334:3334"
+    volumes:
+      - vendor_data:/app/data
+    networks:
+      - hashnhedge
+
+  # Hybrid Mining Pool
+  mining-pool:
+    build:
+      context: ./hybrid-pool
+      dockerfile: Dockerfile
+    container_name: hashnhedge-mining-pool
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Stratum
+      STRATUM_PORT: 3333
+      STRATUM_HOST: 0.0.0.0
+
+      # API
+      API_PORT: 3335
+
+      # Database
+      DATABASE_URL: postgresql://hashnhedge_app:${POSTGRES_PASSWORD}@postgres:5432/hashnhedge_pool
+
+      # Pool configuration
+      POOL_FEE_AI: 0.30
+      POOL_FEE_MINING: 0.03
+    ports:
+      - "3333:3333"  # Stratum
+      - "3335:3335"  # API
+    volumes:
+      - pool_data:/app/data
+    networks:
+      - hashnhedge
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: hashnhedge-nginx
+    restart: unless-stopped
+    depends_on:
+      - vendor-portal
+      - mining-pool
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./:/var/www/html:ro
+      - certbot_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    networks:
+      - hashnhedge
+
+  # Certbot for SSL
+  certbot:
+    image: certbot/certbot
+    container_name: hashnhedge-certbot
+    volumes:
+      - certbot_data:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+networks:
+  hashnhedge:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  vault_data:
+  vendor_data:
+  pool_data:
+  certbot_data:
+  certbot_www:
