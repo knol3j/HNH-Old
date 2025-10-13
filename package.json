@@ -4,7 +4,8 @@
   "description": "HashNHedge - Decentralized GPU Computing Network",
   "main": "server.js",
   "scripts": {
-    "start": "NODE_ENV=production node server.js",
+    "start": "NODE_ENV=production node api/server-unified.js",
+    "start:legacy": "NODE_ENV=production node server.js",
     "start:api": "NODE_ENV=production node api/server.js",
     "start:unified": "NODE_ENV=production node api/server-unified.js",
     "start:pool": "cd HNH-pool && node pool_server_file.js",
