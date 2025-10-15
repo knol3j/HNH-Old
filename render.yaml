@@ -20,7 +20,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: https://hashnhedge.com,https://www.hashnhedge.com,http://localhost:3000
       - key: OFFICIAL_WALLET_ADDRESS
-        sync: false
+        value: GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc
       - key: SOLANA_NETWORK
         value: mainnet-beta
       - key: ADMIN_API_KEY
