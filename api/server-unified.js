@@ -269,6 +269,69 @@ app.get('/api/stats/pool', async (req, res) => {
 });
 
 // ============================================================
+// WALLET & CONFIG ENDPOINTS
+// ============================================================
+
+// Wallet configuration endpoint
+app.get('/api/config/wallet', (req, res) => {
+  const officialWallet = process.env.OFFICIAL_WALLET_ADDRESS || null;
+
+  if (!officialWallet) {
+    console.warn('[WARNING] OFFICIAL_WALLET_ADDRESS not configured in environment');
+    return res.status(503).json({
+      success: false,
+      error: 'Wallet configuration unavailable'
+    });
+  }
+
+  res.json({
+    success: true,
+    walletAddress: officialWallet,
+    network: process.env.SOLANA_NETWORK || 'mainnet-beta'
+  });
+});
+
+// Connect wallet endpoint
+app.post('/api/connect-wallet', authLimiter, async (req, res) => {
+  try {
+    const { address } = req.body;
+
+    // Validate wallet address format (basic Solana validation)
+    if (!address || !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid wallet address'
+      });
+    }
+
+    // In production, verify wallet signature here
+    res.json({
+      success: true,
+      address: address,
+      connected: true,
+      message: 'Wallet connected successfully'
+    });
+  } catch (error) {
+    console.error('[ERROR] Wallet connection failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to connect wallet'
+    });
+  }
+});
+
+// Network stats alias for backward compatibility
+app.get('/api/network-stats', async (req, res) => {
+  try {
+    const stats = await getNetworkStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('[ERROR] Network stats endpoint failed:', error);
+    res.status(500).json({ error: 'Failed to fetch network statistics' });
+  }
+});
+
+// ============================================================
 // API ROUTES
 // ============================================================
 

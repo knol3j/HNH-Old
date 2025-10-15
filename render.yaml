@@ -1,22 +1,28 @@
 services:
-  # Main API Server
+  # Main API Server (Unified Backend)
   - type: web
     name: hashnhedge-api
     env: node
     plan: free
-    buildCommand: npm install && npx prisma generate
+    buildCommand: npm run deploy:build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: API_PORT
         value: 10000
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_URL_UNPOOLED
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://hashnhedge.com,https://www.hashnhedge.com
+        value: https://hashnhedge.com,https://www.hashnhedge.com,http://localhost:3000
+      - key: OFFICIAL_WALLET_ADDRESS
+        sync: false
+      - key: SOLANA_NETWORK
+        value: mainnet-beta
       - key: ADMIN_API_KEY
         generateValue: true
       - key: POOL_FEE_AI

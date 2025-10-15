@@ -5,8 +5,8 @@
 
 // Configuration
 const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3001'
-    : 'https://hashnhedge.com';
+    ? 'http://localhost:10000'
+    : 'https://hashnhedge-api.onrender.com';
 
 // Global state
 let OFFICIAL_WALLET = null;
