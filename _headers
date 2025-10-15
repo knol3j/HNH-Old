@@ -1,0 +1,24 @@
+# Security headers for all pages
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# CORS headers for API routes
+/api/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key, X-Worker-ID
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+  Access-Control-Max-Age: 86400
+
+# Cache static assets
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable

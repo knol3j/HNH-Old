@@ -1,0 +1,5 @@
+# API redirects to backend server
+/api/*  https://hashnhedge-api.onrender.com/api/:splat  200!
+
+# SPA fallback - serve index.html for all routes
+/*  /index.html  200

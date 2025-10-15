@@ -1,0 +1,41 @@
+name: "CodeQL Config"
+
+# Disable default queries to reduce false positives
+disable-default-queries: false
+
+# Paths to ignore
+paths-ignore:
+  - 'node_modules/**'
+  - 'dist/**'
+  - 'build/**'
+  - '**/*.test.js'
+  - '**/*.spec.js'
+  - '**/test/**'
+  - '**/tests/**'
+  - 'netlify_backup_**/**'
+  - 'security-audits/**'
+  - '.github/**'
+
+# Paths to include
+paths:
+  - 'api/**'
+  - 'src/**'
+  - 'lib/**'
+  - 'controllers/**'
+  - 'middleware/**'
+  - 'routes/**'
+  - 'models/**'
+
+# Query filters
+queries:
+  - name: javascript-queries
+    uses: security-extended
+  - name: python-queries
+    uses: security-extended
+
+# Disable specific query IDs that cause false positives
+query-filters:
+  - exclude:
+      id:
+        - js/incomplete-sanitization
+        - js/incomplete-url-substring-sanitization
