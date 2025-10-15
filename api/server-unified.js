@@ -79,6 +79,14 @@ app.use('/api', apiLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Static file serving - serve frontend files
+const path = require('path');
+app.use(express.static(path.join(__dirname, '..')));
+app.use('/pages', express.static(path.join(__dirname, '..', 'pages')));
+app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
+app.use('/js', express.static(path.join(__dirname, '..', 'js')));
+app.use('/css', express.static(path.join(__dirname, '..', 'css')));
+
 // Request logging
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -341,13 +349,19 @@ app.use('/api', apiRoutes);
 // ERROR HANDLING
 // ============================================================
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Endpoint not found',
-    path: req.path
-  });
+// 404 handler - serve index.html for non-API routes
+app.use((req, res, next) => {
+  // If it's an API route, return JSON error
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      success: false,
+      error: 'API endpoint not found',
+      path: req.path
+    });
+  }
+
+  // For non-API routes, serve index.html (SPA fallback)
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
 // Global error handler
