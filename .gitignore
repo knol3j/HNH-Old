@@ -31,3 +31,6 @@ build/
 .netlify
 
 /generated/prisma
+
+# Security audit reports (generated locally)
+security-audits/
