@@ -63,6 +63,14 @@ class EmailService {
      * Send vendor registration confirmation
      */
     async sendVendorRegistrationConfirmation(vendorData) {
+        // Escape all user input to prevent XSS
+        const safeData = {
+            contact_first_name: this.escapeHtml(vendorData.contact_first_name),
+            legal_business_name: this.escapeHtml(vendorData.legal_business_name),
+            business_type: this.escapeHtml(vendorData.business_type),
+            contact_email: this.escapeHtml(vendorData.contact_email)
+        };
+
         const html = `
             <!DOCTYPE html>
             <html>
@@ -84,9 +92,9 @@ class EmailService {
                         <p>HashNHedge Vendor Portal</p>
                     </div>
                     <div class="content">
-                        <p>Dear ${vendorData.contact_first_name},</p>
+                        <p>Dear ${safeData.contact_first_name},</p>
 
-                        <p>Thank you for registering <strong>${vendorData.legal_business_name}</strong> with HashNHedge's compute vendor program!</p>
+                        <p>Thank you for registering <strong>${safeData.legal_business_name}</strong> with HashNHedge's compute vendor program!</p>
 
                         <div class="info-box">
                             <h3>📋 What Happens Next?</h3>
@@ -101,9 +109,9 @@ class EmailService {
                         <div class="info-box">
                             <h3>📝 Application Summary</h3>
                             <ul>
-                                <li><strong>Business:</strong> ${vendorData.legal_business_name}</li>
-                                <li><strong>Type:</strong> ${vendorData.business_type}</li>
-                                <li><strong>Contact:</strong> ${vendorData.contact_email}</li>
+                                <li><strong>Business:</strong> ${safeData.legal_business_name}</li>
+                                <li><strong>Type:</strong> ${safeData.business_type}</li>
+                                <li><strong>Contact:</strong> ${safeData.contact_email}</li>
                                 <li><strong>Submitted:</strong> ${new Date().toLocaleString()}</li>
                             </ul>
                         </div>
@@ -133,6 +141,12 @@ class EmailService {
      * Send vendor approval notification
      */
     async sendVendorApproved(vendorData, apiKey) {
+        // Escape all user input
+        const safeData = {
+            contact_first_name: this.escapeHtml(vendorData.contact_first_name),
+            legal_business_name: this.escapeHtml(vendorData.legal_business_name)
+        };
+        const safeApiKey = this.escapeHtml(apiKey);
         const html = `
             <!DOCTYPE html>
             <html>
@@ -155,16 +169,16 @@ class EmailService {
                         <p>Your vendor account has been approved</p>
                     </div>
                     <div class="content">
-                        <p>Dear ${vendorData.contact_first_name},</p>
+                        <p>Dear ${safeData.contact_first_name},</p>
 
-                        <p>Great news! Your vendor application for <strong>${vendorData.legal_business_name}</strong> has been approved.</p>
+                        <p>Great news! Your vendor application for <strong>${safeData.legal_business_name}</strong> has been approved.</p>
 
                         <div class="info-box">
                             <h3>🔑 Your API Credentials</h3>
                             <p>Use these credentials to submit compute jobs to our network:</p>
                             <div class="api-key-box">
                                 <strong>API Key:</strong><br>
-                                ${apiKey}
+                                ${safeApiKey}
                             </div>
                             <p style="color: #dc2626; font-size: 13px;">⚠️ Keep this key secure! Do not share it publicly.</p>
                         </div>
@@ -215,6 +229,12 @@ class EmailService {
      * Send vendor rejection notification
      */
     async sendVendorRejected(vendorData, reason) {
+        // Escape all user input
+        const safeData = {
+            contact_first_name: this.escapeHtml(vendorData.contact_first_name),
+            legal_business_name: this.escapeHtml(vendorData.legal_business_name)
+        };
+        const safeReason = this.escapeHtml(reason);
         const html = `
             <!DOCTYPE html>
             <html>
@@ -235,16 +255,16 @@ class EmailService {
                         <p>HashNHedge Vendor Portal</p>
                     </div>
                     <div class="content">
-                        <p>Dear ${vendorData.contact_first_name},</p>
+                        <p>Dear ${safeData.contact_first_name},</p>
 
                         <p>Thank you for your interest in becoming a HashNHedge compute vendor.</p>
 
-                        <p>After careful review, we're unable to approve your application for <strong>${vendorData.legal_business_name}</strong> at this time.</p>
+                        <p>After careful review, we're unable to approve your application for <strong>${safeData.legal_business_name}</strong> at this time.</p>
 
                         ${reason ? `
                         <div class="info-box">
                             <h3>📋 Reason</h3>
-                            <p>${reason}</p>
+                            <p>${safeReason}</p>
                         </div>
                         ` : ''}
 
@@ -277,6 +297,18 @@ class EmailService {
      * Send admin alert for new vendor registration
      */
     async sendAdminAlert(vendorData) {
+        // Escape all user input
+        const safeData = {
+            legal_business_name: this.escapeHtml(vendorData.legal_business_name),
+            business_type: this.escapeHtml(vendorData.business_type),
+            contact_first_name: this.escapeHtml(vendorData.contact_first_name),
+            contact_last_name: this.escapeHtml(vendorData.contact_last_name),
+            contact_email: this.escapeHtml(vendorData.contact_email),
+            contact_phone: this.escapeHtml(vendorData.contact_phone || 'N/A'),
+            website: this.escapeHtml(vendorData.website || 'N/A'),
+            tax_country: this.escapeHtml(vendorData.tax_country || 'N/A'),
+            business_description: this.escapeHtml(vendorData.business_description || 'N/A')
+        };
         const html = `
             <!DOCTYPE html>
             <html>
@@ -302,20 +334,20 @@ class EmailService {
                         <div class="info-box">
                             <h3>📋 Vendor Details</h3>
                             <ul>
-                                <li><strong>Business:</strong> ${vendorData.legal_business_name}</li>
-                                <li><strong>Type:</strong> ${vendorData.business_type}</li>
-                                <li><strong>Contact:</strong> ${vendorData.contact_first_name} ${vendorData.contact_last_name}</li>
-                                <li><strong>Email:</strong> ${vendorData.contact_email}</li>
-                                <li><strong>Phone:</strong> ${vendorData.contact_phone}</li>
-                                <li><strong>Website:</strong> ${vendorData.website}</li>
-                                <li><strong>Tax Country:</strong> ${vendorData.tax_country}</li>
+                                <li><strong>Business:</strong> ${safeData.legal_business_name}</li>
+                                <li><strong>Type:</strong> ${safeData.business_type}</li>
+                                <li><strong>Contact:</strong> ${safeData.contact_first_name} ${safeData.contact_last_name}</li>
+                                <li><strong>Email:</strong> ${safeData.contact_email}</li>
+                                <li><strong>Phone:</strong> ${safeData.contact_phone}</li>
+                                <li><strong>Website:</strong> ${safeData.website}</li>
+                                <li><strong>Tax Country:</strong> ${safeData.tax_country}</li>
                                 <li><strong>Submitted:</strong> ${new Date().toLocaleString()}</li>
                             </ul>
                         </div>
 
                         <div class="info-box">
                             <h3>📝 Business Description</h3>
-                            <p>${vendorData.business_description}</p>
+                            <p>${safeData.business_description}</p>
                         </div>
 
                         <a href="https://hashnhedge.com/hnh-vendor-portal/vendor-management.html" class="button">Review Application →</a>
@@ -333,7 +365,7 @@ class EmailService {
         return Promise.all(this.config.adminEmails.map(email =>
             this.sendEmail({
                 to: email,
-                subject: `🔔 New Vendor: ${vendorData.legal_business_name}`,
+                subject: `🔔 New Vendor: ${safeData.legal_business_name}`,
                 html
             })
         ));
@@ -390,12 +422,45 @@ class EmailService {
     }
 
     /**
-     * Strip HTML tags for plain text version
+     * Escape HTML to prevent XSS in emails
+     */
+    escapeHtml(text) {
+        if (typeof text !== 'string') return '';
+
+        const htmlEscapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '/': '&#x2F;'
+        };
+
+        return text.replace(/[&<>"'/]/g, char => htmlEscapeMap[char]);
+    }
+
+    /**
+     * Strip HTML tags for plain text version (secure implementation)
      */
     stripHtml(html) {
+        if (typeof html !== 'string') return '';
+
+        // More comprehensive HTML stripping
         return html
-            .replace(/<style[^>]*>.*?<\/style>/gs, '')
+            // Remove style and script tags completely
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            // Remove all HTML tags
             .replace(/<[^>]+>/g, '')
+            // Decode HTML entities
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&#x2F;/g, '/')
+            // Normalize whitespace
             .replace(/\s+/g, ' ')
             .trim();
     }
