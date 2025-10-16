@@ -354,17 +354,45 @@ class VendorAPI {
     }
 
     /**
+     * Validate vendor ID format (prevent path traversal)
+     */
+    validateVendorId(vendorId) {
+        // VendorId must match expected format: VND-timestamp-hex
+        return /^VND-\d+-[A-F0-9]{8}$/i.test(vendorId);
+    }
+
+    /**
+     * Validate folder name (prevent path traversal)
+     */
+    validateFolder(folder) {
+        const allowedFolders = ['approved', 'pending', 'rejected'];
+        return allowedFolders.includes(folder);
+    }
+
+    /**
      * Save vendor to disk
      */
     async saveVendor(vendorId, data, folder = 'approved') {
         try {
+            // Validate inputs to prevent path traversal
+            if (!this.validateVendorId(vendorId)) {
+                throw new Error('Invalid vendor ID format');
+            }
+            if (!this.validateFolder(folder)) {
+                throw new Error('Invalid folder name');
+            }
+
             const dir = path.join(this.config.dataDir, folder);
             await fs.mkdir(dir, { recursive: true });
 
-            const filePath = path.join(dir, `${vendorId}.json`);
+            // Use path.basename to prevent directory traversal
+            const safeVendorId = path.basename(vendorId);
+            const filePath = path.join(dir, `${safeVendorId}.json`);
             await fs.writeFile(filePath, JSON.stringify(data, null, 2));
         } catch (err) {
-            console.error(`❌ Failed to save vendor ${vendorId}:`, err);
+            // Sanitize vendorId in error message
+            const safeId = vendorId ? vendorId.replace(/[^\w-]/g, '') : 'unknown';
+            console.error(`Failed to save vendor ${safeId}:`, err.message);
         }
     }
 
@@ -373,7 +401,14 @@ class VendorAPI {
      */
     async deleteVendorFile(vendorId, folder) {
         try {
-            const filePath = path.join(this.config.dataDir, folder, `${vendorId}.json`);
+            // Validate inputs to prevent path traversal
+            if (!this.validateVendorId(vendorId) || !this.validateFolder(folder)) {
+                return;
+            }
+
+            // Use path.basename to prevent directory traversal
+            const safeVendorId = path.basename(vendorId);
+            const filePath = path.join(this.config.dataDir, folder, `${safeVendorId}.json`);
             await fs.unlink(filePath);
         } catch (err) {
             // File might not exist, ignore

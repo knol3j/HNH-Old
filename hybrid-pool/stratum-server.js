@@ -4,6 +4,7 @@
  */
 
 const net = require('net');
+const crypto = require('crypto');
 const EventEmitter = require('events');
 
 class StratumServer extends EventEmitter {
@@ -454,17 +455,17 @@ class StratumServer extends EventEmitter {
     }
 
     /**
-     * Generate session ID
+     * Generate session ID (cryptographically secure)
      */
     generateSessionId() {
-        return Math.random().toString(36).substring(7);
+        return crypto.randomBytes(16).toString('hex');
     }
 
     /**
-     * Generate extranonce
+     * Generate extranonce (cryptographically secure)
      */
     generateExtranonce() {
-        return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+        return crypto.randomBytes(4).toString('hex');
     }
 
     /**

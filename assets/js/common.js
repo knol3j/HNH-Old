@@ -213,16 +213,43 @@ function isValidEmail(email) {
 }
 
 /**
- * Sanitize user input
+ * Sanitize user input (comprehensive XSS prevention)
  */
 function sanitizeInput(input) {
     if (typeof input !== 'string') return '';
-    return input
-        .replace(/[<>]/g, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+=/gi, '')
+
+    // More comprehensive sanitization
+    let sanitized = input
+        .replace(/[<>'"]/g, '') // Remove dangerous characters
+        .replace(/javascript\s*:/gi, '') // Remove javascript: protocol (with whitespace)
+        .replace(/data\s*:/gi, '') // Remove data: protocol
+        .replace(/vbscript\s*:/gi, '') // Remove vbscript: protocol
+        .replace(/file\s*:/gi, '') // Remove file: protocol
+        .replace(/on\w+\s*=/gi, '') // Remove event handlers
+        .replace(/&lt;/gi, '') // Remove encoded <
+        .replace(/&gt;/gi, '') // Remove encoded >
         .trim()
-        .slice(0, 1000);
+        .slice(0, 1000); // Limit length
+
+    // Additional check: if input contains suspicious patterns, return empty
+    const dangerousPatterns = [
+        /javascript:/i,
+        /data:/i,
+        /vbscript:/i,
+        /file:/i,
+        /<script/i,
+        /<iframe/i,
+        /<object/i,
+        /<embed/i
+    ];
+
+    for (const pattern of dangerousPatterns) {
+        if (pattern.test(sanitized)) {
+            return '';
+        }
+    }
+
+    return sanitized;
 }
 
 // ====================
