@@ -28,7 +28,18 @@ console.log(`
 
 // Security middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Allow external scripts for development
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com", "https://discordapp.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      frameSrc: ["https://discordapp.com"],
+      connectSrc: ["'self'", "https://hashnhedge-api.onrender.com", "wss:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow embedding for Discord widget
 }));
 
 // CORS configuration

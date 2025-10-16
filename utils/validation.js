@@ -21,12 +21,38 @@ function isValidEmail(email) {
 function sanitizeString(input) {
     if (typeof input !== 'string') return '';
 
-    return input
-        .replace(/[<>]/g, '') // Remove < and >
-        .replace(/javascript:/gi, '') // Remove javascript: protocol
-        .replace(/on\w+=/gi, '') // Remove event handlers
+    // More comprehensive sanitization
+    let sanitized = input
+        .replace(/[<>'"]/g, '') // Remove dangerous characters
+        .replace(/javascript\s*:/gi, '') // Remove javascript: protocol (with whitespace)
+        .replace(/data\s*:/gi, '') // Remove data: protocol
+        .replace(/vbscript\s*:/gi, '') // Remove vbscript: protocol
+        .replace(/file\s*:/gi, '') // Remove file: protocol
+        .replace(/on\w+\s*=/gi, '') // Remove event handlers
+        .replace(/&lt;/gi, '') // Remove encoded <
+        .replace(/&gt;/gi, '') // Remove encoded >
         .trim()
         .slice(0, 1000); // Limit length
+
+    // Additional check: if input contains suspicious URL schemes, return empty
+    const dangerousPatterns = [
+        /javascript:/i,
+        /data:/i,
+        /vbscript:/i,
+        /file:/i,
+        /<script/i,
+        /<iframe/i,
+        /<object/i,
+        /<embed/i
+    ];
+
+    for (const pattern of dangerousPatterns) {
+        if (pattern.test(sanitized)) {
+            return '';
+        }
+    }
+
+    return sanitized;
 }
 
 // Validate and sanitize worker ID
