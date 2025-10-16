@@ -27,8 +27,13 @@ build/
 *.tmp
 *.temp
 
-# Local Netlify folder
+# Netlify (removed from project)
 .netlify
+netlify_backup*/
+netlify.toml
+_headers
+_redirects
+*netlify*.sh
 
 /generated/prisma
 
