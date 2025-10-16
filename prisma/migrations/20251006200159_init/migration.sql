@@ -1,3 +1,7 @@
+-- Enable PostgreSQL extensions required for UUID generation
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- CreateTable
 CREATE TABLE "workers" (
     "id" UUID NOT NULL DEFAULT uuid_generate_v4(),
