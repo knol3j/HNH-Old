@@ -1,0 +1,32 @@
+services:
+  # Mobile Proof Pool Web Service
+  - type: web
+    name: mobile-proof-pool
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STRATUM_PORT
+        value: 3333
+      - key: WS_PORT
+        value: 8081
+      - key: API_PORT
+        value: 8080
+      - key: POOL_ADDRESS
+        sync: false
+      - key: POOL_FEE
+        value: 2
+      - key: MIN_PAYOUT
+        value: 0.01
+    healthCheckPath: /api/stats
+    autoDeploy: true
+
+  # Redis for caching (optional, upgrade to paid plan for persistence)
+  - type: redis
+    name: mobile-pool-redis
+    plan: free
+    ipAllowList: []

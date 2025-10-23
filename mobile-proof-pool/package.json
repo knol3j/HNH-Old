@@ -1,0 +1,36 @@
+{
+  "name": "mobile-proof-pool",
+  "version": "1.0.0",
+  "description": "Mobile-optimized mining pool with battery-aware proof-of-work algorithm",
+  "main": "src/mobile-pool-server.js",
+  "scripts": {
+    "start": "node src/mobile-pool-server.js",
+    "dev": "nodemon src/mobile-pool-server.js",
+    "test": "jest",
+    "build": "npm install",
+    "docker:build": "docker build -t mobile-proof-pool .",
+    "docker:run": "docker-compose up -d"
+  },
+  "keywords": [
+    "mining",
+    "pool",
+    "mobile",
+    "cryptocurrency",
+    "proof-of-work",
+    "phoneproof"
+  ],
+  "author": "HashNHedge Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
