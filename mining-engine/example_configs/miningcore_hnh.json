@@ -23,7 +23,7 @@
       "host": "smtp.gmail.com",
       "port": 587,
       "user": "pool@hashnhedge.com",
-      "password": "your-app-password",
+      "password": "${SMTP_PASSWORD}",
       "fromAddress": "pool@hashnhedge.com",
       "fromName": "HashNHedge Pool Notifications"
     },
@@ -41,7 +41,7 @@
       "port": 5432,
       "database": "hashnhedge_pool",
       "user": "pooluser",
-      "password": "change-this-password"
+      "password": "${DATABASE_PASSWORD}"
     }
   },
 
@@ -77,11 +77,11 @@
       "id": "etc-hybrid",
       "enabled": true,
       "coin": "etc",
-      "address": "0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2",
+      "address": "0x0000000000000000000000000000000000000000",
 
       "rewardRecipients": [
         {
-          "address": "0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2",
+          "address": "0x0000000000000000000000000000000000000000",
           "percentage": 0.03,
           "type": "dev"
         }
@@ -171,11 +171,11 @@
       "id": "rvn-hybrid",
       "enabled": true,
       "coin": "rvn",
-      "address": "RNm4LMBGyfH8ddCGvncQKrMtxEydxwhUJL",
+      "address": "RPLACEHOLDER1234567890ABCDEFGHIJKL",
 
       "rewardRecipients": [
         {
-          "address": "RNm4LMBGyfH8ddCGvncQKrMtxEydxwhUJL",
+          "address": "RPLACEHOLDER1234567890ABCDEFGHIJKL",
           "percentage": 0.03,
           "type": "dev"
         }
@@ -222,7 +222,7 @@
           "host": "127.0.0.1",
           "port": 8766,
           "user": "rpcuser",
-          "password": "rpcpassword",
+          "password": "${RPC_PASSWORD}",
           "timeout": 30000
         }
       ],
@@ -242,11 +242,11 @@
       "id": "ergo-hybrid",
       "enabled": false,
       "coin": "ergo",
-      "address": "9gpNWA3LVic14cMmWHmKGZyiGqrxPaSEvGsdyt7jt2DDAWDQyc9",
+      "address": "9PLACEHOLDER_ERGO_ADDRESS_HERE_ABCDEF",
 
       "rewardRecipients": [
         {
-          "address": "9gpNWA3LVic14cMmWHmKGZyiGqrxPaSEvGsdyt7jt2DDAWDQyc9",
+          "address": "9PLACEHOLDER_ERGO_ADDRESS_HERE_ABCDEF",
           "percentage": 0.03,
           "type": "dev"
         }

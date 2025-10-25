@@ -15,9 +15,18 @@ import requests
 import psutil
 from datetime import datetime, timedelta
 import platform
+from collections import deque
+import logging
 
 # Import our backend manager
-from miner_backends import MinerManager
+from miner_backends import MinerManager, ValidationError
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class EnhancedMinerGUI:
@@ -41,8 +50,8 @@ class EnhancedMinerGUI:
         self.wallet_address = ""
         self.worker_name = "HNH-Rig-1"
 
-        # Stats tracking
-        self.hashrate_history = []
+        # Stats tracking (using deque for efficient operations)
+        self.hashrate_history = deque(maxlen=60)
         self.gpu_temp = 0
         self.gpu_power = 0
         self.gpu_fan = 0
@@ -70,8 +79,10 @@ class EnhancedMinerGUI:
                     self.pool_url = config.get("pool_url", "pool.hashnhedge.com:3333")
                     self.current_backend = config.get("backend", "t-rex")
                     self.current_algorithm = config.get("algorithm", "ethash")
-            except Exception as e:
-                print(f"Error loading config: {e}")
+            except (FileNotFoundError, PermissionError) as e:
+                logger.warning(f"Could not load config file: {e}")
+            except (json.JSONDecodeError, KeyError, ValueError) as e:
+                logger.error(f"Error parsing config file: {e}")
 
     def save_config(self):
         """Save configuration to file"""
@@ -90,8 +101,8 @@ class EnhancedMinerGUI:
         try:
             with open(config_file, 'w') as f:
                 json.dump(config, f, indent=2)
-        except Exception as e:
-            print(f"Error saving config: {e}")
+        except (PermissionError, OSError) as e:
+            logger.error(f"Error saving config: {e}")
 
     def setup_ui(self):
         """Setup the user interface"""
@@ -401,8 +412,8 @@ class EnhancedMinerGUI:
                 self.gpu_name_label.config(text=f"🎮 {gpu_name}")
                 self.add_log(f"Detected GPU: {gpu_name}")
                 return
-        except:
-            pass
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+            logger.debug(f"Could not detect GPU via nvidia-smi: {e}")
 
         self.gpu_name_label.config(text="🎮 GPU Detected (Generic)")
         self.add_log("GPU detected (using generic mode)")
@@ -437,8 +448,8 @@ class EnhancedMinerGUI:
                     self.gpu_temp_label.config(fg='#fab387')
                 else:
                     self.gpu_temp_label.config(fg='#a6e3a1')
-        except:
-            pass
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError, ValueError) as e:
+            logger.debug(f"Could not update GPU stats: {e}")
 
     def save_wallet_config(self):
         """Save wallet configuration"""
@@ -454,6 +465,17 @@ class EnhancedMinerGUI:
         """Start mining process"""
         if not self.wallet_address:
             messagebox.showerror("Error", "Please enter a wallet address first!")
+            return
+
+        # Validate inputs before starting
+        from miner_backends import InputValidator
+        try:
+            InputValidator.validate_ethereum_address(self.wallet_address)
+            InputValidator.validate_pool_url(self.pool_url)
+            InputValidator.validate_worker_name(self.worker_name)
+        except ValidationError as e:
+            messagebox.showerror("Validation Error", str(e))
+            self.add_log(f"Validation failed: {e}")
             return
 
         self.current_algorithm = self.algo_var.get()
@@ -540,10 +562,8 @@ class EnhancedMinerGUI:
                     efficiency = (accepted / max(total_shares, 1)) * 100
                     self.stat_labels['efficiency'].config(text=f"{efficiency:.1f}%")
 
-                    # Track hashrate history
+                    # Track hashrate history (deque auto-manages size)
                     self.hashrate_history.append(hashrate)
-                    if len(self.hashrate_history) > 60:
-                        self.hashrate_history.pop(0)
 
                     avg_hashrate = sum(self.hashrate_history) / max(len(self.hashrate_history), 1)
                     self.stat_labels['avg_hashrate'].config(text=f"{avg_hashrate:.2f} MH/s")
@@ -553,10 +573,10 @@ class EnhancedMinerGUI:
                     # Update GPU stats
                     self.update_gpu_stats()
 
-                time.sleep(1)
+                time.sleep(3)  # Reduced from 1s to 3s for efficiency
             except Exception as e:
-                print(f"Monitor error: {e}")
-                time.sleep(1)
+                logger.error(f"Monitor error: {e}", exc_info=True)
+                time.sleep(3)
 
 
 def main():
