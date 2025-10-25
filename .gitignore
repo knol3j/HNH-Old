@@ -39,3 +39,13 @@ _redirects
 
 # Security audit reports (generated locally)
 security-audits/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Process ID files
+*.pid
