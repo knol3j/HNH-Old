@@ -1,11 +1,19 @@
 /**
- * HashNHedge Hybrid Compute Orchestrator
+ * HashNHedge Hybrid Compute Orchestrator (Basic Version)
  * Routes GPUs between AI/ML jobs (priority) and mining (fallback)
  *
  * Architecture:
  * - AI jobs get priority (high margin: 30% fee)
  * - Mining when idle (low margin: 2-3% fee)
  * - Dynamic routing based on job availability and GPU capability
+ *
+ * NOTE: This is the basic orchestrator. For enhanced autonomous operation with:
+ * - Automatic job discovery from multiple sources
+ * - Intelligent worker health monitoring & auto-recovery
+ * - Smart job matching and load balancing
+ * - Automatic retry with exponential backoff
+ *
+ * See: enhanced-orchestrator.js and index-enhanced.js
  */
 
 const EventEmitter = require('events');
