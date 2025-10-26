@@ -13,6 +13,7 @@
 const EventEmitter = require('events');
 const https = require('https');
 const http = require('http');
+const WebhookSecurity = require('./webhook-security');
 
 class AutonomousJobDiscovery extends EventEmitter {
     constructor(config = {}) {
@@ -34,8 +35,18 @@ class AutonomousJobDiscovery extends EventEmitter {
             externalAPIs: config.externalAPIs || [],
 
             // Webhook server
-            webhookPort: config.webhookPort || 3334,
+            webhookPort: config.webhookPort || 3335,
             webhookHost: config.webhookHost || '0.0.0.0',
+
+            // Webhook security
+            webhookSecurity: config.webhookSecurity || {
+                secret: process.env.WEBHOOK_SECRET || null,
+                enableIPWhitelist: false,
+                allowedIPs: [],
+                enableRateLimit: true,
+                maxRequestsPerMinute: 60,
+                maxRequestsPerHour: 1000
+            },
 
             // Circuit breaker settings
             maxFailures: config.maxFailures || 3,
@@ -63,6 +74,9 @@ class AutonomousJobDiscovery extends EventEmitter {
 
         // Webhook server
         this.webhookServer = null;
+
+        // Webhook security
+        this.webhookSecurity = new WebhookSecurity(this.config.webhookSecurity);
     }
 
     /**
@@ -259,48 +273,124 @@ class AutonomousJobDiscovery extends EventEmitter {
      * Handle incoming webhook requests
      */
     async handleWebhook(req, res) {
+        const sourceName = `webhook:${req.headers['x-source'] || 'unknown'}`;
+
+        // Only accept POST requests
         if (req.method !== 'POST') {
             res.writeHead(405, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Method not allowed' }));
             return;
         }
 
+        // Collect request body
         let body = '';
-        req.on('data', chunk => body += chunk);
+        let bodySize = 0;
+        const maxSize = this.config.webhookSecurity?.maxBodySize || 1048576; // 1MB
+
+        req.on('data', chunk => {
+            bodySize += chunk.length;
+
+            // Prevent memory exhaustion
+            if (bodySize > maxSize) {
+                req.destroy();
+                res.writeHead(413, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Request entity too large' }));
+                return;
+            }
+
+            body += chunk;
+        });
+
         req.on('end', async () => {
             try {
-                const data = JSON.parse(body);
-                const sourceName = `webhook:${req.headers['x-source'] || 'unknown'}`;
+                // Verify webhook security
+                const verification = this.webhookSecurity.verify(req, body, req.headers);
 
-                console.log(`🎣 Received webhook from ${sourceName}`);
+                if (!verification.valid) {
+                    console.error(`🔒 Webhook security check failed from ${sourceName}:`, verification.errors);
 
-                // Validate webhook (add signature verification in production)
-                if (this.config.webhookSecret && req.headers['x-signature']) {
-                    // TODO: Verify HMAC signature
+                    res.writeHead(403, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Security verification failed',
+                        details: verification.errors
+                    }));
+
+                    this.emit('webhook:security_failed', {
+                        source: sourceName,
+                        errors: verification.errors,
+                        ip: this.webhookSecurity.extractClientIP(req)
+                    });
+
+                    return;
                 }
 
+                // Parse JSON body
+                const data = JSON.parse(body);
+
+                console.log(`🎣 Received verified webhook from ${sourceName}`);
+
                 // Process job(s)
-                const jobs = Array.isArray(data) ? data : [data];
+                const jobs = Array.isArray(data.jobs) ? data.jobs :
+                            Array.isArray(data) ? data : [data];
                 let imported = 0;
+                let failed = 0;
 
                 for (const job of jobs) {
                     if (await this.processDiscoveredJob(job, sourceName)) {
                         imported++;
+                    } else {
+                        failed++;
                     }
                 }
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                // Get rate limit info for response headers
+                const rateLimitInfo = this.webhookSecurity.getRateLimitInfo(
+                    req.headers['x-source'] || this.webhookSecurity.extractClientIP(req)
+                );
+
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'X-RateLimit-Limit-Minute': this.config.webhookSecurity.maxRequestsPerMinute,
+                    'X-RateLimit-Remaining-Minute': rateLimitInfo.minute.remaining,
+                    'X-RateLimit-Limit-Hour': this.config.webhookSecurity.maxRequestsPerHour,
+                    'X-RateLimit-Remaining-Hour': rateLimitInfo.hour.remaining
+                });
+
                 res.end(JSON.stringify({
                     success: true,
                     imported,
-                    total: jobs.length
+                    failed,
+                    total: jobs.length,
+                    timestamp: Date.now()
                 }));
 
+                this.emit('webhook:processed', {
+                    source: sourceName,
+                    imported,
+                    failed,
+                    total: jobs.length
+                });
+
             } catch (error) {
-                console.error('❌ Webhook processing error:', error.message);
+                console.error(`❌ Webhook processing error from ${sourceName}:`, error.message);
+
                 res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ error: 'Invalid request' }));
+                res.end(JSON.stringify({
+                    error: 'Invalid request',
+                    message: error.message
+                }));
+
+                this.emit('webhook:error', {
+                    source: sourceName,
+                    error: error.message
+                });
             }
+        });
+
+        req.on('error', (error) => {
+            console.error(`❌ Webhook request error from ${sourceName}:`, error.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal server error' }));
         });
     }
 
@@ -596,6 +686,11 @@ class AutonomousJobDiscovery extends EventEmitter {
             await new Promise(resolve => {
                 this.webhookServer.close(resolve);
             });
+        }
+
+        // Stop webhook security cleanup
+        if (this.webhookSecurity) {
+            this.webhookSecurity.stop();
         }
 
         this.emit('discovery:stopped');

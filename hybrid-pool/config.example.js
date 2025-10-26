@@ -99,7 +99,40 @@ module.exports = {
             // Webhook server settings
             webhookPort: 3335,              // Webhook receiver port
             webhookHost: '0.0.0.0',
-            webhookSecret: process.env.WEBHOOK_SECRET || null,  // HMAC secret (optional)
+
+            // Webhook security configuration
+            // See WEBHOOK_GUIDE.md for detailed setup instructions
+            webhookSecurity: {
+                // HMAC signature verification
+                // Generate with: openssl rand -base64 32
+                secret: process.env.WEBHOOK_SECRET || null,
+                signatureHeader: 'x-signature',
+                algorithm: 'sha256',
+
+                // IP whitelisting (optional)
+                // Restrict webhooks to specific IP addresses
+                enableIPWhitelist: false,
+                allowedIPs: [
+                    // '192.168.1.100',      // Specific IP
+                    // '10.0.0.*',           // Wildcard pattern
+                    // '172.16.0.0/12'       // CIDR notation (TODO)
+                ],
+
+                // Rate limiting per source
+                // Prevents abuse and DoS attacks
+                enableRateLimit: true,
+                maxRequestsPerMinute: 60,       // Per source/IP
+                maxRequestsPerHour: 1000,       // Per source/IP
+
+                // Replay attack prevention
+                // Validates timestamp to prevent old requests
+                enableTimestampValidation: true,
+                maxTimestampAge: 300000,        // 5 minutes max age
+
+                // Request size limits
+                // Prevents memory exhaustion
+                maxBodySize: 1048576            // 1MB max request size
+            },
 
             // Circuit breaker settings
             maxFailures: 3,                 // Open circuit after 3 failures
@@ -205,7 +238,7 @@ module.exports = {
  * STRATUM_HOST          - Stratum server host (default: 0.0.0.0)
  * PORT                  - Admin API port (default: 3334)
  * ADMIN_API_KEY         - Admin API authentication key
- * WEBHOOK_SECRET        - Webhook HMAC secret (optional)
+ * WEBHOOK_SECRET        - Webhook HMAC secret (generate with: openssl rand -base64 32)
  * DATABASE_URL          - Database connection URL (if using database polling)
  * NODE_ENV              - Environment: development, production
  * LOG_LEVEL             - Logging level: error, warn, info, debug
@@ -214,6 +247,14 @@ module.exports = {
  * Optional external API keys:
  * RENDER_API_KEY        - Render marketplace API key
  * YOUR_MARKETPLACE_KEY  - Your custom marketplace API key
+ *
+ * Webhook configuration (optional):
+ * WEBHOOK_PORT                     - Webhook server port (default: 3335)
+ * WEBHOOK_HOST                     - Webhook server host (default: 0.0.0.0)
+ * WEBHOOK_ENABLE_IP_WHITELIST      - Enable IP whitelisting (true/false)
+ * WEBHOOK_ALLOWED_IPS              - Comma-separated list of allowed IPs
+ * WEBHOOK_MAX_REQUESTS_PER_MINUTE  - Rate limit per minute (default: 60)
+ * WEBHOOK_MAX_REQUESTS_PER_HOUR    - Rate limit per hour (default: 1000)
  */
 
 // ====================================================================
@@ -263,5 +304,29 @@ module.exports = {
  *
  * pool.orchestrator.on('job:permanently_failed', ({ jobId }) => {
  *     console.log(`Job ${jobId} permanently failed`);
+ * });
+ *
+ * -------------------------------------------------------------------
+ *
+ * Submit jobs via webhook:
+ *
+ * // See WEBHOOK_GUIDE.md for complete documentation
+ *
+ * curl -X POST http://localhost:3335 \
+ *   -H "Content-Type: application/json" \
+ *   -H "X-Source: my-app" \
+ *   -H "X-Signature: sha256=<hmac>" \
+ *   -d '{"id":"job_1","type":"ai","task":"inference","reward":1.5,"priority":8}'
+ *
+ * -------------------------------------------------------------------
+ *
+ * Monitor webhook events:
+ *
+ * pool.orchestrator.jobDiscovery.on('webhook:processed', ({ source, imported }) => {
+ *     console.log(`Webhook from ${source}: ${imported} jobs imported`);
+ * });
+ *
+ * pool.orchestrator.jobDiscovery.on('webhook:security_failed', ({ source, errors }) => {
+ *     console.error(`Security failure from ${source}:`, errors);
  * });
  */
