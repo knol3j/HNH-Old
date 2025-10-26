@@ -8,6 +8,119 @@ datasource db {
 }
 
 // ============================================================
+// AUTHENTICATION & AUTHORIZATION MODELS
+// ============================================================
+
+model User {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+
+  // User role - for RBAC
+  role              String    @default("user")
+
+  // Account status
+  isActive          Boolean   @default(true) @map("is_active")
+  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
+  emailVerifiedAt   DateTime? @map("email_verified_at")
+
+  // Security
+  failedLoginAttempts Int     @default(0) @map("failed_login_attempts")
+  lockedUntil       DateTime? @map("locked_until")
+  lastLoginAt       DateTime? @map("last_login_at")
+  lastLoginIp       String?   @map("last_login_ip")
+
+  // Password reset
+  resetToken        String?   @unique @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+
+  // Email verification
+  verificationToken String?   @unique @map("verification_token")
+
+  // Profile references
+  communityMemberId String?   @unique @map("community_member_id") @db.Uuid
+  vendorId          String?   @unique @map("vendor_id") @db.Uuid
+  workerId          String?   @unique @map("worker_id") @db.Uuid
+
+  // Timestamps
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Metadata
+  metadata          Json?
+
+  // Relations
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([role], map: "idx_users_role")
+  @@index([isActive], map: "idx_users_is_active")
+  @@index([communityMemberId], map: "idx_users_community_member_id")
+  @@index([vendorId], map: "idx_users_vendor_id")
+  @@index([workerId], map: "idx_users_worker_id")
+  @@map("users")
+}
+
+model RefreshToken {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  token        String    @unique
+  expiresAt    DateTime  @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  revokedAt    DateTime? @map("revoked_at")
+  replacedBy   String?   @map("replaced_by")
+
+  // Device info for security tracking
+  userAgent    String?   @map("user_agent")
+  ipAddress    String?   @map("ip_address")
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_refresh_tokens_user_id")
+  @@index([token], map: "idx_refresh_tokens_token")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  action       String
+  resource     String
+  resourceId   String?  @map("resource_id")
+
+  // Request details
+  method       String?
+  path         String?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+
+  // Changes
+  oldValues    Json?    @map("old_values")
+  newValues    Json?    @map("new_values")
+
+  // Result
+  success      Boolean  @default(true)
+  errorMessage String?  @map("error_message")
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Metadata
+  metadata     Json?
+
+  // Relations
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], map: "idx_audit_logs_user_id")
+  @@index([action], map: "idx_audit_logs_action")
+  @@index([resource], map: "idx_audit_logs_resource")
+  @@index([createdAt], map: "idx_audit_logs_created_at")
+  @@map("audit_logs")
+}
+
+// ============================================================
 // MINING POOL MODELS
 // ============================================================
 

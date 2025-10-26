@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
+const { validateConfig } = require('./utils/configValidation');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -21,6 +22,26 @@ console.log(`
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 `);
+
+// ============================================================
+// CONFIGURATION VALIDATION
+// ============================================================
+console.log('\n🔒 Starting security and configuration validation...\n');
+const configValidation = validateConfig();
+
+if (!configValidation.valid) {
+  console.error('\n❌ CRITICAL: Configuration validation failed!');
+  console.error('Please fix the configuration errors above before starting the server.\n');
+
+  if (NODE_ENV === 'production') {
+    console.error('Production mode detected - server will NOT start with invalid configuration.');
+    process.exit(1);
+  } else {
+    console.warn('⚠️  Development mode - server will start but functionality may be limited.\n');
+  }
+} else {
+  console.log('✅ Configuration validation passed!\n');
+}
 
 // ============================================================
 // MIDDLEWARE
