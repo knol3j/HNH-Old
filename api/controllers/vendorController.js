@@ -1,4 +1,10 @@
 const prisma = require('../../lib/prisma');
+const {
+  isValidEmail,
+  isValidSolanaAddress,
+  sanitizeString,
+  validateNumber
+} = require('../../utils/validation');
 
 /**
  * Register a new vendor
@@ -44,6 +50,50 @@ async function registerVendor(req, res) {
       });
     }
 
+    // Validate email format
+    if (!isValidEmail(contactEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid contact email format'
+      });
+    }
+
+    // Validate contact person email if provided
+    if (contactPersonEmail && !isValidEmail(contactPersonEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid contact person email format'
+      });
+    }
+
+    // Validate payment wallet address if provided
+    if (paymentWalletAddress && !isValidSolanaAddress(paymentWalletAddress)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Solana payment wallet address'
+      });
+    }
+
+    // Validate website URL format if provided
+    if (websiteUrl && !websiteUrl.match(/^https?:\/\/.+\..+/i)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid website URL format'
+      });
+    }
+
+    // Validate established year if provided
+    if (establishedYear) {
+      try {
+        validateNumber(establishedYear, 1800, new Date().getFullYear());
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid established year'
+        });
+      }
+    }
+
     if (!termsAccepted) {
       return res.status(400).json({
         success: false,
@@ -51,12 +101,44 @@ async function registerVendor(req, res) {
       });
     }
 
+    // Sanitize text inputs
+    const sanitizedData = {
+      companyName: sanitizeString(companyName).slice(0, 200),
+      legalName: legalName ? sanitizeString(legalName).slice(0, 200) : null,
+      registrationNumber: registrationNumber ? sanitizeString(registrationNumber).slice(0, 100) : null,
+      taxId: taxId ? sanitizeString(taxId).slice(0, 100) : null,
+      contactEmail: contactEmail.toLowerCase().trim(),
+      contactPhone: contactPhone ? sanitizeString(contactPhone).slice(0, 50) : null,
+      websiteUrl: websiteUrl ? sanitizeString(websiteUrl).slice(0, 200) : null,
+      contactPersonName: sanitizeString(contactPersonName).slice(0, 200),
+      contactPersonTitle: contactPersonTitle ? sanitizeString(contactPersonTitle).slice(0, 100) : null,
+      contactPersonEmail: contactPersonEmail ? contactPersonEmail.toLowerCase().trim() : null,
+      businessType: businessType ? sanitizeString(businessType).slice(0, 100) : null,
+      industrySector: industrySector ? sanitizeString(industrySector).slice(0, 100) : null,
+      companySize: companySize ? sanitizeString(companySize).slice(0, 50) : null,
+      establishedYear: establishedYear ? parseInt(establishedYear) : null,
+      addressLine1: addressLine1 ? sanitizeString(addressLine1).slice(0, 200) : null,
+      addressLine2: addressLine2 ? sanitizeString(addressLine2).slice(0, 200) : null,
+      city: city ? sanitizeString(city).slice(0, 100) : null,
+      stateProvince: stateProvince ? sanitizeString(stateProvince).slice(0, 100) : null,
+      postalCode: postalCode ? sanitizeString(postalCode).slice(0, 20) : null,
+      country: country ? sanitizeString(country).slice(0, 100) : null,
+      paymentWalletAddress: paymentWalletAddress || null,
+      partnershipType: partnershipType ? sanitizeString(partnershipType).slice(0, 100) : null,
+      productsServices: productsServices ? sanitizeString(productsServices).slice(0, 1000) : null,
+      integrationInterest: Array.isArray(integrationInterest) ? integrationInterest.map(i => sanitizeString(i)).slice(0, 10) : [],
+      expectedVolume: expectedVolume ? sanitizeString(expectedVolume).slice(0, 100) : null,
+      termsAccepted: Boolean(termsAccepted),
+      termsAcceptedAt: new Date(),
+      stackUserId: stackUserId || null
+    };
+
     // Check if company or email already exists
     const existingVendor = await prisma.vendor.findFirst({
       where: {
         OR: [
-          { companyName },
-          { contactEmail }
+          { companyName: sanitizedData.companyName },
+          { contactEmail: sanitizedData.contactEmail }
         ]
       }
     });
@@ -64,43 +146,16 @@ async function registerVendor(req, res) {
     if (existingVendor) {
       return res.status(409).json({
         success: false,
-        error: existingVendor.companyName === companyName
+        error: existingVendor.companyName === sanitizedData.companyName
           ? 'Company name already registered'
           : 'Contact email already in use'
       });
     }
 
-    // Create new vendor
+    // Create new vendor with validated and sanitized data
     const vendor = await prisma.vendor.create({
       data: {
-        companyName,
-        legalName,
-        registrationNumber,
-        taxId,
-        contactEmail,
-        contactPhone,
-        websiteUrl,
-        contactPersonName,
-        contactPersonTitle,
-        contactPersonEmail,
-        businessType,
-        industrySector,
-        companySize,
-        establishedYear,
-        addressLine1,
-        addressLine2,
-        city,
-        stateProvince,
-        postalCode,
-        country,
-        paymentWalletAddress,
-        partnershipType,
-        productsServices,
-        integrationInterest: integrationInterest || [],
-        expectedVolume,
-        termsAccepted,
-        termsAcceptedAt: new Date(),
-        stackUserId,
+        ...sanitizedData,
         status: 'pending'
       }
     });

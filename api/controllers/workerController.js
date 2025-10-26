@@ -1,5 +1,11 @@
 const prisma = require('../../lib/prisma');
 const crypto = require('crypto');
+const {
+  isValidSolanaAddress,
+  validateWorkerId,
+  validateHardwareInfo,
+  validateNumber
+} = require('../../utils/validation');
 
 /**
  * Register a new worker/miner
@@ -20,6 +26,37 @@ async function registerWorker(req, res) {
       });
     }
 
+    // Validate worker ID format
+    try {
+      validateWorkerId(workerId);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    // Validate wallet address format
+    if (!isValidSolanaAddress(walletAddress)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Solana wallet address format'
+      });
+    }
+
+    // Validate hardware info if provided
+    let validatedHardwareInfo = {};
+    if (hardwareInfo) {
+      try {
+        validatedHardwareInfo = validateHardwareInfo(hardwareInfo);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid hardware info: ' + error.message
+        });
+      }
+    }
+
     // Check if worker already exists
     const existingWorker = await prisma.worker.findUnique({
       where: { workerId }
@@ -32,12 +69,12 @@ async function registerWorker(req, res) {
       });
     }
 
-    // Create new worker
+    // Create new worker with validated data
     const worker = await prisma.worker.create({
       data: {
         workerId,
         walletAddress,
-        hardwareInfo: hardwareInfo || {},
+        hardwareInfo: validatedHardwareInfo,
         status: 'active',
         lastSeen: new Date()
       }
@@ -74,12 +111,46 @@ async function workerHeartbeat(req, res) {
     const { workerId } = req.params;
     const { hardwareInfo, status } = req.body;
 
+    // Validate worker ID format
+    try {
+      validateWorkerId(workerId);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    // Validate status if provided
+    if (status) {
+      const validStatuses = ['active', 'inactive', 'maintenance', 'error'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        });
+      }
+    }
+
+    // Validate hardware info if provided
+    let validatedHardwareInfo;
+    if (hardwareInfo) {
+      try {
+        validatedHardwareInfo = validateHardwareInfo(hardwareInfo);
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid hardware info: ' + error.message
+        });
+      }
+    }
+
     const worker = await prisma.worker.update({
       where: { workerId },
       data: {
         lastSeen: new Date(),
         status: status || 'active',
-        ...(hardwareInfo && { hardwareInfo })
+        ...(validatedHardwareInfo && { hardwareInfo: validatedHardwareInfo })
       }
     });
 
@@ -313,6 +384,52 @@ async function submitShare(req, res) {
       });
     }
 
+    // Validate worker ID format
+    try {
+      validateWorkerId(workerId);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+
+    // Validate difficulty
+    let validatedDifficulty;
+    try {
+      validatedDifficulty = validateNumber(difficulty, 1, 1000000);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid difficulty: ' + error.message
+      });
+    }
+
+    // Validate hash format (hex string)
+    if (!/^[a-fA-F0-9]{64}$/.test(hash)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid hash format (must be 64-character hex string)'
+      });
+    }
+
+    // Validate nonce format (hex string)
+    if (!/^[a-fA-F0-9]+$/.test(nonce)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid nonce format (must be hex string)'
+      });
+    }
+
+    // Validate job type
+    const validJobTypes = ['mining', 'ai', 'hybrid'];
+    if (!validJobTypes.includes(jobType)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid job type. Must be one of: ${validJobTypes.join(', ')}`
+      });
+    }
+
     // Get worker
     const worker = await prisma.worker.findUnique({
       where: { workerId }
@@ -325,8 +442,8 @@ async function submitShare(req, res) {
       });
     }
 
-    // Validate hash (basic validation - implement proper validation based on algorithm)
-    const isValid = validateShare(hash, difficulty, nonce);
+    // Validate share with proper algorithm
+    const isValid = validateShare(hash, validatedDifficulty, nonce, jobId);
 
     // Create share record
     const share = await prisma.share.create({
@@ -404,11 +521,31 @@ async function listWorkers(req, res) {
   try {
     const { page = 1, limit = 20, status } = req.query;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const take = parseInt(limit);
+    // Validate pagination parameters
+    let validatedPage, validatedLimit;
+    try {
+      validatedPage = validateNumber(page, 1, 10000);
+      validatedLimit = validateNumber(limit, 1, 100); // Max 100 items per page
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid pagination parameters: ' + error.message
+      });
+    }
 
+    const skip = (validatedPage - 1) * validatedLimit;
+    const take = validatedLimit;
+
+    // Validate status parameter
     const where = {};
     if (status) {
+      const validStatuses = ['active', 'inactive', 'maintenance', 'error'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+        });
+      }
       where.status = status;
     }
 
@@ -444,10 +581,10 @@ async function listWorkers(req, res) {
         totalEarnings: w.totalEarnings.toString()
       })),
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: validatedPage,
+        limit: validatedLimit,
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / validatedLimit)
       }
     });
 
@@ -461,18 +598,59 @@ async function listWorkers(req, res) {
 }
 
 /**
- * Basic share validation
- * In production, implement proper algorithm-specific validation
+ * Proper share validation with PoW verification
+ * Validates that the provided hash meets the difficulty requirements
+ * and can be reproduced from the nonce and jobId
  */
-function validateShare(hash, difficulty, nonce) {
-  // Placeholder validation - implement actual algorithm validation
-  // For now, just check if hash meets minimum difficulty requirements
+function validateShare(hash, difficulty, nonce, jobId) {
+  try {
+    // 1. Validate hash format
+    if (!/^[a-fA-F0-9]{64}$/.test(hash)) {
+      console.log('[SHARE VALIDATION] Invalid hash format');
+      return false;
+    }
 
-  // Example: For SHA256, check leading zeros based on difficulty
-  const leadingZeros = Math.floor(difficulty / 4);
-  const hashStart = hash.substring(0, leadingZeros);
+    // 2. Check difficulty requirements
+    // For SHA256 PoW: difficulty determines minimum leading zeros or target value
+    // Difficulty 1 = 1 leading zero nibble (4 bits)
+    // Difficulty 4 = 1 leading zero byte (8 bits)
+    const requiredLeadingZeros = Math.floor(difficulty / 4);
+    const hashLeadingZeros = hash.match(/^0*/)[0].length;
 
-  return hashStart === '0'.repeat(leadingZeros);
+    if (hashLeadingZeros < requiredLeadingZeros) {
+      console.log(`[SHARE VALIDATION] Insufficient leading zeros: ${hashLeadingZeros} < ${requiredLeadingZeros}`);
+      return false;
+    }
+
+    // 3. Verify the hash can be reproduced
+    // Recreate the hash from jobId + nonce and verify it matches
+    const input = `${jobId}:${nonce}`;
+    const computedHash = crypto.createHash('sha256').update(input).digest('hex');
+
+    if (computedHash !== hash.toLowerCase()) {
+      console.log('[SHARE VALIDATION] Hash verification failed: computed hash does not match');
+      return false;
+    }
+
+    // 4. Additional check: Ensure hash meets target value
+    // Convert hash to BigInt and check against target
+    const hashBigInt = BigInt('0x' + hash);
+    // Target is max value / (2^difficulty)
+    const maxTarget = BigInt('0x' + 'f'.repeat(64));
+    const target = maxTarget >> BigInt(difficulty);
+
+    if (hashBigInt > target) {
+      console.log('[SHARE VALIDATION] Hash does not meet difficulty target');
+      return false;
+    }
+
+    console.log('[SHARE VALIDATION] Valid share accepted');
+    return true;
+
+  } catch (error) {
+    console.error('[SHARE VALIDATION] Error validating share:', error);
+    return false;
+  }
 }
 
 module.exports = {
