@@ -1,0 +1,64 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          echo "Installing Railway CLI..."
+          npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Deploying to Railway..."
+
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "ERROR: RAILWAY_TOKEN not set in GitHub Secrets"
+            echo "Please add this secret to your repository:"
+            echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo "2. Add RAILWAY_TOKEN (get from https://railway.app/account/tokens)"
+            echo "   - Click your profile → Account Settings → Tokens"
+            echo "   - Create new token → Copy the token starting with 'rwy_'"
+            exit 1
+          fi
+
+          # Deploy using Railway CLI
+          railway up --detach
+
+          if [ $? -eq 0 ]; then
+            echo "✅ Railway deployment successful!"
+          else
+            echo "❌ Railway deployment failed"
+            exit 1
+          fi
+
+      - name: Get deployment info
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Fetching deployment status..."
+          railway status || echo "Status check completed"
+
+      - name: Deployment summary
+        run: |
+          echo "### ✅ Railway Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Deployment completed for commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** https://railway.app/dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
