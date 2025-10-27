@@ -67,7 +67,20 @@
       "Bash(set \"PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=yes\")",
       "Bash($env:PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\")",
       "Bash(git log:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "WebFetch(domain:grok.com)",
+      "Bash(gh:*)",
+      "Read(//usr/lib/**)",
+      "Bash(sudo pacman -Sy github-cli --noconfirm)",
+      "Bash(railway --version:*)",
+      "Bash(render --version:*)",
+      "Bash(railway login:*)",
+      "Bash(railway whoami:*)",
+      "Bash(render login)",
+      "Bash(echo:*)",
+      "Read(//root/.config/**)",
+      "Bash(export RAILWAY_TOKEN:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

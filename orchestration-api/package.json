@@ -18,10 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:deploy": "prisma migrate deploy"
+    "prisma:generate": "cd .. && prisma generate",
+    "prisma:migrate": "cd .. && prisma migrate dev",
+    "prisma:studio": "cd .. && prisma studio",
+    "prisma:deploy": "cd .. && prisma migrate deploy"
   },
   "keywords": [
     "blockchain",

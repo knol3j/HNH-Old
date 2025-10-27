@@ -8,14 +8,41 @@ const express = require('express');
 class AdminAPI {
     constructor(pool, config = {}) {
         this.pool = pool; // Reference to HybridPool instance
+
+        // Validate required API key before initialization
+        const apiKey = config.apiKey || process.env.ADMIN_API_KEY;
+
+        if (!apiKey) {
+            console.error('FATAL ERROR: ADMIN_API_KEY is not set!');
+            console.error('Please set ADMIN_API_KEY in your .env file or pass it in the config.');
+            console.error('Generate a secure API key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+            throw new Error('ADMIN_API_KEY is required but not set');
+        }
+
+        if (apiKey.length < 32) {
+            console.error('SECURITY WARNING: ADMIN_API_KEY is too short (minimum 32 characters recommended)');
+            console.error('Current length:', apiKey.length);
+            throw new Error('ADMIN_API_KEY must be at least 32 characters');
+        }
+
+        // Security check: prevent using insecure default values
+        const insecureKeys = ['change-me', 'admin', 'password', '12345', 'test', 'default'];
+        if (insecureKeys.includes(apiKey.toLowerCase())) {
+            console.error('SECURITY ERROR: ADMIN_API_KEY is set to an insecure default value:', apiKey);
+            console.error('Please use a cryptographically secure random key.');
+            throw new Error('Insecure ADMIN_API_KEY detected');
+        }
+
         this.config = {
             port: config.port || 3334,
             host: config.host || '0.0.0.0',
             enableAuth: config.enableAuth !== false,
-            apiKey: config.apiKey || process.env.ADMIN_API_KEY || 'change-me',
+            apiKey: apiKey,
             cors: config.cors !== false,
             ...config
         };
+
+        console.log('[ADMIN-API] Initialized with secure API key authentication');
 
         this.app = express();
         this.setupMiddleware();
