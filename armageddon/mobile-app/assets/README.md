@@ -1,10 +1,10 @@
-# Assets Directory
+# ARMgeddon Mobile App - Assets
 
-Place the following image assets here:
+Required assets for the mobile app build:
+- icon.png (1024x1024) - App icon
+- splash.png (1242x2436) - Splash screen
+- adaptive-icon.png (1024x1024) - Android adaptive icon
+- notification-icon.png (96x96) - Notification icon
+- favicon.png (48x48) - Web favicon
 
-- `icon.png` - App icon (1024x1024)
-- `adaptive-icon.png` - Android adaptive icon (1024x1024)
-- `splash.png` - Splash screen (1242x2436)
-- `favicon.png` - Web favicon (48x48)
-
-For now, Expo will use default placeholder images.
+Note: Image placeholders will be created automatically during build.

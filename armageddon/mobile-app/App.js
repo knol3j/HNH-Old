@@ -30,7 +30,7 @@ class PhoneProofMiner {
     let hashCount = 0;
     const startTime = Date.now();
 
-    while (this.ismining) {
+    while (this.isMining) {
       // Simplified mining simulation optimized for mobile
       const nonce = hashCount;
       const blockData = `${wallet}${nonce}${Date.now()}`;
