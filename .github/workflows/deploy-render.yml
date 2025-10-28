@@ -44,9 +44,9 @@ jobs:
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n-1)
 
-          if [ "$HTTP_CODE" = "201" ]; then
-            echo "✅ Render deployment triggered successfully!"
-            echo "$BODY" | jq '.'
+          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ]; then
+            echo "✅ Render deployment triggered successfully! (HTTP $HTTP_CODE)"
+            echo "$BODY" | jq '.' || echo "$BODY"
           else
             echo "❌ Render deployment failed with status: $HTTP_CODE"
             echo "$BODY"
