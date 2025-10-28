@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.husky_root/
+node_modules_root/
 
 # OS files
 .DS_Store

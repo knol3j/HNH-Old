@@ -26,8 +26,8 @@ REM Check if t-rex.exe exists
 if not exist "t-rex.exe" (
     echo ERROR: t-rex.exe not found!
     echo.
-    echo Please download T-Rex miner to this directory.
-    echo Download from: https://github.com/trex-miner/T-Rex/releases
+    echo Please download the Smart Miner bundle (GUI + pool stats + T-Rex) to this directory.
+    echo Latest bundle: ..\downloads\miner\smart-multi-hnhminer.exe
     echo.
     pause
     exit /b 1

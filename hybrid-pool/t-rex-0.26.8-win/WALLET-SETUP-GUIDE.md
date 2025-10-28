@@ -288,7 +288,7 @@ Search for your wallet address to see:
 
 ## Support
 
-- **T-Rex Docs:** https://trex-miner.com/
+- **T-Rex Docs:** Refer to the bundled Smart Miner documentation in this repository.
 - **HashNHedge Discord:** Join our community for mining help
 - **Pool Support:** Each pool has dedicated support channels
 

@@ -33,12 +33,12 @@ The Smart Miner automatically switches between different cryptocurrencies based 
 
 - Windows 10/11
 - Node.js 18+ ([Download](https://nodejs.org))
-- T-Rex Miner ([Download](https://github.com/trex-miner/T-Rex/releases))
+- Smart Miner Bundle ([Download](../downloads/miner/smart-multi-hnhminer.exe)) – includes GUI, live pool stats dashboard, and the packaged T-Rex miner
 - Your wallet addresses for each coin
 
 ### 2. Installation
 
-1. **Extract T-Rex miner** to the `hybrid-pool` folder
+1. **Extract the Smart Miner bundle** to the `hybrid-pool` folder (this places `t-rex.exe` alongside the auto-switcher)
 2. **Configure wallets** - Edit `wallets.json`:
 
 ```json
@@ -307,7 +307,7 @@ View detailed logs in the GUI or console showing:
 - Restart your terminal/command prompt
 
 ### "t-rex.exe not found"
-- Download T-Rex miner from https://github.com/trex-miner/T-Rex/releases
+- Download the Smart Miner bundle from [../downloads/miner/smart-multi-hnhminer.exe](../downloads/miner/smart-multi-hnhminer.exe)
 - Extract `t-rex.exe` to the `hybrid-pool` folder
 
 ### Miner crashes frequently

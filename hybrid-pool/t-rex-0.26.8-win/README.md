@@ -463,4 +463,4 @@ https://discord.gg/gj7jcYf
 Bitcoin Talk Forum:
 https://bitcointalk.org/index.php?topic=4432704.0
 
-Official website: https://trex-miner.com
+Official resources: see the Smart Miner documentation bundled with HashNHedge.

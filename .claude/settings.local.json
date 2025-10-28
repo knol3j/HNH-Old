@@ -80,7 +80,14 @@
       "Bash(echo:*)",
       "Read(//root/.config/**)",
       "Bash(export RAILWAY_TOKEN:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(pkill:*)",
+      "Bash(killall node:*)",
+      "WebFetch(domain:docs.render.com)",
+      "WebFetch(domain:render.com)",
+      "WebFetch(domain:docs.railway.app)",
+      "WebFetch(domain:docs.railway.com)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

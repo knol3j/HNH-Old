@@ -1,4 +1,4 @@
-name: Deploy to All Platforms
+name: Deploy to Production
 
 on:
   push:
@@ -12,35 +12,28 @@ jobs:
     uses: ./.github/workflows/deploy-render.yml
     secrets: inherit
 
-  deploy-railway:
-    name: Deploy to Railway
-    uses: ./.github/workflows/deploy-railway.yml
-    secrets: inherit
-
   notify:
     name: Deployment Complete
     runs-on: ubuntu-latest
-    needs: [deploy-render, deploy-railway]
+    needs: [deploy-render]
     if: always()
 
     steps:
       - name: Check deployment results
         run: |
-          echo "### 🚀 Multi-Platform Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ needs.deploy-render.result }}" = "success" ]; then
             echo "✅ **Render:** Deployed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "   - hashnhedge-api" >> $GITHUB_STEP_SUMMARY
+            echo "   - hashnhedge-pool" >> $GITHUB_STEP_SUMMARY
+            echo "   - hashnhedge-mobile-pool" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Render:** Deployment failed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.deploy-railway.result }}" = "success" ]; then
-            echo "✅ **Railway:** Deployed successfully" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Railway:** Deployment failed" >> $GITHUB_STEP_SUMMARY
           fi
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Services:** https://hashnhedge-api.onrender.com" >> $GITHUB_STEP_SUMMARY

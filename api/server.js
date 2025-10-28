@@ -7,6 +7,7 @@ const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.API_PORT || 3000;
+let server;
 
 // Security middleware
 app.use(helmet());
@@ -117,9 +118,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`
+const startServer = () => {
+  if (server) {
+    return server;
+  }
+
+  server = app.listen(PORT, () => {
+    console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║           HashNHedge API Server                          ║
@@ -134,15 +139,34 @@ app.listen(PORT, () => {
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
-});
+  });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  return server;
+};
+
+const stopServer = () => {
+  if (!server) {
+    return;
+  }
+
   server.close(() => {
     console.log('Server closed');
-    process.exit(0);
   });
-});
+  server = null;
+};
+
+const handleSignal = () => {
+  console.log('Termination signal received, shutting down gracefully...');
+  stopServer();
+  process.exit(0);
+};
+
+if (require.main === module) {
+  startServer();
+  process.on('SIGTERM', handleSignal);
+  process.on('SIGINT', handleSignal);
+}
 
 module.exports = app;
+module.exports.start = startServer;
+module.exports.stop = stopServer;
