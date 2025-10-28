@@ -83,3 +83,33 @@ services:
       - key: SENDGRID_FROM_EMAIL
         value: noreply@hashnhedge.com
     autoDeploy: true
+
+  # Mobile Proof Pool (PhoneProof Mining)
+  - type: web
+    name: hashnhedge-mobile-pool
+    env: node
+    plan: free
+    rootDir: mobile-proof-pool
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STRATUM_PORT
+        value: 3333
+      - key: WS_PORT
+        value: 8081
+      - key: API_PORT
+        value: 8080
+      - key: PORT
+        value: 10000
+      - key: POOL_ADDRESS
+        sync: false
+      - key: POOL_FEE
+        value: 2
+      - key: MIN_PAYOUT
+        value: 0.01
+      - key: DATABASE_URL
+        sync: false
+    healthCheckPath: /api/stats
+    autoDeploy: true
