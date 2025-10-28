@@ -48,6 +48,7 @@ Professional mining GUI with comprehensive real-time statistics and PyInstaller 
 - Multi-coin support (ETC, RVN, ERGO, ETHW, FIRO, CFX, ALPH)
 - Pool connection with worker identification
 - Configurable pool URL and wallet address
+- Preconfigured HashNHedge pool presets (Stratum/API/WebSocket)
 - Persistent configuration storage
 
 ## 📦 Building the Executable
@@ -86,6 +87,39 @@ pip install -r requirements.txt
 pyinstaller --clean hnh_miner.spec
 ```
 
+### Quick Build (Linux)
+
+#### Automated Shell Script
+
+```bash
+# Navigate to mining-engine directory
+cd mining-engine
+
+# Make sure the script is executable (first run only)
+chmod +x build_linux.sh
+
+# Run the build script
+./build_linux.sh
+```
+
+The script will:
+1. ✅ Create/Reuse a virtual environment
+2. ✅ Install dependencies (requests, psutil, PyInstaller)
+3. ✅ Clean previous build artifacts
+4. ✅ Build a standalone ELF binary with PyInstaller
+
+> **Note:** Building requires access to PyPI to download dependencies the first time the script runs. If you're in an offline environment, pre-install the required wheels before executing the script.
+
+#### Manual Build
+
+```bash
+cd mining-engine
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pyinstaller --clean hnh_miner.spec
+```
+
 ### Build Output
 
 After successful build, you'll find:
@@ -115,7 +149,7 @@ Simply double-click `HashNHedge_Miner.exe` - no installation required!
 1. Launch the application
 2. Enter your wallet address (supports multiple coins)
 3. Set worker name (default: HNH-Rig-1)
-4. Configure pool URL (default: pool.hashnhedge.com:3333)
+4. Choose a HashNHedge pool preset or enter a custom pool URL
 5. Click "💾 Save Configuration"
 
 ### Configuration File
@@ -130,7 +164,8 @@ Example configuration:
 {
   "wallet": "0x0924EF9ecBcC1287047cAFd2EAD3A133313eE6A2",
   "worker_name": "HNH-Rig-1",
-  "pool_url": "pool.hashnhedge.com:3333"
+  "pool_url": "stratum+tcp://pool.hashnhedge.com:3333",
+  "pool_profile": "HashNHedge Stratum (GPU)"
 }
 ```
 

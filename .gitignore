@@ -26,6 +26,7 @@ dist/
 build/
 
 # Temporary files
+__pycache__/
 *.tmp
 *.temp
 
@@ -41,3 +42,5 @@ _redirects
 
 # Security audit reports (generated locally)
 security-audits/
+
+mining-engine/.venv/

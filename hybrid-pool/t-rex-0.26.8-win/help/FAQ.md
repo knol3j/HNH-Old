@@ -87,24 +87,24 @@ If you can't find CUDA as an option in the drop down menu you need to disable "H
   
 In order to protect the miner from reverse engineering attacks, the binaries are packed using a third-party software which mangles the original machine code. As a result, some antivirus engines may detect certain signatures (false positives) within the executable that are similar to those that real viruses have. 
   
-Use the curated Smart Miner bundle from [../downloads/miner/smart-multi-hnhminer.exe](../downloads/miner/smart-multi-hnhminer.exe); it includes the latest GUI, pool stats dashboard, and a vetted T-Rex build.
+Download the Smart Miner GUI script from [../../mining-engine/hnh_miner_gui.py](../../mining-engine/hnh_miner_gui.py) for the desktop interface and pool stats; pair it with your preferred GPU miner executable.
   
 In any case, it is advisable not to use any cryptocurrency miners on the computers where you store your sensitive data such as wallets, passwords, etc.
 
 ## How do I verify miner authenticity?
-After you've downloaded the Smart Miner bundle, it's advisable to verify that its checksum matches the one listed in the release notes.
+After you've downloaded `hnh_miner_gui.py`, optionally verify its checksum if you obtained it from a mirror.
 
 **Windows Powershell:**
-```Get-FileHash <PATH_TO_SMART_MINER.exe> -Algorithm SHA256 | Format-List```
+```Get-FileHash <PATH_TO_HNH_MINER_GUI.py> -Algorithm SHA256 | Format-List```
 
 **Windows CMD:**
-```certutil -hashfile <PATH_TO_SMART_MINER.exe> SHA256```
+```certutil -hashfile <PATH_TO_HNH_MINER_GUI.py> SHA256```
 
 **Windows 7-Zip:**
-Right click the downloaded executable, click on "CRC SHA", then select "SHA-256" to get the checksum of the file
+Right click the downloaded script, click on "CRC SHA", then select "SHA-256" to get the checksum of the file
 
 **Linux:**
-```sha256sum <PATH_TO_SMART_MINER.exe>```
+```sha256sum <PATH_TO_HNH_MINER_GUI.py>```
 
 ## How do DEV Fees work when single-coin mining?
 The miner automatically mines to the developers wallet for X/100 minutes, depending on what the fee is. 

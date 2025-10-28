@@ -25,6 +25,25 @@ class MinerGUI:
         self.root.geometry("1200x800")
         self.root.configure(bg='#1e1e2e')
 
+        # Preconfigured HashNHedge pools
+        self.preconfigured_pools = [
+            {
+                'name': 'HashNHedge Stratum (GPU)',
+                'url': 'stratum+tcp://pool.hashnhedge.com:3333'
+            },
+            {
+                'name': 'HashNHedge Pool API',
+                'url': 'https://pool.hashnhedge.com/api'
+            },
+            {
+                'name': 'HashNHedge WebSocket (Mobile)',
+                'url': 'wss://pool.hashnhedge.com:8081'
+            }
+        ]
+        self.custom_pool_label = 'Custom / Other'
+        self.pool_profiles_map = {profile['name']: profile for profile in self.preconfigured_pools}
+        self.pool_profile_name = self.preconfigured_pools[0]['name']
+
         # Mining state
         self.mining = False
         self.miner_process = None
@@ -40,7 +59,7 @@ class MinerGUI:
         self.gpu_fan = 0
 
         # Pool connection
-        self.pool_url = "pool.hashnhedge.com:3333"
+        self.pool_url = self.preconfigured_pools[0]['url']
         self.wallet_address = ""
         self.worker_name = "HNH-Rig-1"
 
@@ -69,9 +88,26 @@ class MinerGUI:
                     config = json.load(f)
                     self.wallet_address = config.get("wallet", "")
                     self.worker_name = config.get("worker_name", "HNH-Rig-1")
-                    self.pool_url = config.get("pool_url", "pool.hashnhedge.com:3333")
+                    self.pool_url = config.get("pool_url", self.pool_url)
+                    self.pool_profile_name = config.get("pool_profile", self.match_pool_profile(self.pool_url))
             except Exception as e:
                 print(f"Error loading config: {e}")
+
+        self.pool_profile_name = self.match_pool_profile(self.pool_url)
+
+    def normalize_pool_url(self, url):
+        """Normalize pool URLs for comparison"""
+        if not url:
+            return ''
+        return url.strip().lower()
+
+    def match_pool_profile(self, url):
+        """Return the preset name that matches the given URL"""
+        normalized = self.normalize_pool_url(url)
+        for profile in self.preconfigured_pools:
+            if self.normalize_pool_url(profile['url']) == normalized:
+                return profile['name']
+        return self.custom_pool_label
 
     def save_config(self):
         """Save configuration to file"""
@@ -82,7 +118,8 @@ class MinerGUI:
         config = {
             "wallet": self.wallet_address,
             "worker_name": self.worker_name,
-            "pool_url": self.pool_url
+            "pool_url": self.pool_url,
+            "pool_profile": self.pool_profile_name
         }
 
         try:
@@ -376,6 +413,15 @@ class MinerGUI:
         self.worker_entry.pack(fill='x', pady=2)
         self.worker_entry.insert(0, self.worker_name)
 
+        # Pool presets
+        tk.Label(content, text="Pool Preset:", bg='#313244', fg='#cdd6f4').pack(anchor='w', pady=(10, 0))
+        pool_names = [profile['name'] for profile in self.preconfigured_pools] + [self.custom_pool_label]
+        initial_profile = self.pool_profile_name if self.pool_profile_name in pool_names else self.custom_pool_label
+        self.pool_var = tk.StringVar(value=initial_profile)
+        self.pool_selector = ttk.Combobox(content, textvariable=self.pool_var, values=pool_names, state='readonly')
+        self.pool_selector.pack(fill='x', pady=2)
+        self.pool_selector.bind('<<ComboboxSelected>>', self.on_pool_selected)
+
         # Pool URL
         tk.Label(content, text="Pool URL:", bg='#313244', fg='#cdd6f4').pack(anchor='w', pady=(10, 0))
         self.pool_entry = tk.Entry(content, bg='#45475a', fg='#cdd6f4', font=('Segoe UI', 10),
@@ -388,6 +434,26 @@ class MinerGUI:
                            bg='#89dceb', fg='#1e1e2e', font=('Segoe UI', 10, 'bold'),
                            relief='raised', bd=2, cursor='hand2', pady=5)
         save_btn.pack(fill='x', pady=10)
+
+    def on_pool_selected(self, event=None):
+        """Handle selection of a preconfigured pool"""
+        selected_var = getattr(self, 'pool_var', None)
+        if selected_var is None:
+            return
+
+        selected_name = selected_var.get()
+        if selected_name == self.custom_pool_label:
+            self.pool_profile_name = self.custom_pool_label
+            return
+
+        profile = self.pool_profiles_map.get(selected_name)
+        if profile:
+            self.pool_profile_name = selected_name
+            self.pool_url = profile['url']
+            if hasattr(self, 'pool_entry'):
+                self.pool_entry.delete(0, tk.END)
+                self.pool_entry.insert(0, self.pool_url)
+            self.add_log(f"Pool preset applied: {selected_name}")
 
     def create_activity_log(self, parent):
         """Create activity log"""
@@ -483,6 +549,9 @@ class MinerGUI:
         self.wallet_address = self.wallet_entry.get().strip()
         self.worker_name = self.worker_entry.get().strip()
         self.pool_url = self.pool_entry.get().strip()
+        self.pool_profile_name = self.match_pool_profile(self.pool_url)
+        if hasattr(self, 'pool_var'):
+            self.pool_var.set(self.pool_profile_name)
 
         self.save_config()
         self.add_log("Configuration saved")
@@ -507,6 +576,8 @@ class MinerGUI:
 
         self.add_log("Mining started!")
         self.add_log(f"Pool: {self.pool_url}")
+        if self.pool_profile_name != self.custom_pool_label:
+            self.add_log(f"Pool preset: {self.pool_profile_name}")
         self.add_log(f"Wallet: {self.wallet_address[:10]}...{self.wallet_address[-6:]}")
         self.add_log(f"Worker: {self.worker_name}")
 

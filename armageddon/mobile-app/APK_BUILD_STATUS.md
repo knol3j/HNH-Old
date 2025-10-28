@@ -1,7 +1,7 @@
 # 📱 ARMgeddon Mobile APK - Build Status Report
 
 **Date**: 2025-10-28
-**Status**: ⚠️ In Progress - Configuration Issues
+**Status**: ⚠️ Upgrade in progress – regenerate Android project after dependency update
 **Build Method Attempted**: EAS Cloud + Local Gradle
 
 ---
@@ -57,6 +57,24 @@ Script compilation errors in @react-native/gradle-plugin
 Plugin [id: 'com.facebook.react.settings'] was not found
 ```
 **Root Cause**: React Native plugin configuration missing/incompatible
+
+### Attempt 5: EAS Cloud Build (Gradle/React Upgrade)
+**Build ID**: `6043022b-447a-4025-8c69-8254fb0eb15a`  
+**Status**: Failed  
+**Error**: Version mismatch – Expo SDK 54 project attempting to use React 18.3.1 / Gradle 8.3 tooling  
+**Fix Applied**:
+- Bumped Expo SDK to `~55.0.0` with React Native `0.81.4` / React `18.3.1`
+- Added `expo-build-properties` plugin with Gradle 8.5 / AGP 8.3.1 / Kotlin 1.9.24
+- Documented rebuild steps (remove `android/`, run `npx expo prebuild`, then `eas build`)
+
+Next build should be executed after running:
+```bash
+cd armageddon/mobile-app
+npm install
+rm -rf android
+npx expo prebuild --platform android
+eas build --platform android --profile preview --non-interactive
+```
 
 ---
 

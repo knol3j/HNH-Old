@@ -47,7 +47,6 @@ after clicking "SAVE SETTINGS" button. "RESTART MINER" button is the top of the 
 
 # Customisation
 
-If you prefer the look of our old WebUI, extract the legacy `webui.zip` that ships inside the Smart Miner bundle and
-place it next to the T-Rex executable, then restart the miner. It will automatically start using the old monitoring page.
+If you prefer the look of our old WebUI, extract the legacy `webui.zip` from the Mining Engine assets in this repository and place it next to the T-Rex executable, then restart the miner. It will automatically start using the old monitoring page.
 Alternatively, you can develop your own UI - use the bundled legacy archive as a template. All HTML, JS, and CSS files must
 be in a ZIP archive called `webui.zip` for the miner to pick it up.

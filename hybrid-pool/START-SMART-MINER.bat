@@ -26,8 +26,8 @@ REM Check if t-rex.exe exists
 if not exist "t-rex.exe" (
     echo ERROR: t-rex.exe not found!
     echo.
-    echo Please download the Smart Miner bundle (GUI + pool stats + T-Rex) to this directory.
-    echo Latest bundle: ..\downloads\miner\smart-multi-hnhminer.exe
+    echo Please copy your GPU miner executable (e.g., T-Rex) into this directory as t-rex.exe.
+    echo GUI helper: ..\mining-engine\hnh_miner_gui.py
     echo.
     pause
     exit /b 1

@@ -33,12 +33,13 @@ The Smart Miner automatically switches between different cryptocurrencies based 
 
 - Windows 10/11
 - Node.js 18+ ([Download](https://nodejs.org))
-- Smart Miner Bundle ([Download](../downloads/miner/smart-multi-hnhminer.exe)) – includes GUI, live pool stats dashboard, and the packaged T-Rex miner
+- Smart Miner GUI script ([Download](../mining-engine/hnh_miner_gui.py)) – desktop interface with live pool stats
+- GPU miner executable (e.g., T-Rex renamed to `t-rex.exe`) placed in the `hybrid-pool` folder
 - Your wallet addresses for each coin
 
 ### 2. Installation
 
-1. **Extract the Smart Miner bundle** to the `hybrid-pool` folder (this places `t-rex.exe` alongside the auto-switcher)
+1. **Copy your miner executable** into the `hybrid-pool` folder (ensure it is named `t-rex.exe` or adjust the config)
 2. **Configure wallets** - Edit `wallets.json`:
 
 ```json
@@ -307,8 +308,8 @@ View detailed logs in the GUI or console showing:
 - Restart your terminal/command prompt
 
 ### "t-rex.exe not found"
-- Download the Smart Miner bundle from [../downloads/miner/smart-multi-hnhminer.exe](../downloads/miner/smart-multi-hnhminer.exe)
-- Extract `t-rex.exe` to the `hybrid-pool` folder
+- Copy your GPU miner executable (e.g., T-Rex) into the `hybrid-pool` folder and name it `t-rex.exe`
+- Ensure antivirus or Windows Defender has not quarantined the file
 
 ### Miner crashes frequently
 - Check your GPU drivers are up to date

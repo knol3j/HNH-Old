@@ -463,4 +463,4 @@ https://discord.gg/gj7jcYf
 Bitcoin Talk Forum:
 https://bitcointalk.org/index.php?topic=4432704.0
 
-Official resources: see the Smart Miner documentation bundled with HashNHedge.
+Official resources: consult mining-engine/README_GUI.md and the Smart Miner GUI (`hnh_miner_gui.py`) provided in this repository.
