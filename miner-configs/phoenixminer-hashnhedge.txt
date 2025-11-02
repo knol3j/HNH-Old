@@ -1,0 +1,11 @@
+# PhoenixMiner Configuration for HashNHedge Pool
+# Save this as: epools.txt in your PhoenixMiner folder
+
+POOL: pool.hashnhedge.com:3333, WALLET: YOUR_WALLET_ADDRESS, WORKER: rig1, ESM: 0, ALLPOOLS: 1
+
+# Backup pool
+POOL: hashnhedge-pool.onrender.com:3333, WALLET: YOUR_WALLET_ADDRESS, WORKER: rig1, ESM: 0, ALLPOOLS: 1
+
+# Pool options:
+# ESM: 0 = ethProxy mode, 1 = eth-stratum mode, 2 = Nicehash mode, 3 = qtminer mode
+# ALLPOOLS: 1 = try all pools in sequence if connection fails

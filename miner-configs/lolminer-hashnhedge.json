@@ -1,0 +1,36 @@
+{
+  "_comment": "lolMiner Configuration for HashNHedge Pool",
+  "_docs": "https://github.com/Lolliedieb/lolMiner-releases/wiki",
+
+  "POOLS": [
+    {
+      "POOL": "pool.hashnhedge.com:3333",
+      "USER": "YOUR_WALLET_ADDRESS.worker1",
+      "PASS": "x"
+    }
+  ],
+
+  "ALGO": "ETHASH",
+  "COIN": "ETC",
+
+  "APIPORT": 8080,
+
+  "WORKERNAMR": "rig1",
+
+  "DEVICES": "AUTO",
+
+  "TEMP_LIMIT": 85,
+  "RESTART_GPU_TEMP": 60,
+
+  "LOG": "logs/lolminer-hashnhedge.log",
+
+  "TIMEPRINT": 60,
+
+  "WATCHDOG": "exit",
+
+  "DISABLEWATCHDOG": false,
+
+  "DISABLECOLOR": false,
+
+  "SHORTSTATS": 30
+}

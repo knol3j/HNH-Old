@@ -1,0 +1,57 @@
+{
+  "_comment": "T-Rex Miner Configuration for HashNHedge Pool",
+  "_docs": "https://github.com/trexminer/T-Rex/wiki/JSON-config-file",
+
+  "pools": [
+    {
+      "name": "HashNHedge Primary",
+      "user": "YOUR_WALLET_ADDRESS.worker1",
+      "url": "stratum+tcp://pool.hashnhedge.com:3333",
+      "pass": "x",
+      "worker": "rig1"
+    },
+    {
+      "name": "HashNHedge Backup (Render)",
+      "user": "YOUR_WALLET_ADDRESS.worker1",
+      "url": "stratum+tcp://hashnhedge-pool.onrender.com:3333",
+      "pass": "x",
+      "worker": "rig1"
+    }
+  ],
+
+  "algo": "ethash",
+  "coin": "etc",
+
+  "api-bind-http": "127.0.0.1:4067",
+  "api-read-only": false,
+
+  "intensity": 22,
+  "gpu-init-mode": 0,
+  "dag-build-mode": 0,
+
+  "temperature-limit": 85,
+  "temperature-start": 60,
+
+  "log-path": "logs/trex-hashnhedge.log",
+  "protocol-dump": false,
+  "no-watchdog": false,
+
+  "hashrate-avr": 60,
+  "sharerate-avr": 60,
+
+  "kernel": 0,
+  "mt": 4,
+
+  "timeout": 300,
+  "retries": 5,
+  "retry-pause": 10,
+
+  "lhr-tune": -1,
+  "lhr-autotune-mode": "full",
+
+  "no-color": false,
+  "no-hashrate-report": false,
+
+  "send-hashrate": true,
+  "hashrate-units": "M"
+}

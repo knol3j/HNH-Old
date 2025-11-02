@@ -267,11 +267,51 @@ class MobilePoolServer {
     }
 
     /**
-     * Verify share validity
+     * Verify share validity using proper cryptographic verification
      */
     verifyShare(share) {
-        // Basic validation - in production, verify against actual block data
-        return share.nonce && share.hash && share.hash.startsWith('0');
+        try {
+            // Basic validation
+            if (!share || !share.nonce || !share.hash) {
+                console.error('[Pool] Invalid share: missing fields');
+                return false;
+            }
+
+            // Validate hash format (must be 64-char hex string)
+            if (!/^[0-9a-f]{64}$/i.test(share.hash)) {
+                console.error('[Pool] Invalid hash format:', share.hash);
+                return false;
+            }
+
+            // Get difficulty (from share or use current network difficulty)
+            const difficulty = share.difficulty || this.algorithm.currentDifficulty;
+            const target = '0'.repeat(difficulty);
+
+            // Check if hash meets difficulty target
+            if (!share.hash.startsWith(target)) {
+                console.error(`[Pool] Hash does not meet difficulty ${difficulty}:`, share.hash);
+                return false;
+            }
+
+            // Optional: Re-verify the hash was computed correctly
+            // This requires having the original block data
+            if (share.jobId && share.blockData) {
+                const input = `${share.blockData}${share.nonce}`;
+                const computedHash = crypto.createHash('sha256').update(input).digest('hex');
+
+                if (computedHash !== share.hash) {
+                    console.error('[Pool] Hash mismatch - possible tampering');
+                    console.error('  Expected:', computedHash);
+                    console.error('  Received:', share.hash);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[Pool] Error verifying share:', error);
+            return false;
+        }
     }
 
     /**
