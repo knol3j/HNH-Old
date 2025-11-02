@@ -6,6 +6,7 @@
  * IMPORTANT: JWT_SECRET must be set in environment variables
  */
 const jwt = require('jsonwebtoken');
+const logger = require('../config/logger');
 
 const MIN_SECRET_LENGTH = 32;
 let loggedState = null;
@@ -16,12 +17,12 @@ const logSecretState = (state, secret) => {
   }
 
   if (state === 'missing') {
-    console.warn('[AUTH] JWT_SECRET environment variable is not set. Authentication requests will be rejected until configured.');
-    console.warn('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    logger.warn('[AUTH] JWT_SECRET environment variable is not set. Authentication requests will be rejected until configured.');
+    logger.warn('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
   } else if (state === 'weak') {
-    console.warn(`[AUTH] JWT_SECRET is shorter than ${MIN_SECRET_LENGTH} characters (current length: ${secret.length}). Rotate to a stronger secret soon.`);
+    logger.warn(`[AUTH] JWT_SECRET is shorter than ${MIN_SECRET_LENGTH} characters (current length: ${secret.length}). Rotate to a stronger secret soon.`);
   } else if (state === 'ok') {
-    console.log('[AUTH] JWT authentication middleware initialized with secure secret');
+    logger.info('[AUTH] JWT authentication middleware initialized with secure secret');
   }
 
   loggedState = state;
@@ -83,12 +84,12 @@ module.exports = (req, res, next) => {
 
     // Log successful authentication (in development only)
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[AUTH] User authenticated: ${payload.userId || payload.email || 'unknown'}`);
+      logger.debug(`[AUTH] User authenticated: ${payload.userId || payload.email || 'unknown'}`);
     }
 
     next();
   } catch (err) {
-    console.warn('[AUTH] Invalid JWT attempt:', err.message, 'from IP:', req.ip);
+    logger.warn('[AUTH] Invalid JWT attempt:', err.message, 'from IP:', req.ip);
 
     // Provide specific error messages for different JWT errors
     let errorMessage = 'Invalid token';

@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const logger = require('../config/logger');
 
 /**
  * Register a new vendor
@@ -118,7 +119,7 @@ async function registerVendor(req, res) {
     });
 
   } catch (error) {
-    console.error('Vendor registration error:', error);
+    logger.error('Vendor registration error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to register vendor',
@@ -166,7 +167,7 @@ async function getVendor(req, res) {
     });
 
   } catch (error) {
-    console.error('Get vendor error:', error);
+    logger.error('Get vendor error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve vendor'
@@ -205,7 +206,7 @@ async function updateVendor(req, res) {
     });
 
   } catch (error) {
-    console.error('Update vendor error:', error);
+    logger.error('Update vendor error:', error);
 
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -292,7 +293,7 @@ async function listVendors(req, res) {
     });
 
   } catch (error) {
-    console.error('List vendors error:', error);
+    logger.error('List vendors error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve vendors'
@@ -351,7 +352,7 @@ async function addVendorOffering(req, res) {
     });
 
   } catch (error) {
-    console.error('Add vendor offering error:', error);
+    logger.error('Add vendor offering error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to add offering'

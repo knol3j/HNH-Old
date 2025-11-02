@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const logger = require('../config/logger');
 
 /**
  * Register a new community member
@@ -88,7 +89,7 @@ async function registerCommunityMember(req, res) {
     });
 
   } catch (error) {
-    console.error('Community registration error:', error);
+    logger.error('Community registration error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to register community member',
@@ -140,7 +141,7 @@ async function getCommunityMember(req, res) {
     });
 
   } catch (error) {
-    console.error('Get community member error:', error);
+    logger.error('Get community member error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve community member'
@@ -176,7 +177,7 @@ async function updateCommunityMember(req, res) {
     });
 
   } catch (error) {
-    console.error('Update community member error:', error);
+    logger.error('Update community member error:', error);
 
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -254,7 +255,7 @@ async function listCommunityMembers(req, res) {
     });
 
   } catch (error) {
-    console.error('List community members error:', error);
+    logger.error('List community members error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve community members'
