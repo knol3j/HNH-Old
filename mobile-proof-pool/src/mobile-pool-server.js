@@ -13,7 +13,8 @@ class MobilePoolServer {
     constructor(options = {}) {
         this.stratumPort = options.stratumPort || 3333;
         this.wsPort = options.wsPort || 8081;
-        this.apiPort = options.apiPort || 8080;
+        // Prioritize PORT (for Render/cloud platforms) over API_PORT
+        this.apiPort = options.apiPort || options.port || 8080;
         this.poolAddress = options.poolAddress || 'pool_default_address';
         this.poolFee = options.poolFee || 2; // 2% pool fee
         this.minPayout = options.minPayout || 0.01;
@@ -498,7 +499,9 @@ if (require.main === module) {
     const pool = new MobilePoolServer({
         stratumPort: process.env.STRATUM_PORT || 3333,
         wsPort: process.env.WS_PORT || 8081,
-        apiPort: process.env.API_PORT || 8080,
+        // Prioritize PORT (standard for Render/cloud) over API_PORT
+        apiPort: process.env.PORT || process.env.API_PORT || 8080,
+        port: process.env.PORT || process.env.API_PORT || 8080,
         poolAddress: process.env.POOL_ADDRESS || 'default_pool_address',
         poolFee: parseFloat(process.env.POOL_FEE) || 2,
         minPayout: parseFloat(process.env.MIN_PAYOUT) || 0.01

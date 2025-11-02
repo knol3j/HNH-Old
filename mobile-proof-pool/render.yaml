@@ -10,6 +10,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: STRATUM_PORT
         value: 3333
       - key: WS_PORT
