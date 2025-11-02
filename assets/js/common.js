@@ -15,6 +15,61 @@ let OFFICIAL_WALLET = null;
 // UTILITY FUNCTIONS
 // ====================
 
+const loadedScripts = new Map();
+
+function runWhenIdle(callback, timeout = 800) {
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(callback, { timeout });
+    } else {
+        setTimeout(callback, Math.min(timeout, 800));
+    }
+}
+
+/**
+ * Dynamically load an external script and return a promise once it is available
+ */
+function loadExternalScript(src, { module = false, defer = true, attributes = {} } = {}) {
+    if (loadedScripts.has(src)) {
+        return loadedScripts.get(src);
+    }
+
+    const promise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = !defer;
+        if (defer) script.defer = true;
+        if (module) script.type = 'module';
+
+        Object.entries(attributes).forEach(([key, value]) => {
+            script.setAttribute(key, value);
+        });
+
+        script.addEventListener('load', () => resolve(script));
+        script.addEventListener('error', (error) => reject(error));
+
+        document.head.appendChild(script);
+    });
+
+    loadedScripts.set(src, promise);
+    return promise;
+}
+
+/**
+ * Lazily load Chart.js only when required
+ */
+async function loadChartJs() {
+    if (typeof window.Chart !== 'undefined') {
+        return window.Chart;
+    }
+
+    await loadExternalScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js', {
+        defer: true,
+        attributes: { integrity: 'sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt', crossOrigin: 'anonymous' }
+    });
+
+    return window.Chart;
+}
+
 /**
  * Fetch data from API with error handling
  */
@@ -326,19 +381,44 @@ async function copyToClipboard(text) {
  * Initialize all common functionality
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize components
-    initializeWallet();
+    // Initialize components while keeping main thread free during first paint
+    runWhenIdle(() => initializeWallet());
     initializeMenu();
     initializeSmoothScroll();
 
-    // Update network stats if element exists
-    if (document.getElementById('gpu-nodes')) {
-        updateNetworkStats();
-        // Update every 30 seconds
-        setInterval(updateNetworkStats, 30000);
+    const statsAnchor = document.getElementById('gpu-nodes');
+    if (statsAnchor) {
+        let statsIntervalId = null;
+
+        const startStatsPolling = () => {
+            runWhenIdle(async () => {
+                await updateNetworkStats();
+            });
+            if (statsIntervalId) return;
+            statsIntervalId = setInterval(() => {
+                if (document.hidden) return;
+                updateNetworkStats();
+            }, 30000);
+        };
+
+        const stopStatsPolling = () => {
+            if (statsIntervalId) {
+                clearInterval(statsIntervalId);
+                statsIntervalId = null;
+            }
+        };
+
+        startStatsPolling();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopStatsPolling();
+            } else {
+                startStatsPolling();
+            }
+        });
     }
 
-    // Log initialization
     console.log('✅ HashNHedge initialized');
 });
 
@@ -356,6 +436,8 @@ if (typeof module !== 'undefined' && module.exports) {
         isValidSolanaAddress,
         isValidEmail,
         sanitizeInput,
-        copyToClipboard
+        copyToClipboard,
+        loadChartJs,
+        loadExternalScript
     };
 }
