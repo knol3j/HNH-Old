@@ -1,0 +1,38 @@
+{
+  "_comment": "T-Rex Miner - KawPow Algorithm (Ravencoin) for HashNHedge",
+
+  "pools": [
+    {
+      "user": "YOUR_RVN_WALLET_ADDRESS.worker1",
+      "url": "stratum+tcp://pool.hashnhedge.com:3333",
+      "pass": "x",
+      "worker": "rig1"
+    }
+  ],
+
+  "algo": "kawpow",
+  "coin": "rvn",
+
+  "api-bind-http": "127.0.0.1:4067",
+
+  "intensity": 22,
+  "kernel": 0,
+  "mt": 4,
+
+  "temperature-limit": 85,
+  "temperature-start": 60,
+
+  "log-path": "logs/trex-kawpow.log",
+  "protocol-dump": false,
+
+  "hashrate-avr": 60,
+  "send-hashrate": true,
+  "hashrate-units": "M",
+
+  "timeout": 300,
+  "retries": 5,
+  "retry-pause": 10,
+
+  "lhr-tune": -1,
+  "lhr-autotune-mode": "full"
+}
