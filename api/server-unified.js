@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
+const logger = require('./config/logger');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -12,7 +13,7 @@ const prisma = new PrismaClient();
 const API_PORT = process.env.API_PORT || process.env.PORT || 10000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-console.log(`
+logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║     HashNHedge Unified Backend API                       ║
@@ -58,7 +59,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
       callback(null, true);
     } else {
-      console.warn(`[SECURITY] Blocked CORS request from: ${origin}`);
+      logger.warn(`[SECURITY] Blocked CORS request from: ${origin}`);
       callback(new Error('Not allowed by CORS policy'));
     }
   },
@@ -100,7 +101,7 @@ app.use('/css', express.static(path.join(__dirname, '..', 'css')));
 
 // Request logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  logger.http(`${req.method} ${req.path}`);
   next();
 });
 
@@ -160,7 +161,7 @@ app.get('/api/health', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[ERROR] Health check failed:', error);
+    logger.error('[ERROR] Health check failed:', error);
     res.status(503).json({
       success: false,
       status: 'unhealthy',
@@ -235,7 +236,7 @@ async function getNetworkStats() {
     lastCacheUpdate = now;
     return networkDataCache;
   } catch (error) {
-    console.error('[ERROR] Failed to fetch network stats:', error);
+    logger.error('[ERROR] Failed to fetch network stats:', error);
     return {
       totalNodes: 0,
       activeGPUs: 0,
@@ -254,7 +255,7 @@ app.get('/api/stats/network', async (req, res) => {
     const stats = await getNetworkStats();
     res.json(stats);
   } catch (error) {
-    console.error('[ERROR] Network stats endpoint failed:', error);
+    logger.error('[ERROR] Network stats endpoint failed:', error);
     res.status(500).json({ error: 'Failed to fetch network statistics' });
   }
 });
@@ -279,7 +280,7 @@ app.get('/api/stats/pool', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[ERROR] Pool stats failed:', error);
+    logger.error('[ERROR] Pool stats failed:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch pool statistics'
@@ -296,7 +297,7 @@ app.get('/api/config/wallet', (req, res) => {
   const officialWallet = process.env.OFFICIAL_WALLET_ADDRESS || null;
 
   if (!officialWallet) {
-    console.warn('[WARNING] OFFICIAL_WALLET_ADDRESS not configured in environment');
+    logger.warn('[WARNING] OFFICIAL_WALLET_ADDRESS not configured in environment');
     return res.status(503).json({
       success: false,
       error: 'Wallet configuration unavailable'
@@ -331,7 +332,7 @@ app.post('/api/connect-wallet', authLimiter, async (req, res) => {
       message: 'Wallet connected successfully'
     });
   } catch (error) {
-    console.error('[ERROR] Wallet connection failed:', error);
+    logger.error('[ERROR] Wallet connection failed:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to connect wallet'
@@ -345,7 +346,7 @@ app.get('/api/network-stats', async (req, res) => {
     const stats = await getNetworkStats();
     res.json(stats);
   } catch (error) {
-    console.error('[ERROR] Network stats endpoint failed:', error);
+    logger.error('[ERROR] Network stats endpoint failed:', error);
     res.status(500).json({ error: 'Failed to fetch network statistics' });
   }
 });
@@ -377,7 +378,7 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err);
+  logger.error('[ERROR]', err);
 
   // CORS errors
   if (err.message === 'Not allowed by CORS policy') {
@@ -400,7 +401,7 @@ app.use((err, req, res, next) => {
 // ============================================================
 
 const server = app.listen(API_PORT, '0.0.0.0', () => {
-  console.log(`
+  logger.info(`
 ✅ Server started successfully!
 
 🌐 Listening on: http://0.0.0.0:${API_PORT}
@@ -423,39 +424,39 @@ CORS: ${allowedOrigins.join(', ')}
 // ============================================================
 
 process.on('SIGTERM', async () => {
-  console.log('\n[INFO] SIGTERM received, shutting down gracefully...');
+  logger.info('\n[INFO] SIGTERM received, shutting down gracefully...');
 
   server.close(async () => {
-    console.log('[INFO] HTTP server closed');
+    logger.info('[INFO] HTTP server closed');
 
     await prisma.$disconnect();
-    console.log('[INFO] Database connection closed');
+    logger.info('[INFO] Database connection closed');
 
-    console.log('[INFO] Shutdown complete');
+    logger.info('[INFO] Shutdown complete');
     process.exit(0);
   });
 
   // Force shutdown after 30 seconds
   setTimeout(() => {
-    console.error('[ERROR] Forced shutdown after timeout');
+    logger.error('[ERROR] Forced shutdown after timeout');
     process.exit(1);
   }, 30000);
 });
 
 process.on('SIGINT', async () => {
-  console.log('\n[INFO] SIGINT received, shutting down...');
+  logger.info('\n[INFO] SIGINT received, shutting down...');
   await prisma.$disconnect();
   process.exit(0);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('[FATAL] Uncaught exception:', error);
+  logger.error('[FATAL] Uncaught exception:', error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
+  logger.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
