@@ -441,42 +441,37 @@ class EmailService {
 
     /**
      * Strip HTML tags for plain text version (secure implementation)
-     * Uses iterative approach to prevent bypass attacks
+     * Removes all tags without decoding entities to prevent double-unescaping
      */
     stripHtml(html) {
         if (typeof html !== 'string') return '';
 
-        let text = html;
-        let previous = '';
+        // First, completely remove script/style/iframe/object/embed tags and their content
+        // Use very permissive regex to match all variations
+        let text = html
+            .replace(/<(script|style|iframe|object|embed)[^>]*>.*?<\/\1>/gis, ' ')
+            // Remove any remaining opening tags of dangerous elements
+            .replace(/<(script|style|iframe|object|embed)[^>]*>/gi, ' ');
 
-        // Iteratively remove tags until no more changes occur
-        // This prevents bypasses like <scr<script>ipt>
+        // Then remove all other HTML tags
+        let previous = '';
         while (text !== previous) {
             previous = text;
-
-            // Remove script, style, and other dangerous tags with all variations
-            text = text
-                .replace(/<script\s*[\s\S]*?<\/script\s*>/gi, '')
-                .replace(/<style\s*[\s\S]*?<\/style\s*>/gi, '')
-                .replace(/<iframe\s*[\s\S]*?<\/iframe\s*>/gi, '')
-                .replace(/<object\s*[\s\S]*?<\/object\s*>/gi, '')
-                .replace(/<embed\s*[\s\S]*?<\/embed\s*>/gi, '')
-                // Remove all remaining HTML tags
-                .replace(/<[^>]+>/g, '');
+            text = text.replace(/<[^>]*>/g, ' ');
         }
 
-        // Decode HTML entities
+        // Only decode safe entities (don't decode < > to prevent injection)
         text = text
-            .replace(/&nbsp;/g, ' ')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'")
-            .replace(/&#x2F;/g, '/')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&quot;/gi, '"')
             // Normalize whitespace
             .replace(/\s+/g, ' ')
             .trim();
+
+        // Final safety check - if any HTML-like content remains, reject it
+        if (/<|>/.test(text)) {
+            return '';
+        }
 
         return text;
     }

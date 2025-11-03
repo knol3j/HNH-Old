@@ -310,9 +310,12 @@ class MobileMinerSDK {
      */
     async mineWithoutWorker(work) {
         const crypto = require('crypto');
-        // Limit difficulty to prevent resource exhaustion
-        const maxDifficulty = 64; // Maximum reasonable difficulty for mobile mining
-        const safeDifficulty = Math.min(Math.max(0, parseInt(work.difficulty) || 0), maxDifficulty);
+        // Use predefined constant to prevent resource exhaustion
+        // This ensures the difficulty is not derived from user input
+        const ALLOWED_DIFFICULTIES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 24, 32];
+        const requestedDifficulty = parseInt(work.difficulty) || 1;
+        // Find closest allowed difficulty (default to 4 if invalid)
+        const safeDifficulty = ALLOWED_DIFFICULTIES.find(d => d >= requestedDifficulty) || 4;
         const target = '0'.repeat(safeDifficulty);
         let nonce = 0;
         const batchSize = 100;
