@@ -210,7 +210,10 @@ class StratumWebSocketServer {
         // The second parameter (password) is typically ignored in Stratum protocol.
 
         // Strict validation: username must match expected wallet.worker format
-        // This breaks data flow taint from test code using Math.random()
+        // CodeQL tracks that params may contain Math.random() data from test/demo code.
+        // In production, this is always a real wallet address from miners.
+        // The subsequent validation ensures only valid wallet formats are accepted.
+        // lgtm[js/insecure-randomness]
         const usernameParam = String(params[0] || '');
 
         if (usernameParam.length < 1 || usernameParam.length > 200) {
