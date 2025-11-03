@@ -205,7 +205,9 @@ class StratumWebSocketServer {
             return;
         }
 
-        const [username, password] = params;
+        // Extract username only - password not used for Stratum mining authorization
+        // Mining pools use wallet address for authentication, not passwords
+        const username = params[0];
 
         // Validate username format (should be wallet.workerName)
         if (typeof username !== 'string' || username.length > 200) {
