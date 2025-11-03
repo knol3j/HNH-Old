@@ -21,16 +21,25 @@ function isValidEmail(email) {
 function sanitizeString(input) {
     if (typeof input !== 'string') return '';
 
-    // More comprehensive sanitization
-    let sanitized = input
-        .replace(/[<>'"]/g, '') // Remove dangerous characters
-        .replace(/javascript\s*:/gi, '') // Remove javascript: protocol (with whitespace)
-        .replace(/data\s*:/gi, '') // Remove data: protocol
-        .replace(/vbscript\s*:/gi, '') // Remove vbscript: protocol
-        .replace(/file\s*:/gi, '') // Remove file: protocol
-        .replace(/on\w+\s*=/gi, '') // Remove event handlers
-        .replace(/&lt;/gi, '') // Remove encoded <
-        .replace(/&gt;/gi, '') // Remove encoded >
+    // More comprehensive sanitization with iterative approach to prevent bypass
+    let sanitized = input;
+    let previousValue = '';
+
+    // Iterate until no more changes (prevents bypass like "oonclick" -> "onclick")
+    while (sanitized !== previousValue) {
+        previousValue = sanitized;
+        sanitized = sanitized
+            .replace(/[<>'"]/g, '') // Remove dangerous characters
+            .replace(/javascript\s*:/gi, '') // Remove javascript: protocol (with whitespace)
+            .replace(/data\s*:/gi, '') // Remove data: protocol
+            .replace(/vbscript\s*:/gi, '') // Remove vbscript: protocol
+            .replace(/file\s*:/gi, '') // Remove file: protocol
+            .replace(/on\w+\s*=/gi, '') // Remove event handlers
+            .replace(/&lt;/gi, '') // Remove encoded <
+            .replace(/&gt;/gi, ''); // Remove encoded >
+    }
+
+    sanitized = sanitized
         .trim()
         .slice(0, 1000); // Limit length
 
