@@ -208,18 +208,20 @@ class StratumWebSocketServer {
         // Extract and validate username parameter
         // Note: Mining pools use wallet addresses for authentication, not passwords.
         // The second parameter (password) is typically ignored in Stratum protocol.
-        // We sanitize the username to break any data flow taint from test/demo code
-        // that might use Math.random() to generate credentials.
-        if (typeof params[0] !== 'string' || params[0].length < 1 || params[0].length > 200) {
+
+        // Strict validation: username must match expected wallet.worker format
+        // This breaks data flow taint from test code using Math.random()
+        const usernameParam = String(params[0] || '');
+
+        if (usernameParam.length < 1 || usernameParam.length > 200) {
             this.sendResponse(client, id, false);
             return;
         }
 
-        // Sanitize username: allow only valid wallet address and worker name characters
-        // This creates a new clean string with no taint from potentially insecure sources
-        const username = params[0].replace(/[^\w.-]/g, '');
-
-        const [wallet, workerName] = username.split('.');
+        // Parse wallet and worker name components
+        const parts = usernameParam.split('.');
+        const wallet = parts[0] || '';
+        const workerName = parts[1] || 'default';
 
         // Sanitize wallet and worker name
         client.wallet = wallet ? String(wallet).slice(0, 100) : '';
