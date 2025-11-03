@@ -441,18 +441,32 @@ class EmailService {
 
     /**
      * Strip HTML tags for plain text version (secure implementation)
+     * Uses iterative approach to prevent bypass attacks
      */
     stripHtml(html) {
         if (typeof html !== 'string') return '';
 
-        // More comprehensive HTML stripping
-        return html
-            // Remove style and script tags completely
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            // Remove all HTML tags
-            .replace(/<[^>]+>/g, '')
-            // Decode HTML entities
+        let text = html;
+        let previous = '';
+
+        // Iteratively remove tags until no more changes occur
+        // This prevents bypasses like <scr<script>ipt>
+        while (text !== previous) {
+            previous = text;
+
+            // Remove script, style, and other dangerous tags with all variations
+            text = text
+                .replace(/<script\s*[\s\S]*?<\/script\s*>/gi, '')
+                .replace(/<style\s*[\s\S]*?<\/style\s*>/gi, '')
+                .replace(/<iframe\s*[\s\S]*?<\/iframe\s*>/gi, '')
+                .replace(/<object\s*[\s\S]*?<\/object\s*>/gi, '')
+                .replace(/<embed\s*[\s\S]*?<\/embed\s*>/gi, '')
+                // Remove all remaining HTML tags
+                .replace(/<[^>]+>/g, '');
+        }
+
+        // Decode HTML entities
+        text = text
             .replace(/&nbsp;/g, ' ')
             .replace(/&amp;/g, '&')
             .replace(/&lt;/g, '<')
@@ -463,6 +477,8 @@ class EmailService {
             // Normalize whitespace
             .replace(/\s+/g, ' ')
             .trim();
+
+        return text;
     }
 
     /**

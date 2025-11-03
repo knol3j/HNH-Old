@@ -310,7 +310,10 @@ class MobileMinerSDK {
      */
     async mineWithoutWorker(work) {
         const crypto = require('crypto');
-        const target = '0'.repeat(work.difficulty);
+        // Limit difficulty to prevent resource exhaustion
+        const maxDifficulty = 64; // Maximum reasonable difficulty for mobile mining
+        const safeDifficulty = Math.min(Math.max(0, parseInt(work.difficulty) || 0), maxDifficulty);
+        const target = '0'.repeat(safeDifficulty);
         let nonce = 0;
         const batchSize = 100;
         const startTime = Date.now();

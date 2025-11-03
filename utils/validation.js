@@ -18,48 +18,22 @@ function isValidEmail(email) {
 }
 
 // Sanitize string input to prevent XSS
+// Uses HTML entity encoding instead of blocklist-based filtering
 function sanitizeString(input) {
     if (typeof input !== 'string') return '';
 
-    // More comprehensive sanitization with iterative approach to prevent bypass
-    let sanitized = input;
-    let previousValue = '';
+    // Trim and limit length first
+    let sanitized = input.trim().slice(0, 1000);
 
-    // Iterate until no more changes (prevents bypass like "oonclick" -> "onclick")
-    while (sanitized !== previousValue) {
-        previousValue = sanitized;
-        sanitized = sanitized
-            .replace(/[<>'"]/g, '') // Remove dangerous characters
-            .replace(/javascript\s*:/gi, '') // Remove javascript: protocol (with whitespace)
-            .replace(/data\s*:/gi, '') // Remove data: protocol
-            .replace(/vbscript\s*:/gi, '') // Remove vbscript: protocol
-            .replace(/file\s*:/gi, '') // Remove file: protocol
-            .replace(/on\w+\s*=/gi, '') // Remove event handlers
-            .replace(/&lt;/gi, '') // Remove encoded <
-            .replace(/&gt;/gi, ''); // Remove encoded >
-    }
-
+    // Use HTML entity encoding for all potentially dangerous characters
+    // This is safer than blocklist-based filtering as it cannot be bypassed
     sanitized = sanitized
-        .trim()
-        .slice(0, 1000); // Limit length
-
-    // Additional check: if input contains suspicious URL schemes, return empty
-    const dangerousPatterns = [
-        /javascript:/i,
-        /data:/i,
-        /vbscript:/i,
-        /file:/i,
-        /<script/i,
-        /<iframe/i,
-        /<object/i,
-        /<embed/i
-    ];
-
-    for (const pattern of dangerousPatterns) {
-        if (pattern.test(sanitized)) {
-            return '';
-        }
-    }
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;')
+        .replace(/\//g, '&#x2F;');
 
     return sanitized;
 }

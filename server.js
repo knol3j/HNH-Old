@@ -60,22 +60,29 @@ const authLimiter = rateLimit({
     message: 'Too many authentication attempts, please try again later.'
 });
 
+// Rate limiter for static file access
+const staticLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 200, // 200 requests per minute for static files
+    message: 'Too many requests, please slow down.'
+});
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Serve static files only from specific safe directories to prevent exposure of private files
-app.use('/docs', express.static('docs'));
-app.use('/assets', express.static('assets'));
-app.use('/downloads', express.static('downloads'));
-app.use('/pages', express.static('pages'));
-app.use('/hnh-vendor-portal', express.static('hnh-vendor-portal'));
-app.use('/HNH-pool', express.static('HNH-pool'));
-app.use('/mobile-proof-pool', express.static('mobile-proof-pool'));
-app.use('/armageddon', express.static('armageddon'));
-app.use('/hybrid-pool', express.static('hybrid-pool'));
-// Serve index.html explicitly
-app.get('/', (req, res) => {
+app.use('/docs', staticLimiter, express.static('docs'));
+app.use('/assets', staticLimiter, express.static('assets'));
+app.use('/downloads', staticLimiter, express.static('downloads'));
+app.use('/pages', staticLimiter, express.static('pages'));
+app.use('/hnh-vendor-portal', staticLimiter, express.static('hnh-vendor-portal'));
+app.use('/HNH-pool', staticLimiter, express.static('HNH-pool'));
+app.use('/mobile-proof-pool', staticLimiter, express.static('mobile-proof-pool'));
+app.use('/armageddon', staticLimiter, express.static('armageddon'));
+app.use('/hybrid-pool', staticLimiter, express.static('hybrid-pool'));
+// Serve index.html explicitly with rate limiting
+app.get('/', staticLimiter, (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 

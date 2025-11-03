@@ -390,9 +390,10 @@ class VendorAPI {
             const filePath = path.join(dir, `${safeVendorId}.json`);
             await fs.writeFile(filePath, JSON.stringify(data, null, 2));
         } catch (err) {
-            // Sanitize vendorId in error message
-            const safeId = vendorId ? vendorId.replace(/[^\w-]/g, '') : 'unknown';
-            console.error(`Failed to save vendor ${safeId}:`, err.message);
+            // Use parameterized logging to prevent format string injection
+            // Limit length and sanitize vendor ID for logging
+            const safeId = vendorId ? String(vendorId).replace(/[^\w-]/g, '').slice(0, 50) : 'unknown';
+            console.error('Failed to save vendor:', { vendorId: safeId, error: err.message });
         }
     }
 

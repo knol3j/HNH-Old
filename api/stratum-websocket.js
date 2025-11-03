@@ -199,14 +199,28 @@ class StratumWebSocketServer {
      * Handle mining.authorize
      */
     handleAuthorize(client, id, params) {
+        // Validate inputs to prevent injection attacks
+        if (!Array.isArray(params) || params.length < 1) {
+            this.sendResponse(client, id, false);
+            return;
+        }
+
         const [username, password] = params;
+
+        // Validate username format (should be wallet.workerName)
+        if (typeof username !== 'string' || username.length > 200) {
+            this.sendResponse(client, id, false);
+            return;
+        }
+
         const [wallet, workerName] = username.split('.');
 
-        client.wallet = wallet;
-        client.worker = workerName || 'default';
+        // Sanitize wallet and worker name
+        client.wallet = wallet ? String(wallet).slice(0, 100) : '';
+        client.worker = workerName ? String(workerName).replace(/[^\w-]/g, '').slice(0, 50) : 'default';
         client.authorized = true;
 
-        console.log(`[STRATUM] Worker authorized: ${client.worker} (${client.wallet})`);
+        console.log(`[STRATUM] Worker authorized: ${client.worker} (wallet: ${client.wallet.substring(0, 12)}...)`);
 
         this.sendResponse(client, id, true);
 
