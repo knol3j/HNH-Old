@@ -27,7 +27,9 @@ class HashNHedgeController:
         config_path = os.path.expanduser("~/.hashnhedge/config.json")
         default_config = {
             "node_id": f"NODE-{os.getpid()}",
-            "pool_url": "pool.hashnhedge.com:3333",
+            "pool_url": "hashnhedge-pool.onrender.com:3333",  # Updated pool URL
+            "pool_ws": "wss://hashnhedge-api.onrender.com/stratum",  # WebSocket stratum
+            "api_url": "https://hashnhedge-api.onrender.com/api",  # API base URL
             "wallet": "",
             "revenue_share": 0.70,
             "auto_switch_threshold": 500,  # Switch to security tasks if pay > $500
@@ -46,18 +48,21 @@ class HashNHedgeController:
     def check_available_tasks(self):
         """Check server for available high-value tasks"""
         try:
+            # Updated API endpoint
             response = requests.get(
-                f"https://api.hashnhedge.com/tasks",
-                params={"node_id": self.config["node_id"]}
+                f"https://hashnhedge-api.onrender.com/api/tasks",
+                params={"node_id": self.config["node_id"]},
+                timeout=10
             )
             tasks = response.json()
-            
+
             # Find highest paying task
             for task in tasks:
                 if task["reward"] > self.config["auto_switch_threshold"]:
                     return task
             return None
-        except:
+        except Exception as e:
+            print(f"[ERROR] Failed to fetch tasks: {e}")
             return None
     
     def switch_to_security_mode(self, task):

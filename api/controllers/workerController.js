@@ -1,6 +1,5 @@
 const prisma = require('../../lib/prisma');
 const crypto = require('crypto');
-const logger = require('../config/logger');
 
 /**
  * Register a new worker/miner
@@ -57,7 +56,7 @@ async function registerWorker(req, res) {
     });
 
   } catch (error) {
-    logger.error('Worker registration error:', error);
+    console.error('Worker registration error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to register worker',
@@ -94,7 +93,7 @@ async function workerHeartbeat(req, res) {
     });
 
   } catch (error) {
-    logger.error('Worker heartbeat error:', error);
+    console.error('Worker heartbeat error:', error);
 
     if (error.code === 'P2025') {
       return res.status(404).json({
@@ -178,7 +177,7 @@ async function getWorkerStats(req, res) {
     });
 
   } catch (error) {
-    logger.error('Get worker stats error:', error);
+    console.error('Get worker stats error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve worker stats'
@@ -228,7 +227,7 @@ async function getAvailableJobs(req, res) {
     });
 
   } catch (error) {
-    logger.error('Get available jobs error:', error);
+    console.error('Get available jobs error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve available jobs'
@@ -276,7 +275,7 @@ async function claimJob(req, res) {
     });
 
   } catch (error) {
-    logger.error('Claim job error:', error);
+    console.error('Claim job error:', error);
 
     if (error.code === 'P2025') {
       return res.status(409).json({
@@ -326,16 +325,8 @@ async function submitShare(req, res) {
       });
     }
 
-    // Get job data for validation
-    const job = await prisma.job.findUnique({
-      where: { id: jobId }
-    });
-
-    // Validate share with proper cryptographic verification
-    const isValid = validateShare(hash, difficulty, nonce, {
-      jobData: job?.jobData || jobId,
-      workerId: worker.workerId
-    });
+    // Validate hash (basic validation - implement proper validation based on algorithm)
+    const isValid = validateShare(hash, difficulty, nonce);
 
     // Create share record
     const share = await prisma.share.create({
@@ -396,7 +387,7 @@ async function submitShare(req, res) {
     });
 
   } catch (error) {
-    logger.error('Submit share error:', error);
+    console.error('Submit share error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to submit share',
@@ -461,7 +452,7 @@ async function listWorkers(req, res) {
     });
 
   } catch (error) {
-    logger.error('List workers error:', error);
+    console.error('List workers error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve workers'
@@ -470,106 +461,61 @@ async function listWorkers(req, res) {
 }
 
 /**
- * Validate mining share
- * Checks if the submitted hash meets the required difficulty target
- *
- * @param {string} hash - The submitted hash (hex string)
- * @param {number} difficulty - The difficulty target
- * @param {string} nonce - The nonce used for hashing
- * @param {Object} additionalData - Additional data needed for validation (jobData, workerId, etc.)
- * @returns {boolean} - True if share is valid, false otherwise
+ * Get available tasks for any node (without node_id requirement)
+ * GET /api/tasks
  */
-function validateShare(hash, difficulty, nonce, additionalData = {}) {
+async function getAvailableTasks(req, res) {
   try {
-    // Validate input parameters
-    if (!hash || typeof hash !== 'string') {
-      logger.error('[SHARE_VALIDATION] Invalid hash format');
-      return false;
-    }
+    const { node_id } = req.query;
 
-    if (!difficulty || difficulty <= 0) {
-      logger.error('[SHARE_VALIDATION] Invalid difficulty value');
-      return false;
-    }
-
-    if (!nonce || typeof nonce !== 'string') {
-      logger.error('[SHARE_VALIDATION] Invalid nonce format');
-      return false;
-    }
-
-    // Normalize hash to lowercase
-    const normalizedHash = hash.toLowerCase();
-
-    // Validate hash is a valid hex string
-    if (!/^[0-9a-f]{64}$/i.test(normalizedHash)) {
-      logger.error('[SHARE_VALIDATION] Hash is not a valid SHA256 hex string');
-      return false;
-    }
-
-    // Check hash meets difficulty target
-    // Convert difficulty to target value
-    // Difficulty represents the number of leading zero bits required
-    const targetValue = calculateTarget(difficulty);
-    const hashValue = BigInt('0x' + normalizedHash);
-
-    if (hashValue >= targetValue) {
-      logger.debug('[SHARE_VALIDATION] Hash does not meet difficulty target', {
-        hash: normalizedHash,
-        difficulty,
-        hashValue: hashValue.toString(16),
-        targetValue: targetValue.toString(16)
-      });
-      return false;
-    }
-
-    // Optional: Re-compute hash if job data is provided to verify integrity
-    if (additionalData.jobData && additionalData.workerId) {
-      const crypto = require('crypto');
-      const computedHash = crypto
-        .createHash('sha256')
-        .update(`${additionalData.jobData}${additionalData.workerId}${nonce}`)
-        .digest('hex');
-
-      if (computedHash !== normalizedHash) {
-        logger.warn('[SHARE_VALIDATION] Hash mismatch - possible tampering detected', {
-          submitted: normalizedHash,
-          computed: computedHash
-        });
-        return false;
-      }
-    }
-
-    logger.debug('[SHARE_VALIDATION] Share validated successfully', {
-      hash: normalizedHash,
-      difficulty,
-      nonce
+    // Get high-value jobs available for any worker
+    const jobs = await prisma.job.findMany({
+      where: {
+        status: 'pending',
+        assignedWorker: null
+      },
+      orderBy: { reward: 'desc' },
+      take: 20
     });
 
-    return true;
+    // Return tasks in expected format for mining controller
+    const tasks = jobs.map(job => ({
+      id: job.id,
+      type: job.jobType === 'ai' ? 'hashcat' : 'mining',
+      reward: parseFloat(job.reward),
+      hash_type: job.metadata?.hash_type || 0,
+      attack_mode: job.metadata?.attack_mode || 0,
+      hash_file: job.metadata?.hash_file || '',
+      wordlist: job.metadata?.wordlist || '',
+      hash_count: job.metadata?.hash_count || 0,
+      difficulty: job.metadata?.difficulty || 1,
+      algorithm: job.metadata?.algorithm || 'sha256'
+    }));
+
+    res.json(tasks);
 
   } catch (error) {
-    logger.error('[SHARE_VALIDATION] Validation error:', error);
-    return false;
+    console.error('Get available tasks error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve available tasks'
+    });
   }
 }
 
 /**
- * Calculate difficulty target from difficulty value
- * Target = (2^256 - 1) / difficulty
- *
- * @param {number} difficulty - Difficulty value
- * @returns {BigInt} - Target value as BigInt
+ * Basic share validation
+ * In production, implement proper algorithm-specific validation
  */
-function calculateTarget(difficulty) {
-  // Maximum target (difficulty 1)
-  const maxTarget = BigInt('0x' + 'F'.repeat(64));
+function validateShare(hash, difficulty, nonce) {
+  // Placeholder validation - implement actual algorithm validation
+  // For now, just check if hash meets minimum difficulty requirements
 
-  // Calculate target: maxTarget / difficulty
-  // For simplicity, using a linear relationship
-  // In production, use proper difficulty adjustment algorithm
-  const target = maxTarget / BigInt(Math.floor(difficulty));
+  // Example: For SHA256, check leading zeros based on difficulty
+  const leadingZeros = Math.floor(difficulty / 4);
+  const hashStart = hash.substring(0, leadingZeros);
 
-  return target;
+  return hashStart === '0'.repeat(leadingZeros);
 }
 
 module.exports = {
@@ -577,6 +523,7 @@ module.exports = {
   workerHeartbeat,
   getWorkerStats,
   getAvailableJobs,
+  getAvailableTasks,
   claimJob,
   submitShare,
   listWorkers

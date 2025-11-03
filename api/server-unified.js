@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
-const logger = require('./config/logger');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -13,7 +12,7 @@ const prisma = new PrismaClient();
 const API_PORT = process.env.API_PORT || process.env.PORT || 10000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-logger.info(`
+console.log(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
 ║     HashNHedge Unified Backend API                       ║
@@ -59,7 +58,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
       callback(null, true);
     } else {
-      logger.warn(`[SECURITY] Blocked CORS request from: ${origin}`);
+      console.warn(`[SECURITY] Blocked CORS request from: ${origin}`);
       callback(new Error('Not allowed by CORS policy'));
     }
   },
@@ -101,7 +100,7 @@ app.use('/css', express.static(path.join(__dirname, '..', 'css')));
 
 // Request logging
 app.use((req, res, next) => {
-  logger.http(`${req.method} ${req.path}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
@@ -161,7 +160,7 @@ app.get('/api/health', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('[ERROR] Health check failed:', error);
+    console.error('[ERROR] Health check failed:', error);
     res.status(503).json({
       success: false,
       status: 'unhealthy',
@@ -236,7 +235,7 @@ async function getNetworkStats() {
     lastCacheUpdate = now;
     return networkDataCache;
   } catch (error) {
-    logger.error('[ERROR] Failed to fetch network stats:', error);
+    console.error('[ERROR] Failed to fetch network stats:', error);
     return {
       totalNodes: 0,
       activeGPUs: 0,
@@ -255,7 +254,7 @@ app.get('/api/stats/network', async (req, res) => {
     const stats = await getNetworkStats();
     res.json(stats);
   } catch (error) {
-    logger.error('[ERROR] Network stats endpoint failed:', error);
+    console.error('[ERROR] Network stats endpoint failed:', error);
     res.status(500).json({ error: 'Failed to fetch network statistics' });
   }
 });
@@ -280,7 +279,7 @@ app.get('/api/stats/pool', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('[ERROR] Pool stats failed:', error);
+    console.error('[ERROR] Pool stats failed:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch pool statistics'
@@ -297,7 +296,7 @@ app.get('/api/config/wallet', (req, res) => {
   const officialWallet = process.env.OFFICIAL_WALLET_ADDRESS || null;
 
   if (!officialWallet) {
-    logger.warn('[WARNING] OFFICIAL_WALLET_ADDRESS not configured in environment');
+    console.warn('[WARNING] OFFICIAL_WALLET_ADDRESS not configured in environment');
     return res.status(503).json({
       success: false,
       error: 'Wallet configuration unavailable'
@@ -332,7 +331,7 @@ app.post('/api/connect-wallet', authLimiter, async (req, res) => {
       message: 'Wallet connected successfully'
     });
   } catch (error) {
-    logger.error('[ERROR] Wallet connection failed:', error);
+    console.error('[ERROR] Wallet connection failed:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to connect wallet'
@@ -346,7 +345,7 @@ app.get('/api/network-stats', async (req, res) => {
     const stats = await getNetworkStats();
     res.json(stats);
   } catch (error) {
-    logger.error('[ERROR] Network stats endpoint failed:', error);
+    console.error('[ERROR] Network stats endpoint failed:', error);
     res.status(500).json({ error: 'Failed to fetch network statistics' });
   }
 });
@@ -378,7 +377,7 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-  logger.error('[ERROR]', err);
+  console.error('[ERROR]', err);
 
   // CORS errors
   if (err.message === 'Not allowed by CORS policy') {
@@ -397,11 +396,18 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
+// STRATUM SERVER INTEGRATION
+// ============================================================
+
+const StratumWebSocketServer = require('./stratum-websocket');
+let stratumServer = null;
+
+// ============================================================
 // START SERVER
 // ============================================================
 
 const server = app.listen(API_PORT, '0.0.0.0', () => {
-  logger.info(`
+  console.log(`
 ✅ Server started successfully!
 
 🌐 Listening on: http://0.0.0.0:${API_PORT}
@@ -417,6 +423,21 @@ Services:
 Environment: ${NODE_ENV}
 CORS: ${allowedOrigins.join(', ')}
   `);
+
+  // Initialize Stratum server after HTTP server is ready
+  try {
+    stratumServer = new StratumWebSocketServer(server, {
+      port: process.env.STRATUM_PORT || 3333
+    });
+
+    console.log(`
+⛏️  Stratum Mining Protocol:
+  📡 WebSocket: ws://0.0.0.0:${API_PORT}/stratum
+  🔌 TCP: 0.0.0.0:${process.env.STRATUM_PORT || 3333}
+    `);
+  } catch (error) {
+    console.error('❌ Failed to start Stratum server:', error.message);
+  }
 });
 
 // ============================================================
@@ -424,39 +445,50 @@ CORS: ${allowedOrigins.join(', ')}
 // ============================================================
 
 process.on('SIGTERM', async () => {
-  logger.info('\n[INFO] SIGTERM received, shutting down gracefully...');
+  console.log('\n[INFO] SIGTERM received, shutting down gracefully...');
+
+  // Close Stratum server
+  if (stratumServer) {
+    stratumServer.close();
+    console.log('[INFO] Stratum server closed');
+  }
 
   server.close(async () => {
-    logger.info('[INFO] HTTP server closed');
+    console.log('[INFO] HTTP server closed');
 
     await prisma.$disconnect();
-    logger.info('[INFO] Database connection closed');
+    console.log('[INFO] Database connection closed');
 
-    logger.info('[INFO] Shutdown complete');
+    console.log('[INFO] Shutdown complete');
     process.exit(0);
   });
 
   // Force shutdown after 30 seconds
   setTimeout(() => {
-    logger.error('[ERROR] Forced shutdown after timeout');
+    console.error('[ERROR] Forced shutdown after timeout');
     process.exit(1);
   }, 30000);
 });
 
 process.on('SIGINT', async () => {
-  logger.info('\n[INFO] SIGINT received, shutting down...');
+  console.log('\n[INFO] SIGINT received, shutting down...');
+
+  if (stratumServer) {
+    stratumServer.close();
+  }
+
   await prisma.$disconnect();
   process.exit(0);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  logger.error('[FATAL] Uncaught exception:', error);
+  console.error('[FATAL] Uncaught exception:', error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
+  console.error('[FATAL] Unhandled rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
