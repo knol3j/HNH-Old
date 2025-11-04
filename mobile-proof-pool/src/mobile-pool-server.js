@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const express = require('express');
 const crypto = require('crypto');
 const MobileProofAlgorithm = require('../lib/mobile-proof-algorithm');
+const ShareValidator = require('../../hybrid-pool/share-validator');
 
 /**
  * Mobile Mining Pool Server
@@ -19,6 +20,10 @@ class MobilePoolServer {
         this.minPayout = options.minPayout || 0.01;
 
         this.algorithm = new MobileProofAlgorithm();
+        this.shareValidator = new ShareValidator({
+            maxTimeDrift: 7200,
+            checkDuplicates: true
+        });
         this.miners = new Map();
         this.shares = new Map();
         this.blocks = [];
@@ -285,16 +290,23 @@ class MobilePoolServer {
 
             // Get difficulty (from share or use current network difficulty)
             const difficulty = share.difficulty || this.algorithm.currentDifficulty;
-            const target = '0'.repeat(difficulty);
 
-            // Check if hash meets difficulty target
-            if (!share.hash.startsWith(target)) {
-                console.error(`[Pool] Hash does not meet difficulty ${difficulty}:`, share.hash);
+            // Perform proper cryptographic validation
+            const validation = this.validateShareCryptographic({
+                nonce: share.nonce,
+                hash: share.hash,
+                header: share.header,
+                mixDigest: share.mixDigest,
+                blockData: share.blockData,
+                difficulty
+            });
+
+            if (!validation.valid) {
+                console.error(`[Pool] Share validation failed: ${validation.error}`);
                 return false;
             }
 
-            // Optional: Re-verify the hash was computed correctly
-            // This requires having the original block data
+            // Optional: Re-verify the hash was computed correctly if blockData provided
             if (share.jobId && share.blockData) {
                 const input = `${share.blockData}${share.nonce}`;
                 const computedHash = crypto.createHash('sha256').update(input).digest('hex');
@@ -315,11 +327,68 @@ class MobilePoolServer {
     }
 
     /**
+     * Validate share with proper cryptographic verification
+     */
+    validateShareCryptographic(params) {
+        const { nonce, hash, header, mixDigest, blockData, difficulty } = params;
+
+        // Validate hash format
+        if (!hash || typeof hash !== 'string' || !/^[0-9a-f]+$/i.test(hash)) {
+            return { valid: false, error: 'Invalid hash format' };
+        }
+
+        // Validate nonce format
+        const nonceStr = typeof nonce === 'number' ? nonce.toString(16) : nonce;
+        if (!nonceStr || !/^[0-9a-f]+$/i.test(nonceStr)) {
+            return { valid: false, error: 'Invalid nonce format' };
+        }
+
+        // If header and mixDigest provided, validate as ethash share
+        if (header && mixDigest) {
+            return this.shareValidator.validateEthashShare({
+                nonce: nonceStr,
+                header,
+                mixDigest,
+                difficulty,
+                target: this.difficultyToTarget(difficulty)
+            });
+        }
+
+        // Otherwise, validate the hash meets the difficulty target
+        const target = this.difficultyToTarget(difficulty);
+        const hashBuffer = Buffer.from(hash, 'hex');
+
+        if (!this.shareValidator.checkTarget(hashBuffer, target)) {
+            return { valid: false, error: 'Hash does not meet difficulty target' };
+        }
+
+        return {
+            valid: true,
+            hash,
+            difficulty: this.shareValidator.hashToDifficulty(hashBuffer)
+        };
+    }
+
+    /**
+     * Convert difficulty to target buffer
+     */
+    difficultyToTarget(difficulty) {
+        const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+        const target = maxTarget / BigInt(Math.floor(difficulty));
+        const targetHex = target.toString(16).padStart(64, '0');
+        return Buffer.from(targetHex, 'hex');
+    }
+
+    /**
      * Check if share represents a block solution
      */
     isBlockFound(share) {
-        // In production, check if hash meets network difficulty
-        return share.hash.startsWith('0'.repeat(this.algorithm.currentDifficulty + 2));
+        // Check if hash meets network difficulty (higher than pool difficulty)
+        const networkDifficulty = this.algorithm.currentDifficulty * 1000; // Network difficulty is much higher
+        const target = this.difficultyToTarget(networkDifficulty);
+        const hashBuffer = Buffer.from(share.hash, 'hex');
+
+        return this.shareValidator.checkTarget(hashBuffer, target);
     }
 
     /**

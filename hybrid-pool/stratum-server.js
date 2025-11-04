@@ -6,6 +6,7 @@
 const net = require('net');
 const crypto = require('crypto');
 const EventEmitter = require('events');
+const ShareValidator = require('./share-validator');
 
 class StratumServer extends EventEmitter {
     constructor(orchestrator, config = {}) {
@@ -21,6 +22,10 @@ class StratumServer extends EventEmitter {
 
         this.clients = new Map(); // socket -> client data
         this.server = null;
+        this.shareValidator = new ShareValidator({
+            maxTimeDrift: 7200,
+            checkDuplicates: true
+        });
     }
 
     /**
@@ -215,18 +220,32 @@ class StratumServer extends EventEmitter {
 
         console.log(`📊 Share submitted (ethProxy) by ${client.id}`);
 
-        // Validate share (simplified)
-        const valid = true; // Accept all for now
+        // Validate ethash share with proper cryptographic verification
+        const validation = this.shareValidator.validateEthashShare({
+            nonce,
+            header,
+            mixDigest,
+            difficulty: client.difficulty || 1,
+            target: this.difficultyToTarget(client.difficulty || 1)
+        });
 
-        if (valid) {
+        if (validation.valid) {
             this.sendResponse(client, id, true);
             this.emit('share:valid', {
                 workerId: client.id,
-                difficulty: client.difficulty || 1
+                difficulty: validation.difficulty || client.difficulty || 1,
+                hash: validation.hash
             });
+
+            console.log(`✅ Valid ethash share accepted from ${client.id}: diff=${validation.difficulty}`);
         } else {
             this.sendResponse(client, id, false);
-            this.emit('share:invalid', { workerId: client.id });
+            this.emit('share:invalid', {
+                workerId: client.id,
+                error: validation.error
+            });
+
+            console.log(`❌ Invalid ethash share rejected from ${client.id}: ${validation.error}`);
         }
     }
 
@@ -316,68 +335,87 @@ class StratumServer extends EventEmitter {
 
         console.log(`📊 Share submitted by ${client.id}: job ${jobId}`);
 
-        // Validate share (simplified - in production, verify hash)
-        const valid = this.validateShare(client, jobId, nonce);
+        // Validate share with proper cryptographic verification
+        const validation = this.validateShare(client, {
+            workerName,
+            jobId,
+            extranonce2,
+            ntime,
+            nonce
+        });
 
-        if (valid) {
+        if (validation.valid) {
             this.sendResponse(client, id, true);
 
             // Report to orchestrator as partial job completion
             this.emit('share:valid', {
                 workerId: client.id,
                 jobId,
-                difficulty: client.difficulty || 1
+                difficulty: validation.difficulty || client.difficulty || 1,
+                hash: validation.hash
             });
+
+            console.log(`✅ Valid share accepted from ${client.worker}: diff=${validation.difficulty}`);
         } else {
             this.sendResponse(client, id, false);
-            this.emit('share:invalid', { workerId: client.id, jobId });
+            this.emit('share:invalid', {
+                workerId: client.id,
+                jobId,
+                error: validation.error
+            });
+
+            console.log(`❌ Invalid share rejected from ${client.worker}: ${validation.error}`);
         }
     }
 
     /**
      * Validate share with proper cryptographic verification
      */
-    validateShare(client, jobId, nonce) {
-        // Basic validation
-        if (!client || !jobId || !nonce) {
-            console.error('❌ Invalid share parameters');
-            return false;
+    validateShare(client, params) {
+        // Basic parameter validation
+        if (!client || !params) {
+            return { valid: false, error: 'Invalid parameters' };
         }
+
+        const { jobId, nonce, extranonce2, ntime } = params;
 
         // Check if client has current job
         if (!client.currentJob || client.currentJob.id !== jobId) {
-            console.error('❌ Invalid job ID:', jobId);
-            return false;
+            return { valid: false, error: 'Job not found or expired' };
         }
 
-        // Validate nonce format (should be hex string)
-        if (!/^[0-9a-f]+$/i.test(nonce)) {
-            console.error('❌ Invalid nonce format:', nonce);
-            return false;
-        }
+        // Get job data (needs to be stored with full parameters in sendMiningJob)
+        const job = client.currentJob;
 
-        // Check difficulty (simplified - in production, verify hash meets difficulty)
-        const difficulty = client.difficulty || 1;
+        // Add required fields for validation
+        const jobData = {
+            ...job,
+            extranonce1: client.extranonce1 || '',
+            target: this.difficultyToTarget(client.difficulty || 1)
+        };
 
-        // For real mining pools, you would:
-        // 1. Reconstruct the block header with the nonce
-        // 2. Compute SHA256d hash
-        // 3. Check if hash meets difficulty target
-        // 4. Verify against network difficulty for blocks
+        // Use ShareValidator for cryptographic verification
+        const result = this.shareValidator.validateStratumShare(
+            params,
+            jobData
+        );
 
-        // Example proper validation (requires full job data):
-        // const crypto = require('crypto');
-        // const blockHeader = this.reconstructBlockHeader(client.currentJob, nonce);
-        // const hash = crypto.createHash('sha256').update(
-        //     crypto.createHash('sha256').update(blockHeader).digest()
-        // ).digest('hex');
-        // const target = this.difficultyToTarget(difficulty);
-        // return BigInt('0x' + hash) <= target;
+        return result;
+    }
 
-        // For now, accept shares but log for monitoring
-        console.log(`✅ Share accepted from ${client.worker}: job=${jobId}, nonce=${nonce}, diff=${difficulty}`);
+    /**
+     * Convert difficulty to target buffer
+     */
+    difficultyToTarget(difficulty) {
+        // Bitcoin difficulty 1 target
+        const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
 
-        return true;
+        // target = maxTarget / difficulty
+        const target = maxTarget / BigInt(Math.floor(difficulty));
+
+        // Convert to 32-byte buffer (little-endian)
+        const targetHex = target.toString(16).padStart(64, '0');
+        return Buffer.from(targetHex, 'hex');
     }
 
     /**
@@ -410,10 +448,16 @@ class StratumServer extends EventEmitter {
             true                       // clean_jobs
         ];
 
-        // Store current job for share validation
+        // Store full job data for share validation
         client.currentJob = {
             id: job.id,
-            prevhash: job.prevhash,
+            prevhash: job.prevhash || '00'.repeat(32),
+            coinb1: job.coinb1 || '',
+            coinb2: job.coinb2 || '',
+            merkle_branch: job.merkle_branch || [],
+            version: job.version || '00000002',
+            nbits: job.nbits || '1d00ffff',
+            ntime: job.ntime || Math.floor(Date.now() / 1000).toString(16),
             timestamp: Date.now()
         };
 

@@ -8,6 +8,7 @@ const { mintTo, getOrCreateAssociatedTokenAccount } = require('@solana/spl-token
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const ShareValidator = require('../hybrid-pool/share-validator');
 
 const app = express();
 
@@ -81,6 +82,12 @@ const miningStats = {
     totalHNHDistributed: 0,
     poolFee: 3 // 3% pool fee
 };
+
+// Initialize share validator
+const shareValidator = new ShareValidator({
+    maxTimeDrift: 7200,
+    checkDuplicates: true
+});
 
 // Serve static files for dashboard
 app.use(express.static('public'));
@@ -234,10 +241,14 @@ app.post('/api/miner/submit-share', async (req, res) => {
         }
         miner.lastShareSubmission = now;
 
-        // Validate share (simplified - checks if hash starts with enough zeros)
-        const isValidShare = hash && hash.startsWith('0000');
-        
-        if (isValidShare) {
+        // Validate share with proper cryptographic verification
+        const validation = validateShare({
+            nonce: nonce.toString(16),
+            hash,
+            difficulty: 1000000 // Pool difficulty
+        });
+
+        if (validation.valid) {
             miner.shares++;
             miner.lastSeen = Date.now();
             miningStats.totalShares++;
@@ -404,6 +415,58 @@ app.post('/api/admin/security-mode', requireAuth, (req, res) => {
         timestamp: new Date().toISOString()
     });
 });
+
+/**
+ * Validate share with proper cryptographic verification
+ */
+function validateShare(params) {
+    const { nonce, hash, header, mixDigest, difficulty } = params;
+
+    // Validate hash format
+    if (!hash || typeof hash !== 'string' || !/^[0-9a-f]+$/i.test(hash)) {
+        return { valid: false, error: 'Invalid hash format' };
+    }
+
+    // Validate nonce format
+    if (!nonce || typeof nonce !== 'string' || !/^[0-9a-f]+$/i.test(nonce)) {
+        return { valid: false, error: 'Invalid nonce format' };
+    }
+
+    // If header and mixDigest provided, validate as ethash share
+    if (header && mixDigest) {
+        return shareValidator.validateEthashShare({
+            nonce,
+            header,
+            mixDigest,
+            difficulty,
+            target: difficultyToTarget(difficulty)
+        });
+    }
+
+    // Otherwise, validate the hash meets the difficulty target
+    const target = difficultyToTarget(difficulty);
+    const hashBuffer = Buffer.from(hash, 'hex');
+
+    if (!shareValidator.checkTarget(hashBuffer, target)) {
+        return { valid: false, error: 'Hash does not meet difficulty target' };
+    }
+
+    return {
+        valid: true,
+        hash,
+        difficulty: shareValidator.hashToDifficulty(hashBuffer)
+    };
+}
+
+/**
+ * Convert difficulty to target buffer
+ */
+function difficultyToTarget(difficulty) {
+    const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+    const target = maxTarget / BigInt(Math.floor(difficulty));
+    const targetHex = target.toString(16).padStart(64, '0');
+    return Buffer.from(targetHex, 'hex');
+}
 
 // HNH Token Distribution Function
 async function distributeHNHTokens(minerWallet, amount) {
