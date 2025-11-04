@@ -13,7 +13,8 @@ class MobilePoolServer {
     constructor(options = {}) {
         this.stratumPort = options.stratumPort || 3333;
         this.wsPort = options.wsPort || 8081;
-        this.apiPort = options.apiPort || 8080;
+        // Use Render's PORT environment variable or default to 8080
+        this.apiPort = process.env.PORT || options.apiPort || 8080;
         this.poolAddress = options.poolAddress || 'pool_default_address';
         this.poolFee = options.poolFee || 2; // 2% pool fee
         this.minPayout = options.minPayout || 0.01;
@@ -377,36 +378,8 @@ class MobilePoolServer {
      * Setup WebSocket server for real-time updates
      */
     setupWebSocketServer() {
-        const httpServer = http.createServer();
-        this.wss = new WebSocket.Server({ server: httpServer });
-
-        this.wss.on('connection', (ws, req) => {
-            const clientId = crypto.randomBytes(8).toString('hex');
-            console.log(`[WebSocket] Client connected: ${clientId}`);
-
-            // Send initial stats
-            ws.send(JSON.stringify({
-                type: 'stats',
-                data: this.stats
-            }));
-
-            ws.on('message', (message) => {
-                try {
-                    const data = JSON.parse(message);
-                    this.handleWebSocketMessage(ws, clientId, data);
-                } catch (err) {
-                    console.error('[WebSocket] Parse error:', err);
-                }
-            });
-
-            ws.on('close', () => {
-                console.log(`[WebSocket] Client disconnected: ${clientId}`);
-            });
-        });
-
-        httpServer.listen(this.wsPort, () => {
-            console.log(`[WebSocket] Server listening on port ${this.wsPort}`);
-        });
+        // WebSocket server will be attached to HTTP server in start() method
+        // We'll initialize it later when we have the HTTP server
     }
 
     /**
@@ -414,6 +387,98 @@ class MobilePoolServer {
      */
     handleWebSocketMessage(ws, clientId, message) {
         switch (message.type) {
+            case 'register':
+                // Register a new miner
+                const miner = {
+                    id: clientId,
+                    address: message.wallet || 'unknown',
+                    worker: message.worker || 'unknown',
+                    hashrate: 0,
+                    shares: 0,
+                    deviceTier: message.deviceInfo?.platform || 'unknown',
+                    connectedAt: Date.now(),
+                    ws
+                };
+                this.miners.set(clientId, miner);
+                console.log(`[WebSocket] Miner registered: ${miner.address} (${miner.worker})`);
+
+                // Send initial job
+                const job = {
+                    type: 'job',
+                    jobId: crypto.randomBytes(8).toString('hex'),
+                    blockData: crypto.randomBytes(32).toString('hex'),
+                    difficulty: this.algorithm.currentDifficulty,
+                    target: '0'.repeat(this.algorithm.currentDifficulty)
+                };
+                ws.send(JSON.stringify(job));
+                break;
+
+            case 'submit':
+                // Handle share submission
+                const share = {
+                    jobId: message.jobId,
+                    nonce: message.nonce,
+                    hash: message.hash
+                };
+
+                const submitMiner = this.miners.get(clientId);
+                if (!submitMiner) {
+                    ws.send(JSON.stringify({
+                        type: 'error',
+                        message: 'Miner not registered'
+                    }));
+                    return;
+                }
+
+                // Verify share
+                const isValid = this.verifyShare(share);
+
+                if (isValid) {
+                    this.stats.validShares++;
+                    submitMiner.shares++;
+
+                    const minerShares = this.shares.get(submitMiner.address) || { valid: 0, invalid: 0, pending: 0 };
+                    minerShares.valid++;
+                    minerShares.pending += this.calculateShareValue(this.algorithm.currentDifficulty);
+                    this.shares.set(submitMiner.address, minerShares);
+
+                    ws.send(JSON.stringify({
+                        type: 'share_accepted',
+                        jobId: share.jobId,
+                        hash: share.hash,
+                        reward: this.calculateShareValue(this.algorithm.currentDifficulty)
+                    }));
+
+                    console.log(`[Pool] Valid share from ${submitMiner.address} (${minerShares.valid} total)`);
+
+                    // Check if block found
+                    if (this.isBlockFound(share)) {
+                        this.handleBlockFound(submitMiner, share);
+                    }
+
+                    // Send new job
+                    const newJob = {
+                        type: 'job',
+                        jobId: crypto.randomBytes(8).toString('hex'),
+                        blockData: crypto.randomBytes(32).toString('hex'),
+                        difficulty: this.algorithm.currentDifficulty,
+                        target: '0'.repeat(this.algorithm.currentDifficulty)
+                    };
+                    ws.send(JSON.stringify(newJob));
+                } else {
+                    this.stats.invalidShares++;
+                    ws.send(JSON.stringify({
+                        type: 'share_rejected',
+                        jobId: share.jobId,
+                        reason: 'Invalid hash'
+                    }));
+                    console.log(`[Pool] Invalid share from ${submitMiner.address}`);
+                }
+
+                this.stats.totalShares++;
+                this.broadcastStats();
+                break;
+
             case 'subscribe':
                 // Subscribe to specific events
                 break;
@@ -485,22 +550,62 @@ class MobilePoolServer {
      * Start all servers
      */
     start() {
-        // Start Stratum server
-        this.stratumServer.listen(this.stratumPort, () => {
-            console.log(`[Stratum] Server listening on port ${this.stratumPort}`);
+        // Create HTTP server from Express app
+        const httpServer = http.createServer(this.app);
+
+        // Attach WebSocket server to HTTP server
+        this.wss = new WebSocket.Server({ server: httpServer });
+
+        this.wss.on('connection', (ws, req) => {
+            const clientId = crypto.randomBytes(8).toString('hex');
+            console.log(`[WebSocket] Client connected: ${clientId}`);
+
+            // Send initial stats
+            ws.send(JSON.stringify({
+                type: 'stats',
+                data: this.stats
+            }));
+
+            ws.on('message', (message) => {
+                try {
+                    const data = JSON.parse(message);
+                    this.handleWebSocketMessage(ws, clientId, data);
+                } catch (err) {
+                    console.error('[WebSocket] Parse error:', err);
+                }
+            });
+
+            ws.on('close', () => {
+                console.log(`[WebSocket] Client disconnected: ${clientId}`);
+                this.miners.delete(clientId);
+                this.updateStats();
+            });
+
+            ws.on('error', (err) => {
+                console.error(`[WebSocket] Error:`, err.message);
+            });
         });
 
-        // Start API server
-        this.app.listen(this.apiPort, () => {
+        // Start combined HTTP + WebSocket server on single port
+        httpServer.listen(this.apiPort, () => {
             console.log(`[API] Server listening on port ${this.apiPort}`);
+            console.log(`[WebSocket] Server attached to port ${this.apiPort}`);
         });
+
+        // Optionally start Stratum server (skip in cloud environments like Render)
+        if (!process.env.RENDER && !process.env.RAILWAY_ENVIRONMENT) {
+            this.stratumServer.listen(this.stratumPort, () => {
+                console.log(`[Stratum] Server listening on port ${this.stratumPort}`);
+            }).on('error', (err) => {
+                console.log(`[Stratum] Skipping Stratum server (${err.message})`);
+            });
+        }
 
         console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║        Mobile Mining Pool Server Started 🚀           ║
 ╠════════════════════════════════════════════════════════╣
-║  Stratum:    stratum+tcp://localhost:${this.stratumPort}        ║
-║  WebSocket:  ws://localhost:${this.wsPort}                 ║
+║  WebSocket:  ws://localhost:${this.apiPort}                 ║
 ║  API:        http://localhost:${this.apiPort}              ║
 ║  Dashboard:  http://localhost:${this.apiPort}/dashboard  ║
 ╚════════════════════════════════════════════════════════╝
