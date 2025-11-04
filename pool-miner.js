@@ -3,23 +3,19 @@
 // Load environment variables from .env file
 require('dotenv').config();
 
+const WebSocket = require('ws');
 const crypto = require('crypto');
 const chalk = require('chalk');
 const os = require('os');
-// Note: fetch is available globally in Node.js 18+
 
 // Configuration
-const POOL_API_URL = process.env.POOL_API_URL || 'https://hashnhedge-pool.onrender.com';
-const POOL_API_KEY = process.env.POOL_API_KEY || 'hnh_5c9543830e15266d9427a336162e945b5ff76d8b4ac86f64efb9778a6ca57762';
+const POOL_WS_URL = process.env.POOL_WS_URL || 'wss://hashnhedge-pool.onrender.com';
 const WALLET_ADDRESS = process.env.WALLET_ADDRESS || 'GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc';
 const WORKER_NAME = process.env.WORKER_NAME || 'cli-miner-' + os.hostname();
 
-// Worker credentials (will be set after registration)
-let workerCredentials = {
-  workerId: WORKER_NAME,
-  secret: null,
-  registered: false
-};
+// Miner state
+let minerId = null;
+let ws = null;
 
 // Mining stats
 const stats = {
@@ -69,17 +65,22 @@ function mine(job) {
 }
 
 // Submit share to pool
-async function submitShare(share) {
-  if (!workerCredentials.registered) {
-    log.error('Worker not registered, cannot submit share');
+function submitShare(share) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    log.error('WebSocket not connected, cannot submit share');
     return;
   }
 
   stats.sharesSubmitted++;
   log.share(`Submitting share: ${chalk.bold(share.hash.substring(0, 16))}...`);
 
-  // Submit to API
-  await submitShareToAPI(share);
+  // Submit share using pool server's protocol
+  ws.send(JSON.stringify({
+    type: 'submit',
+    jobId: share.jobId,
+    nonce: share.nonce,
+    hash: share.hash
+  }));
 }
 
 // Mining loop
@@ -128,9 +129,9 @@ function displayStats() {
   console.log(chalk.bold.white('           HASHNHEDGE POOL MINER'));
   console.log(chalk.bold.cyan('═══════════════════════════════════════════════════════════'));
   console.log();
-  console.log(chalk.white('Pool:       ') + chalk.yellow(POOL_API_URL));
+  console.log(chalk.white('Pool:       ') + chalk.yellow(POOL_WS_URL));
   console.log(chalk.white('Wallet:     ') + chalk.yellow(WALLET_ADDRESS));
-  console.log(chalk.white('Worker:     ') + chalk.yellow(workerCredentials.workerId));
+  console.log(chalk.white('Miner ID:   ') + chalk.yellow(minerId || 'Connecting...'));
   console.log();
   console.log(chalk.bold.cyan('───────────────────────────────────────────────────────────'));
   console.log(chalk.bold.white('  Mining Statistics'));
@@ -163,256 +164,101 @@ function formatUptime(seconds) {
   return `${h}h ${m}m ${s}s`;
 }
 
-// Generate common headers for API requests
-function getHeaders(includeAuth = false) {
-  const headers = {
-    'Content-Type': 'application/json',
-  };
+// Connect to pool via WebSocket
+function connect() {
+  log.info(`Connecting to pool: ${POOL_WS_URL}`);
 
-  // Add API key if available
-  if (POOL_API_KEY) {
-    headers['X-API-Key'] = POOL_API_KEY;
-  }
+  ws = new WebSocket(POOL_WS_URL);
 
-  // Add worker authentication if requested and available
-  if (includeAuth && workerCredentials.secret) {
-    const timestamp = Date.now();
-    const signature = generateAuthSignature(
-      workerCredentials.workerId,
-      timestamp,
-      workerCredentials.secret
-    );
-    headers['X-Worker-ID'] = workerCredentials.workerId;
-    headers['X-Worker-Timestamp'] = timestamp.toString();
-    headers['X-Worker-Signature'] = signature;
-  }
+  ws.on('open', () => {
+    log.success('Connected to pool!');
 
-  return headers;
-}
-
-// Generate HMAC signature for authentication
-function generateAuthSignature(workerId, timestamp, secret) {
-  const message = `${workerId}:${timestamp}`;
-  return crypto
-    .createHmac('sha256', secret)
-    .update(message)
-    .digest('hex');
-}
-
-// Register worker with the pool API
-async function registerWorker() {
-  try {
-    log.info('Registering with pool...');
-
-    const hardwareInfo = {
-      platform: process.platform,
-      arch: process.arch,
-      cpus: os.cpus().length,
-      memory: os.totalmem(),
-      hostname: os.hostname()
-    };
-
-    const response = await fetch(`${POOL_API_URL}/api/worker/register`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        workerId: WORKER_NAME,
-        walletAddress: WALLET_ADDRESS,
-        hardwareInfo
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 409) {
-        log.warning('Worker already registered, attempting to use cached credentials...');
-        // Worker already exists, we'll try to connect without signature
-        workerCredentials.registered = true;
-        workerCredentials.secret = WALLET_ADDRESS; // Fallback to wallet address
-        return true;
+    // Register with pool (using pool server's protocol)
+    ws.send(JSON.stringify({
+      type: 'register',
+      wallet: WALLET_ADDRESS,
+      worker: WORKER_NAME,
+      deviceInfo: {
+        platform: 'desktop',
+        cores: require('os').cpus().length
       }
-      throw new Error(data.error || 'Registration failed');
-    }
+    }));
 
-    // Store credentials
-    workerCredentials.workerId = data.data.workerId;
-    workerCredentials.secret = data.authentication.secret;
-    workerCredentials.registered = true;
-
-    log.success(`Worker registered! ID: ${workerCredentials.workerId}`);
-    log.info(`Auth secret: ${workerCredentials.secret.substring(0, 16)}...`);
-    log.warning('Save your secret if you need to restart the miner!');
-
-    return true;
-  } catch (error) {
-    log.error(`Registration failed: ${error.message}`);
-    return false;
-  }
-}
-
-// Send heartbeat to keep worker alive
-async function sendHeartbeat() {
-  try {
-    const response = await fetch(
-      `${POOL_API_URL}/api/worker/${workerCredentials.workerId}/heartbeat`,
-      {
-        method: 'POST',
-        headers: getHeaders(true),
-        body: JSON.stringify({
-          status: 'active',
-          hardwareInfo: {
-            hashrate: stats.hashrate,
-            shares: stats.sharesSubmitted,
-            uptime: Math.floor((Date.now() - stats.startTime) / 1000)
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      log.warning('Heartbeat failed, worker may be marked inactive');
-    }
-  } catch (error) {
-    log.warning(`Heartbeat error: ${error.message}`);
-  }
-}
-
-// Submit share to pool via API
-async function submitShareToAPI(share) {
-  try {
-    const response = await fetch(
-      `${POOL_API_URL}/api/worker/${workerCredentials.workerId}/shares`,
-      {
-        method: 'POST',
-        headers: getHeaders(true),
-        body: JSON.stringify({
-          jobId: share.jobId,
-          difficulty: currentJob.difficulty,
-          nonce: share.nonce,
-          hash: share.hash,
-          jobType: 'mining'
-        })
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Share submission failed');
-    }
-
-    stats.lastShareTime = Date.now();
-
-    if (data.data.isValid) {
-      stats.sharesAccepted++;
-      log.success(`Share ACCEPTED! Hash: ${share.hash.substring(0, 16)}...`);
-    } else {
-      stats.sharesRejected++;
-      log.error(`Share REJECTED! Hash: ${share.hash.substring(0, 16)}...`);
-    }
-
-    return data.data.isValid;
-  } catch (error) {
-    log.error(`Share submission error: ${error.message}`);
-    stats.sharesRejected++;
-    return false;
-  }
-}
-
-// Get mining jobs from pool
-async function getJobs() {
-  try {
-    const response = await fetch(
-      `${POOL_API_URL}/api/worker/${workerCredentials.workerId}/jobs`,
-      {
-        method: 'GET',
-        headers: getHeaders(true)
-      }
-    );
-
-    const data = await response.json();
-
-    if (response.ok && data.data && data.data.length > 0) {
-      const job = data.data[0];
-      log.info(`New job received: ${job.jobId}`);
-
-      stopMining();
-      currentJob = {
-        jobId: job.jobId,
-        blockData: job.blockData || crypto.randomBytes(32).toString('hex'),
-        difficulty: job.difficulty || 4,
-        target: job.target
-      };
-      startMining();
+    // Start hashrate calculation and display
+    hashrateInterval = setInterval(() => {
+      updateHashrate();
       displayStats();
-    } else {
-      // If no jobs available, create a practice job
-      if (!currentJob) {
-        log.warning('No jobs available, mining practice blocks...');
+    }, 2000);
+  });
+
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data);
+
+      // Handle stats update
+      if (message.type === 'stats') {
+        // Pool sent initial stats
+        log.info(`Pool stats: ${message.data.activeMiners} miners, ${message.data.totalHashrate} H/s`);
+      }
+
+      // Handle new mining job
+      if (message.type === 'job') {
+        if (!minerId) {
+          minerId = WORKER_NAME; // Use worker name as miner ID
+          log.success(`Registered as: ${chalk.bold(minerId)}`);
+        }
+        log.info(`New job received: ${chalk.bold(message.jobId)}`);
+        stopMining();
         currentJob = {
-          jobId: `practice-${Date.now()}`,
-          blockData: crypto.randomBytes(32).toString('hex'),
-          difficulty: 4,
-          target: '0'.repeat(4)
+          jobId: message.jobId,
+          blockData: message.blockData,
+          difficulty: message.difficulty,
+          target: message.target
         };
         startMining();
+        displayStats();
       }
+
+      // Handle share accepted
+      if (message.type === 'share_accepted') {
+        stats.sharesAccepted++;
+        log.success(chalk.bold('SHARE ACCEPTED! ') + `Reward: ${message.reward}`);
+        displayStats();
+      }
+
+      // Handle share rejected
+      if (message.type === 'share_rejected') {
+        stats.sharesRejected++;
+        log.error(`SHARE REJECTED: ${message.reason}`);
+        displayStats();
+      }
+
+      // Handle errors
+      if (message.type === 'error') {
+        log.error(`Pool error: ${message.message}`);
+      }
+
+    } catch (err) {
+      log.error(`Failed to parse message: ${err.message}`);
     }
-  } catch (error) {
-    log.warning(`Failed to get jobs: ${error.message}`);
-    // Continue with practice mining
-    if (!currentJob) {
-      currentJob = {
-        jobId: `practice-${Date.now()}`,
-        blockData: crypto.randomBytes(32).toString('hex'),
-        difficulty: 4,
-        target: '0'.repeat(4)
-      };
-      startMining();
+  });
+
+  ws.on('error', (error) => {
+    log.error(`WebSocket error: ${error.message}`);
+  });
+
+  ws.on('close', () => {
+    log.warning('Disconnected from pool');
+    stopMining();
+
+    if (hashrateInterval) {
+      clearInterval(hashrateInterval);
     }
-  }
-}
 
-// Connect to pool using API
-async function connect() {
-  log.info(`Connecting to pool: ${POOL_API_URL}`);
-
-  // Register worker
-  const registered = await registerWorker();
-  if (!registered) {
-    log.error('Failed to register with pool. Retrying in 10 seconds...');
-    setTimeout(connect, 10000);
-    return;
-  }
-
-  log.success('Connected to pool!');
-
-  // Start hashrate calculation
-  hashrateInterval = setInterval(() => {
-    updateHashrate();
-    displayStats();
-  }, 2000);
-
-  // Get initial job
-  await getJobs();
-
-  // Poll for new jobs every 30 seconds
-  const jobPollInterval = setInterval(() => {
-    getJobs();
-  }, 30000);
-
-  // Send heartbeat every 60 seconds
-  const heartbeatInterval = setInterval(() => {
-    sendHeartbeat();
-  }, 60000);
-
-  // Store intervals for cleanup
-  global.poolIntervals = {
-    hashrate: hashrateInterval,
-    jobPoll: jobPollInterval,
-    heartbeat: heartbeatInterval
-  };
+    // Reconnect after 5 seconds
+    log.info('Reconnecting in 5 seconds...');
+    setTimeout(connect, 5000);
+  });
 }
 
 // Handle shutdown gracefully
@@ -421,11 +267,12 @@ process.on('SIGINT', () => {
   log.info('Shutting down miner...');
   stopMining();
 
-  // Clean up intervals
-  if (global.poolIntervals) {
-    clearInterval(global.poolIntervals.hashrate);
-    clearInterval(global.poolIntervals.jobPoll);
-    clearInterval(global.poolIntervals.heartbeat);
+  if (ws) {
+    ws.close();
+  }
+
+  if (hashrateInterval) {
+    clearInterval(hashrateInterval);
   }
 
   console.log();
@@ -441,15 +288,4 @@ process.on('SIGINT', () => {
 
 // Start
 console.log(chalk.bold.cyan('\n🚀 Starting HashNHedge Pool Miner...\n'));
-
-// Check for API key
-if (!POOL_API_KEY) {
-  console.log(chalk.yellow('⚠️  Warning: No POOL_API_KEY environment variable set.'));
-  console.log(chalk.yellow('   The pool may require an API key for access.\n'));
-  console.log(chalk.white('   To generate an API key, run:'));
-  console.log(chalk.cyan('   node generate-pool-api-key.js\n'));
-  console.log(chalk.white('   Then set the environment variable:'));
-  console.log(chalk.cyan('   export POOL_API_KEY="your_generated_key"\n'));
-}
-
 connect();
