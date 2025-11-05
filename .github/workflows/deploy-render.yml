@@ -21,20 +21,23 @@ jobs:
       - name: Trigger Render deployment
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_POOL_SERVICE_ID }}
         run: |
-          echo "Triggering Render deployment..."
+          echo "🚀 Triggering Render deployment for hashnhedge-pool..."
 
           if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-            echo "ERROR: RENDER_API_KEY or RENDER_SERVICE_ID not set in GitHub Secrets"
-            echo "Please add these secrets to your repository:"
+            echo "⚠️ RENDER_API_KEY or RENDER_POOL_SERVICE_ID not set"
+            echo "📝 Render will still auto-deploy via GitHub integration"
+            echo ""
+            echo "To enable API-triggered deployments, add these secrets:"
             echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
             echo "2. Add RENDER_API_KEY (get from https://dashboard.render.com/account/settings)"
-            echo "3. Add RENDER_SERVICE_ID (from your service URL: srv-xxxxx)"
-            exit 1
+            echo "3. Add RENDER_POOL_SERVICE_ID (from service page: srv-xxxxx)"
+            exit 0
           fi
 
           # Trigger Render deployment via API
+          echo "📡 Calling Render API..."
           RESPONSE=$(curl -X POST \
             "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
             -H "Accept: application/json" \
@@ -55,6 +58,37 @@ jobs:
             echo "$BODY"
             exit 1
           fi
+
+      - name: Health check
+        if: success()
+        env:
+          RENDER_POOL_URL: ${{ secrets.RENDER_POOL_URL }}
+        run: |
+          if [ -z "$RENDER_POOL_URL" ]; then
+            echo "⚠️ RENDER_POOL_URL not set. Skipping health check."
+            echo "💡 Add this secret with your pool URL: https://hashnhedge-pool.onrender.com"
+            exit 0
+          fi
+
+          echo "🏥 Waiting for deployment to be healthy..."
+          sleep 30
+
+          for i in {1..10}; do
+            echo "🔍 Health check attempt $i/10..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_POOL_URL/health" || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Service is healthy!"
+              curl -s "$RENDER_POOL_URL/health" | jq '.' || echo "Health check passed"
+              exit 0
+            fi
+
+            echo "⏳ Status: $HTTP_CODE - waiting 10s..."
+            sleep 10
+          done
+
+          echo "⚠️ Health check timed out (service may still be starting)"
+          exit 0
 
       - name: Deployment summary
         run: |
