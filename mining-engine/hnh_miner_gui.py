@@ -28,16 +28,16 @@ class MinerGUI:
         # Preconfigured HashNHedge pools
         self.preconfigured_pools = [
             {
-                'name': 'HashNHedge Stratum (GPU)',
-                'url': 'stratum+tcp://pool.hashnhedge.com:3333'
+                'name': 'HashNHedge Stratum (Railway)',
+                'url': 'stratum+tcp://switchyard.proxy.rlwy.net:13595'
             },
             {
-                'name': 'HashNHedge Pool API',
-                'url': 'https://pool.hashnhedge.com/api'
+                'name': 'HashNHedge Pool API (Render)',
+                'url': 'https://hashnhedge-pool.onrender.com/api'
             },
             {
-                'name': 'HashNHedge WebSocket (Mobile)',
-                'url': 'wss://pool.hashnhedge.com:8081'
+                'name': 'HashNHedge Mobile Pool (Render)',
+                'url': 'https://hashnhedge-mobile-pool.onrender.com/api'
             }
         ]
         self.custom_pool_label = 'Custom / Other'
