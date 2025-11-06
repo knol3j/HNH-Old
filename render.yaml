@@ -45,7 +45,7 @@ services:
         sync: false
     autoDeploy: true
 
-  # Legacy Pool Server (if still needed)
+  # Hybrid Pool Server (AI/Mining)
   - type: web
     name: hashnhedge-pool
     env: node
@@ -56,6 +56,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: STRATUM_PORT
         value: 3333
       - key: STRATUM_HOST
@@ -82,6 +84,7 @@ services:
         sync: false
       - key: SENDGRID_FROM_EMAIL
         value: noreply@hashnhedge.com
+    healthCheckPath: /health
     autoDeploy: true
 
   # Mobile Proof Pool (PhoneProof Mining)

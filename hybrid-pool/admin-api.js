@@ -19,18 +19,27 @@ class AdminAPI {
             throw new Error('ADMIN_API_KEY is required but not set');
         }
 
-        if (apiKey.length < 32) {
-            console.error('SECURITY WARNING: ADMIN_API_KEY is too short (minimum 32 characters recommended)');
+        // In production, enforce strict key requirements
+        const isProduction = process.env.NODE_ENV === 'production';
+
+        if (isProduction && apiKey.length < 32) {
+            console.error('SECURITY ERROR: ADMIN_API_KEY is too short for production (minimum 32 characters required)');
             console.error('Current length:', apiKey.length);
-            throw new Error('ADMIN_API_KEY must be at least 32 characters');
+            throw new Error('ADMIN_API_KEY must be at least 32 characters in production');
+        } else if (!isProduction && apiKey.length < 32) {
+            console.warn('⚠️  WARNING: ADMIN_API_KEY is shorter than recommended 32 characters (development mode)');
+            console.warn('   Current length:', apiKey.length);
+            console.warn('   Generate a secure key: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
         }
 
-        // Security check: prevent using insecure default values
+        // Security check: prevent using insecure default values in production
         const insecureKeys = ['change-me', 'admin', 'password', '12345', 'test', 'default'];
-        if (insecureKeys.includes(apiKey.toLowerCase())) {
+        if (isProduction && insecureKeys.includes(apiKey.toLowerCase())) {
             console.error('SECURITY ERROR: ADMIN_API_KEY is set to an insecure default value:', apiKey);
             console.error('Please use a cryptographically secure random key.');
-            throw new Error('Insecure ADMIN_API_KEY detected');
+            throw new Error('Insecure ADMIN_API_KEY detected in production');
+        } else if (!isProduction && insecureKeys.includes(apiKey.toLowerCase())) {
+            console.warn('⚠️  WARNING: Using insecure default API key in development mode');
         }
 
         this.config = {
