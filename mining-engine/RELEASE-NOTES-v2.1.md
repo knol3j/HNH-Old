@@ -1,8 +1,9 @@
 # HashNHedge Miner v2.1 - Release Notes
 
 **Release Date**: 2025-11-06
-**Build**: Production
+**Build**: Production (Verbose Logging Edition)
 **Platform**: Windows x64
+**Version**: 2.1.1
 
 ---
 

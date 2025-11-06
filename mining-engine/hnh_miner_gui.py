@@ -574,18 +574,28 @@ class MinerGUI:
         self.pool_status_label.config(text="Connected", fg='#a6e3a1')
         self.conn_indicator.config(text="● Online", fg='#a6e3a1')
 
-        self.add_log("Mining started!")
-        self.add_log(f"Pool: {self.pool_url}")
+        self.add_log("=" * 60)
+        self.add_log("🚀 MINING SESSION STARTED")
+        self.add_log("=" * 60)
+        self.add_log(f"📍 Pool: {self.pool_url}")
         if self.pool_profile_name != self.custom_pool_label:
-            self.add_log(f"Pool preset: {self.pool_profile_name}")
-        self.add_log(f"Wallet: {self.wallet_address[:10]}...{self.wallet_address[-6:]}")
-        self.add_log(f"Worker: {self.worker_name}")
+            self.add_log(f"📋 Pool Preset: {self.pool_profile_name}")
+        self.add_log(f"💰 Wallet: {self.wallet_address[:10]}...{self.wallet_address[-6:]}")
+        self.add_log(f"🏷️  Worker ID: {self.worker_name}")
+        self.add_log(f"🌐 Protocol: Stratum TCP")
+        self.add_log(f"⏰ Session Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.add_log("=" * 60)
+        self.add_log("📊 Initializing connection to pool...")
+        self.add_log("🔍 Detecting GPUs and starting mining engine...")
 
         # Simulate mining process (in production, launch actual miner)
         self.current_coin = "ETC"
         self.current_coin_label.config(text=self.current_coin)
 
         self.status_bar_label.config(text="Mining in progress...")
+
+        # Reset verbose stats counter
+        self.last_verbose_log = time.time()
 
     def stop_mining(self):
         """Stop mining process"""
@@ -614,6 +624,9 @@ class MinerGUI:
 
     def monitor_loop(self):
         """Background monitoring thread"""
+        self.last_verbose_log = time.time()
+        share_count_checkpoint = 0
+
         while True:
             try:
                 if self.mining:
@@ -626,6 +639,7 @@ class MinerGUI:
                         self.uptime_label.config(text=f"{hours}h {minutes}m {seconds}s")
 
                     # Simulate stats (replace with actual miner API calls)
+                    old_hashrate = self.current_hashrate
                     self.current_hashrate = 45.5 + (hash(str(time.time())) % 10) / 10
                     self.accepted_shares += 1
                     self.total_shares += 1
@@ -654,6 +668,35 @@ class MinerGUI:
 
                     # Update GPU stats
                     self.update_gpu_stats()
+
+                    # Verbose logging every 30 seconds
+                    current_time = time.time()
+                    if current_time - self.last_verbose_log >= 30:
+                        self.last_verbose_log = current_time
+                        new_shares = self.accepted_shares - share_count_checkpoint
+                        share_count_checkpoint = self.accepted_shares
+
+                        self.add_log("─" * 60)
+                        self.add_log(f"📊 STATS UPDATE [{datetime.now().strftime('%H:%M:%S')}]")
+                        self.add_log(f"  ⚡ Current Hashrate: {self.current_hashrate:.2f} MH/s")
+                        self.add_log(f"  📈 Average Hashrate: {avg_hashrate:.2f} MH/s")
+                        self.add_log(f"  ✅ Accepted Shares: {self.accepted_shares} (+{new_shares} last 30s)")
+                        self.add_log(f"  ❌ Rejected Shares: {self.rejected_shares}")
+                        self.add_log(f"  📊 Efficiency: {efficiency:.2f}%")
+                        self.add_log(f"  💰 Total Earnings: ${self.total_earnings:.4f}")
+                        self.add_log(f"  💵 Est. Daily Profit: ${daily_profit:.2f}")
+                        self.add_log(f"  🌡️  GPU Temp: {self.gpu_temp}°C")
+                        self.add_log(f"  ⚡ GPU Power: {self.gpu_power}W")
+                        self.add_log(f"  🌀 GPU Fan: {self.gpu_fan}%")
+                        self.add_log(f"  ⏱️  Uptime: {hours}h {minutes}m {seconds}s")
+                        self.add_log(f"  🎯 Algorithm: Ethash (ETC)")
+                        self.add_log(f"  🌐 Pool: Connected")
+                        self.add_log("─" * 60)
+
+                    # Log individual shares every 5 shares
+                    if self.accepted_shares % 5 == 0 and self.accepted_shares != share_count_checkpoint:
+                        share_rate = new_shares / 30.0 if current_time - self.last_verbose_log < 30 else 0
+                        self.add_log(f"✅ Share #{self.accepted_shares} accepted | Rate: {share_rate:.2f}/s | Hashrate: {self.current_hashrate:.2f} MH/s")
 
                 time.sleep(1)
             except Exception as e:
