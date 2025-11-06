@@ -1,0 +1,122 @@
+🌐 HashNHedge Mining Pool - Official Connection Address
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 MINING POOL ADDRESS (Stratum TCP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+stratum+tcp://switchyard.proxy.rlwy.net:13595
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+🔌 CONNECTION EXAMPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+T-Rex Miner:
+───────────────────────────────────────────────────────────────
+t-rex -a ethash \
+  -o stratum+tcp://switchyard.proxy.rlwy.net:13595 \
+  -u YOUR_WALLET_ADDRESS.worker1 \
+  -p x
+
+
+lolMiner:
+───────────────────────────────────────────────────────────────
+lolMiner --algo ETHASH \
+  --pool switchyard.proxy.rlwy.net:13595 \
+  --user YOUR_WALLET_ADDRESS.worker1
+
+
+PhoenixMiner:
+───────────────────────────────────────────────────────────────
+PhoenixMiner.exe -pool stratum+tcp://switchyard.proxy.rlwy.net:13595 \
+  -wal YOUR_WALLET_ADDRESS.worker1
+
+
+TeamRedMiner:
+───────────────────────────────────────────────────────────────
+teamredminer -a ethash \
+  -o stratum+tcp://switchyard.proxy.rlwy.net:13595 \
+  -u YOUR_WALLET_ADDRESS.worker1 \
+  -p x
+
+
+NBMiner:
+───────────────────────────────────────────────────────────────
+nbminer -a ethash \
+  -o stratum+tcp://switchyard.proxy.rlwy.net:13595 \
+  -u YOUR_WALLET_ADDRESS.worker1
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+💰 POOL FEES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AI Jobs:      30% (high-value compute)
+Mining:       3%  (crypto mining fallback)
+Min Payout:   0.01 (varies by coin)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+📊 POOL STATISTICS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Health Check:    https://hashnhedge-pool.onrender.com/health
+Pool Stats API:  https://hashnhedge-pool.onrender.com/stats
+Mobile Stats:    https://hashnhedge-mobile-pool.onrender.com/api/stats
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+✅ SUPPORTED ALGORITHMS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• Ethash (ETH, ETC, ETHW)
+• KawPow (RVN)
+• Auto-switching enabled
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+🔧 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Connection Test:
+───────────────────────────────────────────────────────────────
+telnet switchyard.proxy.rlwy.net 13595
+
+Or:
+───────────────────────────────────────────────────────────────
+nc -zv switchyard.proxy.rlwy.net 13595
+
+
+Common Issues:
+───────────────────────────────────────────────────────────────
+• Firewall blocking port 13595
+• Incorrect wallet address format
+• Mining software not compatible with Stratum protocol
+• Pool temporarily down for maintenance
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+📞 SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+GitHub:   https://github.com/knol3j/HNH
+Website:  https://hashnhedge.com
+Email:    support@hashnhedge.com
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Last Updated: 2025-11-06
+Pool Status: LIVE ✅
