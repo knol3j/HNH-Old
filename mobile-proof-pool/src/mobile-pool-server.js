@@ -23,6 +23,7 @@ class MobilePoolServer {
         this.miners = new Map();
         this.shares = new Map();
         this.blocks = [];
+        this.jobs = new Map(); // Store active jobs for verification: jobId -> job data
         this.stats = {
             totalHashrate: 0,
             activeMiners: 0,
@@ -294,10 +295,17 @@ class MobilePoolServer {
                 return false;
             }
 
-            // Optional: Re-verify the hash was computed correctly
-            // This requires having the original block data
-            if (share.jobId && share.blockData) {
-                const input = `${share.blockData}${share.nonce}`;
+            // Re-verify the hash was computed correctly using stored job data
+            if (share.jobId) {
+                const job = this.jobs.get(share.jobId);
+
+                if (!job) {
+                    console.error('[Pool] Unknown or expired job ID:', share.jobId);
+                    return false;
+                }
+
+                // Verify hash was computed correctly from the job's blockData
+                const input = `${job.blockData}${share.nonce}`;
                 const computedHash = crypto.createHash('sha256').update(input).digest('hex');
 
                 if (computedHash !== share.hash) {
@@ -306,6 +314,14 @@ class MobilePoolServer {
                     console.error('  Received:', share.hash);
                     return false;
                 }
+
+                // Verify difficulty matches the job
+                if (job.difficulty !== this.algorithm.currentDifficulty) {
+                    console.log(`[Pool] Job difficulty ${job.difficulty} differs from current ${this.algorithm.currentDifficulty}`);
+                }
+            } else {
+                console.error('[Pool] Share missing jobId');
+                return false;
             }
 
             return true;
@@ -410,6 +426,14 @@ class MobilePoolServer {
                     difficulty: this.algorithm.currentDifficulty,
                     target: '0'.repeat(this.algorithm.currentDifficulty)
                 };
+
+                // Store job for later verification
+                this.jobs.set(job.jobId, {
+                    blockData: job.blockData,
+                    difficulty: job.difficulty,
+                    createdAt: Date.now()
+                });
+
                 ws.send(JSON.stringify(job));
                 break;
 
@@ -464,6 +488,14 @@ class MobilePoolServer {
                         difficulty: this.algorithm.currentDifficulty,
                         target: '0'.repeat(this.algorithm.currentDifficulty)
                     };
+
+                    // Store new job
+                    this.jobs.set(newJob.jobId, {
+                        blockData: newJob.blockData,
+                        difficulty: newJob.difficulty,
+                        createdAt: Date.now()
+                    });
+
                     ws.send(JSON.stringify(newJob));
                 } else {
                     this.stats.invalidShares++;
@@ -527,7 +559,22 @@ class MobilePoolServer {
         setInterval(() => {
             this.updateStats();
             this.broadcastStats();
+            this.cleanupOldJobs();
         }, 10000); // Update every 10 seconds
+    }
+
+    /**
+     * Clean up old jobs (older than 5 minutes)
+     */
+    cleanupOldJobs() {
+        const now = Date.now();
+        const maxAge = 5 * 60 * 1000; // 5 minutes
+
+        for (const [jobId, job] of this.jobs) {
+            if (now - job.createdAt > maxAge) {
+                this.jobs.delete(jobId);
+            }
+        }
     }
 
     /**

@@ -116,7 +116,14 @@ class StratumServer extends EventEmitter {
             }
         } catch (err) {
             console.error(`❌ Invalid JSON from ${client.id}:`, message);
-            this.sendError(client, null, -32700, 'Parse error');
+            console.error(`❌ Parse error:`, err.message);
+
+            // Try to send error, but don't crash if it fails
+            try {
+                this.sendError(client, null, -32700, 'Parse error');
+            } catch (sendErr) {
+                console.error(`[Stratum] Failed to send error response:`, sendErr.message);
+            }
         }
     }
 
@@ -472,8 +479,30 @@ class StratumServer extends EventEmitter {
      * Send message to client
      */
     send(client, data) {
-        const message = JSON.stringify(data) + '\n';
-        client.socket.write(message);
+        try {
+            if (!client || !client.socket || client.socket.destroyed) {
+                console.error('[Stratum] Cannot send to destroyed socket');
+                return false;
+            }
+
+            const message = JSON.stringify(data) + '\n';
+
+            if (!client.socket.writable) {
+                console.error('[Stratum] Socket not writable');
+                return false;
+            }
+
+            client.socket.write(message, (err) => {
+                if (err) {
+                    console.error(`[Stratum] Write error to ${client.id}:`, err.message);
+                }
+            });
+
+            return true;
+        } catch (err) {
+            console.error(`[Stratum] Send error to ${client.id}:`, err.message);
+            return false;
+        }
     }
 
     /**
@@ -482,6 +511,15 @@ class StratumServer extends EventEmitter {
     handleError(client, err) {
         console.error(`❌ Client error ${client.id}:`, err.message);
         this.emit('client:error', { clientId: client.id, error: err });
+
+        // Don't let socket errors crash the server
+        try {
+            if (client && client.socket && !client.socket.destroyed) {
+                client.socket.destroy();
+            }
+        } catch (cleanupErr) {
+            console.error(`[Stratum] Cleanup error:`, cleanupErr.message);
+        }
     }
 
     /**
