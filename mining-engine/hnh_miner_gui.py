@@ -63,6 +63,18 @@ class MinerGUI:
         self.wallet_address = ""
         self.worker_name = "HNH-Rig-1"
 
+        # Multi-coin wallet addresses
+        self.wallet_addresses = {
+            'ETC': '',
+            'RVN': '',
+            'ERG': '',
+            'ETHW': '',
+            'FIRO': '',
+            'CFX': '',
+            'ALPH': '',
+            'SERO': ''
+        }
+
         # Stats tracking
         self.hashrate_history = []
         self.profit_history = []
@@ -90,6 +102,11 @@ class MinerGUI:
                     self.worker_name = config.get("worker_name", "HNH-Rig-1")
                     self.pool_url = config.get("pool_url", self.pool_url)
                     self.pool_profile_name = config.get("pool_profile", self.match_pool_profile(self.pool_url))
+
+                    # Load multi-coin wallets
+                    coin_wallets = config.get("coin_wallets", {})
+                    for coin in self.wallet_addresses.keys():
+                        self.wallet_addresses[coin] = coin_wallets.get(coin, "")
             except Exception as e:
                 print(f"Error loading config: {e}")
 
@@ -119,7 +136,8 @@ class MinerGUI:
             "wallet": self.wallet_address,
             "worker_name": self.worker_name,
             "pool_url": self.pool_url,
-            "pool_profile": self.pool_profile_name
+            "pool_profile": self.pool_profile_name,
+            "coin_wallets": self.wallet_addresses
         }
 
         try:
@@ -399,12 +417,54 @@ class MinerGUI:
         """Create wallet configuration"""
         content = self.create_card(parent, "💰 Wallet Configuration")
 
-        # Wallet address
-        tk.Label(content, text="Wallet Address:", bg='#313244', fg='#cdd6f4').pack(anchor='w', pady=(5, 0))
-        self.wallet_entry = tk.Entry(content, bg='#45475a', fg='#cdd6f4', font=('Segoe UI', 10),
-                                     insertbackground='#cdd6f4', relief='flat', bd=5)
-        self.wallet_entry.pack(fill='x', pady=2)
-        self.wallet_entry.insert(0, self.wallet_address)
+        # Create scrollable frame for coin wallets
+        canvas = tk.Canvas(content, bg='#313244', highlightthickness=0, height=200)
+        scrollbar = tk.Scrollbar(content, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg='#313244')
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Coin wallet entries
+        self.coin_wallet_entries = {}
+        coin_info = {
+            'ETC': ('Ethereum Classic', '#a6e3a1'),
+            'RVN': ('Ravencoin', '#89dceb'),
+            'ERG': ('Ergo', '#cba6f7'),
+            'ETHW': ('Ethereum PoW', '#fab387'),
+            'FIRO': ('Firo', '#f9e2af'),
+            'CFX': ('Conflux', '#f38ba8'),
+            'ALPH': ('Alephium', '#94e2d5'),
+            'SERO': ('Super Zero', '#eba0ac')
+        }
+
+        for coin, (full_name, color) in coin_info.items():
+            coin_frame = tk.Frame(scrollable_frame, bg='#313244')
+            coin_frame.pack(fill='x', pady=3)
+
+            # Coin label with color
+            label_frame = tk.Frame(coin_frame, bg='#313244')
+            label_frame.pack(fill='x')
+
+            tk.Label(label_frame, text=f"{coin}:", bg='#313244', fg=color,
+                    font=('Segoe UI', 10, 'bold')).pack(side='left')
+            tk.Label(label_frame, text=f" ({full_name})", bg='#313244', fg='#6c7086',
+                    font=('Segoe UI', 8)).pack(side='left')
+
+            # Wallet entry
+            entry = tk.Entry(coin_frame, bg='#45475a', fg='#cdd6f4', font=('Consolas', 9),
+                           insertbackground='#cdd6f4', relief='flat', bd=3)
+            entry.pack(fill='x', pady=2)
+            entry.insert(0, self.wallet_addresses.get(coin, ''))
+            self.coin_wallet_entries[coin] = entry
+
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
 
         # Worker name
         tk.Label(content, text="Worker Name:", bg='#313244', fg='#cdd6f4').pack(anchor='w', pady=(10, 0))
@@ -546,7 +606,16 @@ class MinerGUI:
 
     def save_wallet_config(self):
         """Save wallet configuration"""
-        self.wallet_address = self.wallet_entry.get().strip()
+        # Save coin wallet addresses
+        for coin, entry in self.coin_wallet_entries.items():
+            self.wallet_addresses[coin] = entry.get().strip()
+
+        # Set primary wallet address to first non-empty coin wallet
+        for coin in ['ETC', 'RVN', 'ERG', 'ETHW', 'FIRO', 'CFX', 'ALPH', 'SERO']:
+            if self.wallet_addresses[coin]:
+                self.wallet_address = self.wallet_addresses[coin]
+                break
+
         self.worker_name = self.worker_entry.get().strip()
         self.pool_url = self.pool_entry.get().strip()
         self.pool_profile_name = self.match_pool_profile(self.pool_url)
@@ -554,8 +623,14 @@ class MinerGUI:
             self.pool_var.set(self.pool_profile_name)
 
         self.save_config()
+
+        # Log saved wallets
         self.add_log("Configuration saved")
-        messagebox.showinfo("Success", "Configuration saved successfully!")
+        saved_coins = [coin for coin, addr in self.wallet_addresses.items() if addr]
+        if saved_coins:
+            self.add_log(f"Configured wallets for: {', '.join(saved_coins)}")
+
+        messagebox.showinfo("Success", f"Configuration saved successfully!\n\nConfigured {len(saved_coins)} coin wallet(s): {', '.join(saved_coins)}")
 
     def start_mining(self):
         """Start mining process"""
