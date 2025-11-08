@@ -18,6 +18,12 @@ from datetime import datetime, timedelta
 import hashlib
 import platform
 
+# Windows-specific flag to hide console windows for subprocess calls
+if platform.system() == 'Windows':
+    CREATE_NO_WINDOW = 0x08000000
+else:
+    CREATE_NO_WINDOW = 0
+
 class MinerGUI:
     def __init__(self, root):
         self.root = root
@@ -605,7 +611,7 @@ class MinerGUI:
         try:
             # Try to detect NVIDIA GPU
             result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-                                  capture_output=True, text=True, timeout=5)
+                                  capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
             if result.returncode == 0:
                 gpu_name = result.stdout.strip()
                 self.gpu_name_label.config(text=f"🎮 {gpu_name}")
@@ -629,7 +635,7 @@ class MinerGUI:
                 'nvidia-smi',
                 '--query-gpu=temperature.gpu,fan.speed,power.draw,memory.used,memory.total',
                 '--format=csv,noheader,nounits'
-            ], capture_output=True, text=True, timeout=5)
+            ], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
 
             if result.returncode == 0:
                 temp, fan, power, mem_used, mem_total = result.stdout.strip().split(', ')
@@ -795,7 +801,7 @@ class MinerGUI:
                 'nvidia-smi',
                 '--query-gpu=power.default_limit',
                 '--format=csv,noheader,nounits'
-            ], capture_output=True, text=True, timeout=5)
+            ], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
 
             if result.returncode == 0:
                 default_power = float(result.stdout.strip())
@@ -805,7 +811,7 @@ class MinerGUI:
                 limit_result = subprocess.run([
                     'nvidia-smi',
                     '-pl', str(target_power)
-                ], capture_output=True, text=True, timeout=5)
+                ], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
 
                 if limit_result.returncode == 0:
                     self.add_log(f"✅ GPU power limit set to {target_power}W ({self.gpu_power_limit}%)")
@@ -824,7 +830,7 @@ class MinerGUI:
                 'nvidia-smi',
                 '--query-gpu=power.default_limit',
                 '--format=csv,noheader,nounits'
-            ], capture_output=True, text=True, timeout=5)
+            ], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
 
             if result.returncode == 0:
                 default_power = int(float(result.stdout.strip()))
@@ -833,7 +839,7 @@ class MinerGUI:
                 reset_result = subprocess.run([
                     'nvidia-smi',
                     '-pl', str(default_power)
-                ], capture_output=True, text=True, timeout=5)
+                ], capture_output=True, text=True, timeout=5, creationflags=CREATE_NO_WINDOW)
 
                 if reset_result.returncode == 0:
                     self.add_log(f"✅ GPU power limit reset to default ({default_power}W)")
