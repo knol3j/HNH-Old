@@ -75,6 +75,10 @@ class MinerGUI:
             'SERO': ''
         }
 
+        # GPU power limiting
+        self.gpu_power_limit_enabled = False
+        self.gpu_power_limit = 80  # 0-100%
+
         # Stats tracking
         self.hashrate_history = []
         self.profit_history = []
@@ -107,6 +111,10 @@ class MinerGUI:
                     coin_wallets = config.get("coin_wallets", {})
                     for coin in self.wallet_addresses.keys():
                         self.wallet_addresses[coin] = coin_wallets.get(coin, "")
+
+                    # Load GPU power limit settings
+                    self.gpu_power_limit_enabled = config.get("gpu_power_limit_enabled", False)
+                    self.gpu_power_limit = config.get("gpu_power_limit", 80)
             except Exception as e:
                 print(f"Error loading config: {e}")
 
@@ -137,7 +145,9 @@ class MinerGUI:
             "worker_name": self.worker_name,
             "pool_url": self.pool_url,
             "pool_profile": self.pool_profile_name,
-            "coin_wallets": self.wallet_addresses
+            "coin_wallets": self.wallet_addresses,
+            "gpu_power_limit_enabled": self.gpu_power_limit_enabled,
+            "gpu_power_limit": self.gpu_power_limit
         }
 
         try:
@@ -413,6 +423,45 @@ class MinerGUI:
                                 relief='raised', bd=3, cursor='hand2', padx=20, pady=8)
         benchmark_btn.pack(fill='x', pady=2)
 
+        # GPU Power Limiter Section
+        limiter_frame = tk.Frame(btn_frame, bg='#313244', relief='raised', bd=2)
+        limiter_frame.pack(fill='x', pady=(10, 2))
+
+        # Power limit toggle
+        self.power_limit_var = tk.BooleanVar(value=self.gpu_power_limit_enabled)
+        power_limit_check = tk.Checkbutton(limiter_frame, text="⚡ GPU Power Limiter",
+                                         variable=self.power_limit_var,
+                                         command=self.toggle_power_limiter,
+                                         bg='#313244', fg='#fab387', selectcolor='#45475a',
+                                         font=('Segoe UI', 10, 'bold'), cursor='hand2',
+                                         activebackground='#313244', activeforeground='#f9e2af')
+        power_limit_check.pack(anchor='w', padx=10, pady=(5, 0))
+
+        # Power limit slider
+        slider_frame = tk.Frame(limiter_frame, bg='#313244')
+        slider_frame.pack(fill='x', padx=10, pady=5)
+
+        tk.Label(slider_frame, text="Power:", bg='#313244', fg='#bac2de',
+                font=('Segoe UI', 9)).pack(side='left')
+
+        self.power_limit_scale = tk.Scale(slider_frame, from_=30, to=100,
+                                         orient='horizontal',
+                                         command=self.update_power_limit_label,
+                                         bg='#45475a', fg='#cdd6f4',
+                                         highlightthickness=0, troughcolor='#1e1e2e',
+                                         activebackground='#89b4fa', cursor='hand2')
+        self.power_limit_scale.set(self.gpu_power_limit)
+        self.power_limit_scale.pack(side='left', fill='x', expand=True, padx=5)
+
+        self.power_limit_label = tk.Label(slider_frame, text=f"{self.gpu_power_limit}%",
+                                        bg='#313244', fg='#a6e3a1',
+                                        font=('Segoe UI', 10, 'bold'), width=5)
+        self.power_limit_label.pack(side='right')
+
+        # Info label
+        tk.Label(limiter_frame, text="Reduces GPU power draw and heat",
+                bg='#313244', fg='#6c7086', font=('Segoe UI', 8)).pack(padx=10, pady=(0, 5))
+
     def create_wallet_config(self, parent):
         """Create wallet configuration"""
         content = self.create_card(parent, "💰 Wallet Configuration")
@@ -672,9 +721,19 @@ class MinerGUI:
         # Reset verbose stats counter
         self.last_verbose_log = time.time()
 
+        # Apply GPU power limit if enabled
+        if self.gpu_power_limit_enabled:
+            self.add_log(f"⚡ Applying GPU power limit: {self.gpu_power_limit}%")
+            self.apply_gpu_power_limit()
+
     def stop_mining(self):
         """Stop mining process"""
         self.mining = False
+
+        # Reset GPU power limit if it was enabled
+        if self.gpu_power_limit_enabled:
+            self.add_log("⚡ Resetting GPU power limit to default")
+            self.reset_gpu_power_limit()
 
         # Update UI
         self.start_btn.config(state='normal')
@@ -696,6 +755,94 @@ class MinerGUI:
         """Benchmark GPU performance"""
         self.add_log("Starting GPU benchmark...")
         messagebox.showinfo("Benchmark", "GPU benchmarking will start. This may take a few minutes.")
+
+    def toggle_power_limiter(self):
+        """Toggle GPU power limiter on/off"""
+        self.gpu_power_limit_enabled = self.power_limit_var.get()
+
+        if self.gpu_power_limit_enabled:
+            self.add_log(f"⚡ GPU Power Limiter ENABLED at {self.gpu_power_limit}%")
+            # Apply power limit immediately if mining
+            if self.mining:
+                self.apply_gpu_power_limit()
+            else:
+                # Apply on next mining start
+                self.add_log("⚡ Power limit will be applied when mining starts")
+        else:
+            self.add_log("⚡ GPU Power Limiter DISABLED - restoring full power")
+            # Reset to default power limit if mining
+            if self.mining:
+                self.reset_gpu_power_limit()
+
+        # Save config
+        self.save_config()
+
+    def update_power_limit_label(self, value):
+        """Update power limit label when slider changes"""
+        self.gpu_power_limit = int(float(value))
+        self.power_limit_label.config(text=f"{self.gpu_power_limit}%")
+
+        # Apply immediately if limiter is enabled and mining
+        if self.gpu_power_limit_enabled and self.mining:
+            self.apply_gpu_power_limit()
+            self.add_log(f"⚡ Power limit adjusted to {self.gpu_power_limit}%")
+
+    def apply_gpu_power_limit(self):
+        """Apply GPU power limit using nvidia-smi"""
+        try:
+            # Get default power limit first
+            result = subprocess.run([
+                'nvidia-smi',
+                '--query-gpu=power.default_limit',
+                '--format=csv,noheader,nounits'
+            ], capture_output=True, text=True, timeout=5)
+
+            if result.returncode == 0:
+                default_power = float(result.stdout.strip())
+                target_power = int(default_power * (self.gpu_power_limit / 100.0))
+
+                # Apply power limit
+                limit_result = subprocess.run([
+                    'nvidia-smi',
+                    '-pl', str(target_power)
+                ], capture_output=True, text=True, timeout=5)
+
+                if limit_result.returncode == 0:
+                    self.add_log(f"✅ GPU power limit set to {target_power}W ({self.gpu_power_limit}%)")
+                else:
+                    self.add_log(f"⚠️ Failed to set power limit (may need admin rights)")
+            else:
+                self.add_log("⚠️ Could not query GPU power limit")
+        except Exception as e:
+            self.add_log(f"⚠️ Power limit error: {str(e)}")
+
+    def reset_gpu_power_limit(self):
+        """Reset GPU to default power limit"""
+        try:
+            # Get default power limit
+            result = subprocess.run([
+                'nvidia-smi',
+                '--query-gpu=power.default_limit',
+                '--format=csv,noheader,nounits'
+            ], capture_output=True, text=True, timeout=5)
+
+            if result.returncode == 0:
+                default_power = int(float(result.stdout.strip()))
+
+                # Reset to default
+                reset_result = subprocess.run([
+                    'nvidia-smi',
+                    '-pl', str(default_power)
+                ], capture_output=True, text=True, timeout=5)
+
+                if reset_result.returncode == 0:
+                    self.add_log(f"✅ GPU power limit reset to default ({default_power}W)")
+                else:
+                    self.add_log(f"⚠️ Failed to reset power limit")
+            else:
+                self.add_log("⚠️ Could not query GPU default power limit")
+        except Exception as e:
+            self.add_log(f"⚠️ Power reset error: {str(e)}")
 
     def monitor_loop(self):
         """Background monitoring thread"""
