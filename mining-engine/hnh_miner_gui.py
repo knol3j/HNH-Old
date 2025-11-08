@@ -68,6 +68,7 @@ class MinerGUI:
         self.pool_url = self.preconfigured_pools[0]['url']
         self.wallet_address = ""
         self.worker_name = "HNH-Rig-1"
+        self.pool_connected = False
 
         # Multi-coin wallet addresses
         self.wallet_addresses = {
@@ -732,6 +733,10 @@ class MinerGUI:
             self.add_log(f"⚡ Applying GPU power limit: {self.gpu_power_limit}%")
             self.apply_gpu_power_limit()
 
+        # Fetch initial pool stats
+        self.last_pool_update = 0
+        self.update_pool_stats()
+
     def stop_mining(self):
         """Stop mining process"""
         self.mining = False
@@ -850,6 +855,77 @@ class MinerGUI:
         except Exception as e:
             self.add_log(f"⚠️ Power reset error: {str(e)}")
 
+    def update_pool_stats(self):
+        """Fetch and update pool statistics from API"""
+        if not self.pool_url:
+            return
+
+        try:
+            # Determine if this is an HTTP API or Stratum pool
+            if self.pool_url.startswith('http'):
+                # Try to fetch stats from API
+                stats_url = f"{self.pool_url}/stats" if not self.pool_url.endswith('/stats') else self.pool_url
+
+                response = requests.get(stats_url, timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+
+                    # Update pool stats from API response
+                    pool_hashrate = data.get('poolHashrate', 0)
+                    active_miners = data.get('activeMiners', 0) or data.get('activeMminers', 0) or data.get('miners', 0)
+                    network_diff = data.get('networkDifficulty', 0) or data.get('difficulty', 0)
+                    last_block = data.get('lastBlock', 'Never') or data.get('lastBlockFound', 'Never')
+
+                    # Format hashrate
+                    if pool_hashrate >= 1e9:
+                        hashrate_str = f"{pool_hashrate/1e9:.2f} GH/s"
+                    elif pool_hashrate >= 1e6:
+                        hashrate_str = f"{pool_hashrate/1e6:.2f} MH/s"
+                    elif pool_hashrate >= 1e3:
+                        hashrate_str = f"{pool_hashrate/1e3:.2f} KH/s"
+                    else:
+                        hashrate_str = f"{pool_hashrate:.2f} H/s"
+
+                    # Update UI
+                    self.pool_hashrate_label.config(text=hashrate_str)
+                    self.active_miners_label.config(text=str(active_miners))
+                    self.network_diff_label.config(text=str(network_diff))
+
+                    # Format last block time
+                    if isinstance(last_block, (int, float)):
+                        time_ago = int(time.time() - last_block)
+                        if time_ago < 60:
+                            last_block_str = f"{time_ago}s ago"
+                        elif time_ago < 3600:
+                            last_block_str = f"{time_ago//60}m ago"
+                        else:
+                            last_block_str = f"{time_ago//3600}h ago"
+                        self.last_block_label.config(text=last_block_str)
+                    else:
+                        self.last_block_label.config(text=str(last_block))
+
+                    self.pool_connected = True
+                else:
+                    self.pool_connected = False
+            else:
+                # Stratum pool - mark as connected if mining
+                if self.mining:
+                    self.pool_connected = True
+                    # For Stratum pools, we can't easily fetch stats without proper implementation
+                    # Just show connected status
+                    self.pool_hashrate_label.config(text="N/A (Stratum)")
+                    self.active_miners_label.config(text="N/A")
+                    self.network_diff_label.config(text="N/A")
+                    self.last_block_label.config(text="N/A")
+        except requests.exceptions.Timeout:
+            self.add_log("⚠️ Pool stats request timed out")
+            self.pool_connected = False
+        except requests.exceptions.ConnectionError:
+            self.pool_connected = False
+        except Exception as e:
+            # Silently fail - don't spam logs
+            self.pool_connected = False
+
     def monitor_loop(self):
         """Background monitoring thread"""
         self.last_verbose_log = time.time()
@@ -858,6 +934,13 @@ class MinerGUI:
         while True:
             try:
                 if self.mining:
+                    # Update pool stats every 10 seconds
+                    if not hasattr(self, 'last_pool_update'):
+                        self.last_pool_update = 0
+
+                    if time.time() - self.last_pool_update >= 10:
+                        self.update_pool_stats()
+                        self.last_pool_update = time.time()
                     # Update uptime
                     if self.start_time:
                         elapsed = datetime.now() - self.start_time
