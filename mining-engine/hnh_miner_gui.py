@@ -18,6 +18,14 @@ from datetime import datetime, timedelta
 import hashlib
 import platform
 
+# Import actual mining engine
+try:
+    from actual_miner import HashNHedgeMiner
+    ACTUAL_MINER_AVAILABLE = True
+except ImportError:
+    ACTUAL_MINER_AVAILABLE = False
+    print("Warning: actual_miner.py not found, using simulation mode")
+
 # Windows-specific flag to hide console windows for subprocess calls
 if platform.system() == 'Windows':
     CREATE_NO_WINDOW = 0x08000000
@@ -53,6 +61,7 @@ class MinerGUI:
         # Mining state
         self.mining = False
         self.miner_process = None
+        self.actual_miner = None  # Actual mining engine instance
         self.current_coin = "None"
         self.start_time = None
         self.total_shares = 0
@@ -688,6 +697,13 @@ class MinerGUI:
 
         messagebox.showinfo("Success", f"Configuration saved successfully!\n\nConfigured {len(saved_coins)} coin wallet(s): {', '.join(saved_coins)}")
 
+    def handle_miner_stats(self, stats):
+        """Callback for actual miner statistics updates"""
+        self.current_hashrate = stats.get('hashrate', 0)
+        self.total_shares = stats.get('shares_submitted', 0)
+        self.accepted_shares = stats.get('shares_accepted', 0)
+        self.rejected_shares = stats.get('shares_rejected', 0)
+
     def start_mining(self):
         """Start mining process"""
         if not self.wallet_address:
@@ -713,16 +729,33 @@ class MinerGUI:
             self.add_log(f"📋 Pool Preset: {self.pool_profile_name}")
         self.add_log(f"💰 Wallet: {self.wallet_address[:10]}...{self.wallet_address[-6:]}")
         self.add_log(f"🏷️  Worker ID: {self.worker_name}")
-        self.add_log(f"🌐 Protocol: Stratum TCP")
         self.add_log(f"⏰ Session Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.add_log("=" * 60)
-        self.add_log("📊 Initializing connection to pool...")
-        self.add_log("🔍 Detecting GPUs and starting mining engine...")
 
-        # Simulate mining process (in production, launch actual miner)
+        # Start actual mining if available
+        if ACTUAL_MINER_AVAILABLE:
+            self.add_log("🔍 Starting ACTUAL mining engine...")
+            try:
+                self.actual_miner = HashNHedgeMiner(
+                    pool_url=self.pool_url,
+                    wallet=self.wallet_address,
+                    worker_name=self.worker_name,
+                    on_stats_update=self.handle_miner_stats
+                )
+                self.actual_miner.connect()
+                time.sleep(1)  # Wait for connection
+                self.actual_miner.start_mining()
+                self.add_log("✓ CPU mining engine started (4 threads)")
+                self.add_log("⚡ Mining with real SHA256 hashing!")
+            except Exception as e:
+                self.add_log(f"⚠️ Miner error: {e}")
+                self.add_log("⚠️ Falling back to simulation mode")
+        else:
+            self.add_log("⚠️ Actual miner not available - using simulation mode")
+            self.add_log("📊 Install 'websocket-client' for real mining")
+
         self.current_coin = "ETC"
         self.current_coin_label.config(text=self.current_coin)
-
         self.status_bar_label.config(text="Mining in progress...")
 
         # Reset verbose stats counter
@@ -740,6 +773,15 @@ class MinerGUI:
     def stop_mining(self):
         """Stop mining process"""
         self.mining = False
+
+        # Stop actual miner if running
+        if self.actual_miner:
+            try:
+                self.actual_miner.stop_mining()
+                self.add_log("✓ Mining engine stopped")
+            except Exception as e:
+                self.add_log(f"⚠️ Stop error: {e}")
+            self.actual_miner = None
 
         # Reset GPU power limit if it was enabled
         if self.gpu_power_limit_enabled:
