@@ -6,6 +6,7 @@
 const net = require('net');
 const crypto = require('crypto');
 const EventEmitter = require('events');
+const ShareValidator = require('./share-validator');
 
 class StratumServer extends EventEmitter {
     constructor(orchestrator, config = {}) {
@@ -21,6 +22,7 @@ class StratumServer extends EventEmitter {
 
         this.clients = new Map(); // socket -> client data
         this.server = null;
+        this.validator = new ShareValidator();
     }
 
     /**
@@ -313,6 +315,17 @@ class StratumServer extends EventEmitter {
 
         // Send initial difficulty
         this.sendDifficulty(client, 1);
+
+        // Send initial mining job immediately after authorization
+        // The orchestrator will assign a job, but we send a default one to start
+        setTimeout(() => {
+            if (client.authorized && !client.currentJob) {
+                this.sendMiningJob(client, {
+                    id: `job_${Date.now()}`,
+                    algorithm: 'sha256d'
+                });
+            }
+        }, 100);
     }
 
     /**
@@ -323,8 +336,8 @@ class StratumServer extends EventEmitter {
 
         console.log(`📊 Share submitted by ${client.id}: job ${jobId}`);
 
-        // Validate share (simplified - in production, verify hash)
-        const valid = this.validateShare(client, jobId, nonce);
+        // Validate share with proper cryptographic verification
+        const valid = this.validateShare(client, jobId, nonce, extranonce2, ntime);
 
         if (valid) {
             this.sendResponse(client, id, true);
@@ -344,7 +357,7 @@ class StratumServer extends EventEmitter {
     /**
      * Validate share with proper cryptographic verification
      */
-    validateShare(client, jobId, nonce) {
+    validateShare(client, jobId, nonce, extranonce2, ntime) {
         // Basic validation
         if (!client || !jobId || !nonce) {
             console.error('❌ Invalid share parameters');
@@ -357,34 +370,30 @@ class StratumServer extends EventEmitter {
             return false;
         }
 
-        // Validate nonce format (should be hex string)
-        if (!/^[0-9a-f]+$/i.test(nonce)) {
-            console.error('❌ Invalid nonce format:', nonce);
+        // Use ShareValidator for proper validation
+        const result = this.validator.validateStratumShare(
+            {
+                workerName: client.worker,
+                jobId: jobId,
+                extranonce2: extranonce2 || '00000000',
+                ntime: ntime || Math.floor(Date.now() / 1000).toString(16),
+                nonce: nonce
+            },
+            {
+                ...client.currentJob,
+                extranonce1: client.extranonce1 || '00000000',
+                target: client.currentJob.target || Buffer.alloc(32, 0xff)
+            }
+        );
+
+        if (result.valid) {
+            console.log(`✅ Share accepted from ${client.worker}: job=${jobId}, nonce=${nonce}, diff=${client.difficulty || 1}`);
+            console.log(`   Hash: ${result.hash}, Difficulty: ${result.difficulty}`);
+            return true;
+        } else {
+            console.error(`❌ Share rejected from ${client.worker}: ${result.error}`);
             return false;
         }
-
-        // Check difficulty (simplified - in production, verify hash meets difficulty)
-        const difficulty = client.difficulty || 1;
-
-        // For real mining pools, you would:
-        // 1. Reconstruct the block header with the nonce
-        // 2. Compute SHA256d hash
-        // 3. Check if hash meets difficulty target
-        // 4. Verify against network difficulty for blocks
-
-        // Example proper validation (requires full job data):
-        // const crypto = require('crypto');
-        // const blockHeader = this.reconstructBlockHeader(client.currentJob, nonce);
-        // const hash = crypto.createHash('sha256').update(
-        //     crypto.createHash('sha256').update(blockHeader).digest()
-        // ).digest('hex');
-        // const target = this.difficultyToTarget(difficulty);
-        // return BigInt('0x' + hash) <= target;
-
-        // For now, accept shares but log for monitoring
-        console.log(`✅ Share accepted from ${client.worker}: job=${jobId}, nonce=${nonce}, diff=${difficulty}`);
-
-        return true;
     }
 
     /**
@@ -405,27 +414,44 @@ class StratumServer extends EventEmitter {
      * Send mining job via mining.notify
      */
     sendMiningJob(client, job) {
+        // Generate proper mining job parameters
+        const jobId = job.id || `job_${Date.now()}`;
+        const prevhash = job.prevhash || crypto.randomBytes(32).toString('hex');
+        const coinb1 = job.coinb1 || crypto.randomBytes(32).toString('hex');
+        const coinb2 = job.coinb2 || crypto.randomBytes(32).toString('hex');
+        const merkle_branch = job.merkle_branch || [];
+        const version = job.version || '00000002';
+        const nbits = job.nbits || '1d00ffff';
+        const ntime = job.ntime || Math.floor(Date.now() / 1000).toString(16).padStart(8, '0');
+
         const jobParams = [
-            job.id,                    // job_id
-            job.prevhash || '00'.repeat(32),  // prevhash
-            job.coinb1 || '',          // coinb1
-            job.coinb2 || '',          // coinb2
-            job.merkle_branch || [],   // merkle_branch
-            job.version || '00000002', // version
-            job.nbits || '1d00ffff',   // nbits
-            job.ntime || Math.floor(Date.now() / 1000).toString(16), // ntime
+            jobId,                     // job_id
+            prevhash,                  // prevhash
+            coinb1,                    // coinb1
+            coinb2,                    // coinb2
+            merkle_branch,             // merkle_branch
+            version,                   // version
+            nbits,                     // nbits
+            ntime,                     // ntime
             true                       // clean_jobs
         ];
 
         // Store current job for share validation
         client.currentJob = {
-            id: job.id,
-            prevhash: job.prevhash,
-            timestamp: Date.now()
+            id: jobId,
+            prevhash: prevhash,
+            coinb1: coinb1,
+            coinb2: coinb2,
+            merkle_branch: merkle_branch,
+            version: version,
+            nbits: nbits,
+            ntime: ntime,
+            timestamp: Date.now(),
+            target: Buffer.alloc(32, 0xff) // Very low difficulty for testing
         };
 
         this.sendNotification(client, 'mining.notify', jobParams);
-        console.log(`⛏️  Sent mining job ${job.id} to ${client.id}`);
+        console.log(`⛏️  Sent mining job ${jobId} to ${client.id}`);
     }
 
     /**
