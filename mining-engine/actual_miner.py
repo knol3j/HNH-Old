@@ -42,6 +42,7 @@ class HashNHedgeMiner:
         # Stratum-specific
         self.stratum_msg_id = 1
         self.stratum_buffer = ""
+        self.extranonce1 = None
 
     def connect(self):
         """Connect to pool via WebSocket or Stratum"""
@@ -214,14 +215,29 @@ class HashNHedgeMiner:
         # Handle mining.notify (new job)
         if msg.get('method') == 'mining.notify':
             params = msg.get('params', [])
-            if len(params) >= 4:
+            if len(params) >= 8:
+                job_id = params[0]
+                prevhash = params[1]
+                coinb1 = params[2]
+                coinb2 = params[3]
+                merkle_branch = params[4]
+                version = params[5]
+                nbits = params[6]
+                ntime = params[7]
+
                 self.current_job = {
-                    'job_id': params[0],
-                    'block_data': params[1] + params[2],  # prevhash + coinbase
-                    'target': '000',  # Simplified
+                    'job_id': job_id,
+                    'prevhash': prevhash,
+                    'coinb1': coinb1,
+                    'coinb2': coinb2,
+                    'merkle_branch': merkle_branch,
+                    'version': version,
+                    'nbits': nbits,
+                    'ntime': ntime,
                     'difficulty': 1
                 }
                 print(f"[JOB] ID: {self.current_job['job_id']}")
+                print(f"[JOB] Version: {version}, NBits: {nbits}, NTime: {ntime}")
 
         # Handle mining.set_difficulty
         elif msg.get('method') == 'mining.set_difficulty':
@@ -253,31 +269,109 @@ class HashNHedgeMiner:
                 self.update_stats()
             elif msg_id == 1:
                 print(f"[OK] Subscribed to pool")
+                # Store extranonce1 from subscription response
+                if isinstance(result, list) and len(result) >= 2:
+                    self.extranonce1 = result[1]
+                    print(f"[EXTRANONCE1] {self.extranonce1}")
             elif msg_id == 2:
                 print(f"[OK] Authorized worker: {self.worker_name}")
+
+    def build_coinbase(self, job, extranonce2):
+        """Build coinbase transaction"""
+        coinb1 = bytes.fromhex(job['coinb1'])
+        extranonce1 = bytes.fromhex(self.extranonce1 or '00000000')
+        extranonce2_bytes = bytes.fromhex(extranonce2)
+        coinb2 = bytes.fromhex(job['coinb2'])
+
+        coinbase = coinb1 + extranonce1 + extranonce2_bytes + coinb2
+        return hashlib.sha256(coinbase).digest()
+
+    def calculate_merkle_root(self, coinbase_hash, merkle_branch):
+        """Calculate merkle root from coinbase and merkle branch"""
+        hash_value = coinbase_hash
+
+        for branch in merkle_branch:
+            branch_bytes = bytes.fromhex(branch)
+            combined = hash_value + branch_bytes
+            hash_value = hashlib.sha256(combined).digest()
+
+        return hash_value
+
+    def build_block_header(self, job, merkle_root, ntime, nonce):
+        """Build 80-byte block header"""
+        import struct
+
+        header = bytearray(80)
+        offset = 0
+
+        # Version (4 bytes, little-endian)
+        version = int(job['version'], 16)
+        struct.pack_into('<I', header, offset, version)
+        offset += 4
+
+        # Previous block hash (32 bytes)
+        prevhash = bytes.fromhex(job['prevhash'])
+        header[offset:offset+32] = prevhash
+        offset += 32
+
+        # Merkle root (32 bytes)
+        header[offset:offset+32] = merkle_root
+        offset += 32
+
+        # Time (4 bytes, little-endian)
+        time_int = int(ntime, 16)
+        struct.pack_into('<I', header, offset, time_int)
+        offset += 4
+
+        # Bits (4 bytes, little-endian)
+        nbits = int(job['nbits'], 16)
+        struct.pack_into('<I', header, offset, nbits)
+        offset += 4
+
+        # Nonce (4 bytes, little-endian)
+        struct.pack_into('<I', header, offset, nonce)
+
+        return bytes(header)
+
+    def double_sha256(self, data):
+        """Compute double SHA256 hash"""
+        hash1 = hashlib.sha256(data).digest()
+        hash2 = hashlib.sha256(hash1).digest()
+        return hash2
 
     def mine_worker(self, thread_id):
         """Mining worker thread - CPU mining"""
         nonce = thread_id * 1000000  # Offset nonces per thread
+        extranonce2 = f"{thread_id:08x}"  # Use thread_id as extranonce2
 
         while self.mining:
-            if not self.current_job:
+            if not self.current_job or not self.extranonce1:
                 time.sleep(0.1)
                 continue
 
-            # Get current job
-            job_id = self.current_job['job_id']
-            block_data = self.current_job['block_data']
-            target = self.current_job['target']
+            job = self.current_job
 
-            # Mine: hash(block_data + nonce)
-            data = f"{block_data}{nonce:016x}"
-            hash_result = hashlib.sha256(data.encode()).hexdigest()
+            # Build coinbase transaction
+            coinbase_hash = self.build_coinbase(job, extranonce2)
 
-            # Check if hash meets target (starts with enough zeros)
-            if hash_result.startswith(target):
+            # Calculate merkle root
+            merkle_root = self.calculate_merkle_root(coinbase_hash, job.get('merkle_branch', []))
+
+            # Build block header
+            header = self.build_block_header(job, merkle_root, job['ntime'], nonce & 0xFFFFFFFF)
+
+            # Compute double SHA256
+            hash_result = self.double_sha256(header)
+
+            # Check if hash meets difficulty (simplified - check leading zeros)
+            # In a real pool, we'd check against target
+            hash_hex = hash_result.hex()
+
+            # Very low difficulty for testing - just need some leading zeros
+            if hash_hex.startswith('0000'):
                 # Found valid share!
-                self.submit_share(job_id, nonce, hash_result)
+                nonce_hex = f"{nonce & 0xFFFFFFFF:08x}"
+                self.submit_share(job['job_id'], nonce_hex, hash_hex, extranonce2, job['ntime'])
 
             nonce += 1
 
@@ -285,7 +379,7 @@ class HashNHedgeMiner:
             if nonce % 1000 == 0:
                 self.update_hashrate()
 
-    def submit_share(self, job_id, nonce, hash_result):
+    def submit_share(self, job_id, nonce, hash_result, extranonce2, ntime):
         """Submit found share to pool"""
         self.shares_submitted += 1
 
@@ -296,7 +390,7 @@ class HashNHedgeMiner:
                 share_msg = {
                     'type': 'submit',
                     'jobId': job_id,
-                    'nonce': f"{nonce:016x}",
+                    'nonce': nonce,
                     'hash': hash_result
                 }
                 self.ws.send(json.dumps(share_msg))
@@ -304,16 +398,16 @@ class HashNHedgeMiner:
             elif self.protocol == 'stratum':
                 if not self.stratum_socket:
                     return
-                # Stratum mining.submit format
+                # Stratum mining.submit format: [worker_name, job_id, extranonce2, ntime, nonce]
                 self.stratum_send({
                     "id": 100 + self.shares_submitted,  # ID >= 100 for share submissions
                     "method": "mining.submit",
                     "params": [
                         self.worker_name,
                         job_id,
-                        f"{nonce:016x}",
-                        "",  # extranonce2 (not used in simple mode)
-                        ""   # time (not used in simple mode)
+                        extranonce2,
+                        ntime,
+                        nonce
                     ]
                 })
 
