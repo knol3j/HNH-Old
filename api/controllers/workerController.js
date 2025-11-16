@@ -145,10 +145,11 @@ async function getWorkerStats(req, res) {
       });
     }
 
-    // Calculate 24h stats
-    const shares24h = worker.shares.length;
-    const validShares24h = worker.shares.filter(s => s.isValid).length;
-    const invalidShares24h = worker.shares.filter(s => !s.isValid).length;
+    // Calculate 24h stats (with null/undefined safety)
+    const shares = worker.shares || [];
+    const shares24h = shares.length;
+    const validShares24h = shares.filter(s => s && s.isValid).length;
+    const invalidShares24h = shares.filter(s => s && !s.isValid).length;
 
     res.json({
       success: true,

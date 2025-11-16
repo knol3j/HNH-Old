@@ -94,7 +94,8 @@ class MobilePoolServer {
         });
 
         this.app.get('/api/blocks', (req, res) => {
-            const limit = parseInt(req.query.limit) || 50;
+            const parsedLimit = parseInt(req.query.limit);
+            const limit = isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 100);
             res.json({
                 success: true,
                 data: this.blocks.slice(0, limit)

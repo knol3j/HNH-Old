@@ -276,11 +276,25 @@ function showLoading(elementId) {
 
 /**
  * Hide loading spinner
+ * @param {string} elementId - The element ID
+ * @param {string} content - Content to display (will be sanitized)
+ * @param {boolean} isHTML - If true, treats content as HTML (use with caution)
  */
-function hideLoading(elementId, content) {
+function hideLoading(elementId, content, isHTML = false) {
     const element = document.getElementById(elementId);
     if (element) {
-        element.innerHTML = content;
+        if (isHTML) {
+            // If HTML is explicitly requested, use DOMPurify if available, otherwise textContent
+            if (typeof DOMPurify !== 'undefined') {
+                element.innerHTML = DOMPurify.sanitize(content);
+            } else {
+                console.warn('DOMPurify not available, using textContent for safety');
+                element.textContent = content;
+            }
+        } else {
+            // Default to safe textContent
+            element.textContent = content;
+        }
     }
 }
 

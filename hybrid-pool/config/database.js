@@ -12,7 +12,11 @@ class Database {
             database: process.env.DB_NAME || 'hashnhedge_pool',
             user: process.env.DB_USER || 'pool_user',
             password: process.env.DB_PASSWORD || '',
-            ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+            ssl: process.env.DB_SSL === 'true'
+                ? (process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false'
+                    ? { rejectUnauthorized: false }
+                    : true)  // Use secure SSL by default
+                : false,
             min: parseInt(process.env.DB_POOL_MIN) || 2,
             max: parseInt(process.env.DB_POOL_MAX) || 10,
             idleTimeoutMillis: 30000,
@@ -233,10 +237,17 @@ class Database {
     }
 
     async getPoolStats(hours = 24) {
+        // Validate input
+        const validHours = parseInt(hours);
+        if (isNaN(validHours) || validHours < 1 || validHours > 8760) {
+            throw new Error('Invalid hours parameter');
+        }
+
         const result = await this.query(
             `SELECT * FROM pool_stats
-             WHERE timestamp > CURRENT_TIMESTAMP - INTERVAL '${hours} hours'
-             ORDER BY timestamp DESC`
+             WHERE timestamp > CURRENT_TIMESTAMP - ($1 || ' hours')::interval
+             ORDER BY timestamp DESC`,
+            [validHours]
         );
         return result.rows;
     }

@@ -36,7 +36,12 @@ class HybridPool {
                 enabled: true,
                 port: process.env.PORT || 3334,
                 host: '0.0.0.0',
-                apiKey: process.env.ADMIN_API_KEY || 'change-me'
+                apiKey: (() => {
+                    if (!process.env.ADMIN_API_KEY) {
+                        throw new Error('ADMIN_API_KEY environment variable must be set for security');
+                    }
+                    return process.env.ADMIN_API_KEY;
+                })()
             },
 
             // Payment settings

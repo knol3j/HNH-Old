@@ -69,6 +69,17 @@ const staticLimiter = rateLimit({
 
 // Middleware
 app.use(cors(corsOptions));
+
+// HTTPS enforcement for production
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            return res.redirect(`https://${req.header('host')}${req.url}`);
+        }
+        next();
+    });
+}
+
 app.use(express.json({ limit: '1mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Serve static files only from specific safe directories to prevent exposure of private files
@@ -330,14 +341,35 @@ app.get('/api/revenue-data', (req, res) => {
         'cpu': 100
     };
 
+    // Input validation
+    if (!gpuType || !hashRates.hasOwnProperty(gpuType)) {
+        return res.status(400).json({
+            error: 'Invalid GPU type. Must be one of: 4090, 3090, 3080, 3070, 3060ti, cpu'
+        });
+    }
+
+    const parsedGpuCount = parseInt(gpuCount);
+    if (isNaN(parsedGpuCount) || parsedGpuCount < 1 || parsedGpuCount > 1000) {
+        return res.status(400).json({
+            error: 'Invalid GPU count. Must be between 1 and 1000'
+        });
+    }
+
+    const parsedHours = parseInt(hoursPerDay);
+    if (isNaN(parsedHours) || parsedHours < 1 || parsedHours > 24) {
+        return res.status(400).json({
+            error: 'Invalid hours per day. Must be between 1 and 24'
+        });
+    }
+
     const electricityCost = 0.12; // $/kWh
     const revenuePerMH = 0.85; // $ per MH/s per day
     const revenueShare = 0.70; // 70% to node operators
 
-    const totalHashRate = hashRates[gpuType] * parseInt(gpuCount);
-    const dailyRevenue = totalHashRate * revenuePerMH * (parseInt(hoursPerDay) / 24) * revenueShare;
-    const totalPower = (powerUsage[gpuType] * parseInt(gpuCount)) / 1000;
-    const dailyElectricity = totalPower * parseInt(hoursPerDay) * electricityCost;
+    const totalHashRate = hashRates[gpuType] * parsedGpuCount;
+    const dailyRevenue = totalHashRate * revenuePerMH * (parsedHours / 24) * revenueShare;
+    const totalPower = (powerUsage[gpuType] * parsedGpuCount) / 1000;
+    const dailyElectricity = totalPower * parsedHours * electricityCost;
     const dailyProfit = dailyRevenue - dailyElectricity;
 
     res.json({
@@ -453,9 +485,19 @@ app.get('/', (req, res) => {
 
 // Handle all other routes by serving static files
 app.get('*', (req, res) => {
-    const filePath = path.join(__dirname, req.path);
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
+    // Normalize and resolve path to prevent traversal attacks
+    const requestedPath = path.normalize(req.path).replace(/^(\.\.[\/\\])+/, '');
+    const filePath = path.join(__dirname, requestedPath);
+    const resolvedPath = path.resolve(filePath);
+
+    // Security check: ensure resolved path is within __dirname
+    if (!resolvedPath.startsWith(path.resolve(__dirname))) {
+        console.warn(`Path traversal attempt detected: ${req.path}`);
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+        res.sendFile(resolvedPath);
     } else {
         res.status(404).sendFile(path.join(__dirname, 'index.html'));
     }
