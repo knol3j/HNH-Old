@@ -38,7 +38,12 @@ const resolveSecret = () => {
 
   if (secret.length < MIN_SECRET_LENGTH) {
     logSecretState('weak', secret);
-    return secret;
+    // Reject weak secrets in production
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[AUTH] CRITICAL: JWT_SECRET must be at least 32 characters in production');
+      return null;
+    }
+    return secret; // Allow in development only
   }
 
   logSecretState('ok');

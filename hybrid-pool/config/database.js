@@ -233,10 +233,17 @@ class Database {
     }
 
     async getPoolStats(hours = 24) {
+        // Validate and sanitize input to prevent SQL injection
+        const hoursInt = parseInt(hours, 10);
+        if (isNaN(hoursInt) || hoursInt < 0 || hoursInt > 720) {
+            throw new Error('Invalid hours parameter: must be between 0 and 720');
+        }
+
         const result = await this.query(
             `SELECT * FROM pool_stats
-             WHERE timestamp > CURRENT_TIMESTAMP - INTERVAL '${hours} hours'
-             ORDER BY timestamp DESC`
+             WHERE timestamp > CURRENT_TIMESTAMP - INTERVAL $1
+             ORDER BY timestamp DESC`,
+            [`${hoursInt} hours`]
         );
         return result.rows;
     }

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../api/server'); // server exports the Express app
+const app = require('../../api/server-unified'); // Updated to use unified server
 
 describe('Health Endpoint', () => {
   it('should return success true', async () => {
