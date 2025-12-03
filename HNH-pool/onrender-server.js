@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const fs = require('fs');
+const ShareValidator = require('../hybrid-pool/share-validator');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -22,6 +23,12 @@ const globalStorage = {
     lastPayoutTime: Date.now()
   }
 };
+
+// Initialize share validator
+const shareValidator = new ShareValidator({
+  maxTimeDrift: 7200,
+  checkDuplicates: true
+});
 
 // Middleware
 app.use(cors({
@@ -132,7 +139,7 @@ app.post('/api/connect', (req, res) => {
 
 // Share submission endpoint
 app.post('/api/submit-share', (req, res) => {
-  const { walletAddress, nonce, hash, timestamp } = req.body;
+  const { walletAddress, nonce, hash, timestamp, header, mixDigest } = req.body;
 
   if (!walletAddress || !nonce || !hash) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -146,17 +153,23 @@ app.post('/api/submit-share', (req, res) => {
   // Update miner last seen
   miner.lastSeen = Date.now();
 
-  // Validate share (simplified validation)
-  const isValidShare = hash.startsWith('0000'); // Simplified difficulty check
+  // Validate share with proper cryptographic verification
+  const validation = validateShare({
+    nonce,
+    hash,
+    header,
+    mixDigest,
+    difficulty: 1000000
+  });
 
-  if (isValidShare) {
+  if (validation.valid) {
     // Accept the share
     const share = {
       walletAddress,
       nonce,
-      hash,
+      hash: validation.hash || hash,
       timestamp: timestamp || Date.now(),
-      difficulty: 1000000,
+      difficulty: validation.difficulty || 1000000,
       reward: 0.1 // 0.1 HNH per share
     };
 
@@ -165,7 +178,7 @@ app.post('/api/submit-share', (req, res) => {
     miner.totalShares++;
     miner.totalEarnings += share.reward;
 
-    console.log(`✅ Share accepted from ${miner.workerName}: ${hash.substring(0, 16)}...`);
+    console.log(`✅ Share accepted from ${miner.workerName}: ${hash.substring(0, 16)}... (diff: ${validation.difficulty})`);
 
     res.json({
       success: true,
@@ -175,10 +188,62 @@ app.post('/api/submit-share', (req, res) => {
       totalEarnings: miner.totalEarnings
     });
   } else {
-    console.log(`❌ Invalid share from ${miner.workerName}: ${hash.substring(0, 16)}...`);
-    res.status(400).json({ error: 'Invalid share' });
+    console.log(`❌ Invalid share from ${miner.workerName}: ${validation.error}`);
+    res.status(400).json({ error: `Invalid share: ${validation.error}` });
   }
 });
+
+/**
+ * Validate share with proper cryptographic verification
+ */
+function validateShare(params) {
+  const { nonce, hash, header, mixDigest, difficulty } = params;
+
+  // Validate hash format
+  if (!hash || typeof hash !== 'string' || !/^[0-9a-f]+$/i.test(hash)) {
+    return { valid: false, error: 'Invalid hash format' };
+  }
+
+  // Validate nonce format
+  if (!nonce || typeof nonce !== 'string' || !/^[0-9a-f]+$/i.test(nonce)) {
+    return { valid: false, error: 'Invalid nonce format' };
+  }
+
+  // If header and mixDigest provided, validate as ethash share
+  if (header && mixDigest) {
+    return shareValidator.validateEthashShare({
+      nonce,
+      header,
+      mixDigest,
+      difficulty,
+      target: difficultyToTarget(difficulty)
+    });
+  }
+
+  // Otherwise, validate the hash meets the difficulty target
+  const target = difficultyToTarget(difficulty);
+  const hashBuffer = Buffer.from(hash, 'hex');
+
+  if (!shareValidator.checkTarget(hashBuffer, target)) {
+    return { valid: false, error: 'Hash does not meet difficulty target' };
+  }
+
+  return {
+    valid: true,
+    hash,
+    difficulty: shareValidator.hashToDifficulty(hashBuffer)
+  };
+}
+
+/**
+ * Convert difficulty to target buffer
+ */
+function difficultyToTarget(difficulty) {
+  const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+  const target = maxTarget / BigInt(Math.floor(difficulty));
+  const targetHex = target.toString(16).padStart(64, '0');
+  return Buffer.from(targetHex, 'hex');
+}
 
 // Marketplace integration
 app.get('/marketplace/jobs', (req, res) => {

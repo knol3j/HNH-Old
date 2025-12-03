@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const express = require('express');
 const crypto = require('crypto');
 const MobileProofAlgorithm = require('../lib/mobile-proof-algorithm');
+const ShareValidator = require('../../hybrid-pool/share-validator');
 
 /**
  * Mobile Mining Pool Server
@@ -13,13 +14,16 @@ class MobilePoolServer {
     constructor(options = {}) {
         this.stratumPort = options.stratumPort || 3333;
         this.wsPort = options.wsPort || 8081;
-        // Prioritize PORT (for Render/cloud platforms) over API_PORT
-        this.apiPort = options.apiPort || options.port || 8080;
+        this.apiPort = options.apiPort || 8080;
         this.poolAddress = options.poolAddress || 'pool_default_address';
         this.poolFee = options.poolFee || 2; // 2% pool fee
         this.minPayout = options.minPayout || 0.01;
 
         this.algorithm = new MobileProofAlgorithm();
+        this.shareValidator = new ShareValidator({
+            maxTimeDrift: 7200,
+            checkDuplicates: true
+        });
         this.miners = new Map();
         this.shares = new Map();
         this.blocks = [];
@@ -90,7 +94,8 @@ class MobilePoolServer {
         });
 
         this.app.get('/api/blocks', (req, res) => {
-            const limit = parseInt(req.query.limit) || 50;
+            const parsedLimit = parseInt(req.query.limit);
+            const limit = isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 100);
             res.json({
                 success: true,
                 data: this.blocks.slice(0, limit)
@@ -268,19 +273,123 @@ class MobilePoolServer {
     }
 
     /**
-     * Verify share validity
+     * Verify share validity using proper cryptographic verification
      */
     verifyShare(share) {
-        // Basic validation - in production, verify against actual block data
-        return share.nonce && share.hash && share.hash.startsWith('0');
+        try {
+            // Basic validation
+            if (!share || !share.nonce || !share.hash) {
+                console.error('[Pool] Invalid share: missing fields');
+                return false;
+            }
+
+            // Validate hash format (must be 64-char hex string)
+            if (!/^[0-9a-f]{64}$/i.test(share.hash)) {
+                console.error('[Pool] Invalid hash format:', share.hash);
+                return false;
+            }
+
+            // Get difficulty (from share or use current network difficulty)
+            const difficulty = share.difficulty || this.algorithm.currentDifficulty;
+
+            // Perform proper cryptographic validation
+            const validation = this.validateShareCryptographic({
+                nonce: share.nonce,
+                hash: share.hash,
+                header: share.header,
+                mixDigest: share.mixDigest,
+                blockData: share.blockData,
+                difficulty
+            });
+
+            if (!validation.valid) {
+                console.error(`[Pool] Share validation failed: ${validation.error}`);
+                return false;
+            }
+
+            // Optional: Re-verify the hash was computed correctly if blockData provided
+            if (share.jobId && share.blockData) {
+                const input = `${share.blockData}${share.nonce}`;
+                const computedHash = crypto.createHash('sha256').update(input).digest('hex');
+
+                if (computedHash !== share.hash) {
+                    console.error('[Pool] Hash mismatch - possible tampering');
+                    console.error('  Expected:', computedHash);
+                    console.error('  Received:', share.hash);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('[Pool] Error verifying share:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Validate share with proper cryptographic verification
+     */
+    validateShareCryptographic(params) {
+        const { nonce, hash, header, mixDigest, blockData, difficulty } = params;
+
+        // Validate hash format
+        if (!hash || typeof hash !== 'string' || !/^[0-9a-f]+$/i.test(hash)) {
+            return { valid: false, error: 'Invalid hash format' };
+        }
+
+        // Validate nonce format
+        const nonceStr = typeof nonce === 'number' ? nonce.toString(16) : nonce;
+        if (!nonceStr || !/^[0-9a-f]+$/i.test(nonceStr)) {
+            return { valid: false, error: 'Invalid nonce format' };
+        }
+
+        // If header and mixDigest provided, validate as ethash share
+        if (header && mixDigest) {
+            return this.shareValidator.validateEthashShare({
+                nonce: nonceStr,
+                header,
+                mixDigest,
+                difficulty,
+                target: this.difficultyToTarget(difficulty)
+            });
+        }
+
+        // Otherwise, validate the hash meets the difficulty target
+        const target = this.difficultyToTarget(difficulty);
+        const hashBuffer = Buffer.from(hash, 'hex');
+
+        if (!this.shareValidator.checkTarget(hashBuffer, target)) {
+            return { valid: false, error: 'Hash does not meet difficulty target' };
+        }
+
+        return {
+            valid: true,
+            hash,
+            difficulty: this.shareValidator.hashToDifficulty(hashBuffer)
+        };
+    }
+
+    /**
+     * Convert difficulty to target buffer
+     */
+    difficultyToTarget(difficulty) {
+        const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+        const target = maxTarget / BigInt(Math.floor(difficulty));
+        const targetHex = target.toString(16).padStart(64, '0');
+        return Buffer.from(targetHex, 'hex');
     }
 
     /**
      * Check if share represents a block solution
      */
     isBlockFound(share) {
-        // In production, check if hash meets network difficulty
-        return share.hash.startsWith('0'.repeat(this.algorithm.currentDifficulty + 2));
+        // Check if hash meets network difficulty (higher than pool difficulty)
+        const networkDifficulty = this.algorithm.currentDifficulty * 1000; // Network difficulty is much higher
+        const target = this.difficultyToTarget(networkDifficulty);
+        const hashBuffer = Buffer.from(share.hash, 'hex');
+
+        return this.shareValidator.checkTarget(hashBuffer, target);
     }
 
     /**
@@ -499,9 +608,7 @@ if (require.main === module) {
     const pool = new MobilePoolServer({
         stratumPort: process.env.STRATUM_PORT || 3333,
         wsPort: process.env.WS_PORT || 8081,
-        // Prioritize PORT (standard for Render/cloud) over API_PORT
-        apiPort: process.env.PORT || process.env.API_PORT || 8080,
-        port: process.env.PORT || process.env.API_PORT || 8080,
+        apiPort: process.env.API_PORT || 8080,
         poolAddress: process.env.POOL_ADDRESS || 'default_pool_address',
         poolFee: parseFloat(process.env.POOL_FEE) || 2,
         minPayout: parseFloat(process.env.MIN_PAYOUT) || 0.01

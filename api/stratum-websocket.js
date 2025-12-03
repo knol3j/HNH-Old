@@ -6,6 +6,7 @@
 const WebSocket = require('ws');
 const net = require('net');
 const crypto = require('crypto');
+const ShareValidator = require('../hybrid-pool/share-validator');
 
 class StratumWebSocketServer {
     constructor(httpServer, config = {}) {
@@ -16,6 +17,10 @@ class StratumWebSocketServer {
         };
 
         this.clients = new Map();
+        this.shareValidator = new ShareValidator({
+            maxTimeDrift: 7200,
+            checkDuplicates: true
+        });
         this.setupWebSocketServer(httpServer);
         this.setupTCPServer();
     }
@@ -248,8 +253,55 @@ class StratumWebSocketServer {
 
         console.log(`[STRATUM] Share submitted by ${client.id}: job ${jobId}`);
 
-        // Accept all shares for now (implement validation in production)
-        this.sendResponse(client, id, true);
+        // Validate share with proper cryptographic verification
+        const validation = this.validateShare(client, {
+            workerName,
+            jobId,
+            extranonce2,
+            ntime,
+            nonce
+        });
+
+        if (validation.valid) {
+            this.sendResponse(client, id, true);
+            console.log(`✅ Valid share accepted from ${client.worker}: diff=${validation.difficulty}`);
+        } else {
+            this.sendResponse(client, id, false);
+            console.log(`❌ Invalid share rejected from ${client.worker}: ${validation.error}`);
+        }
+    }
+
+    /**
+     * Validate share with proper cryptographic verification
+     */
+    validateShare(client, params) {
+        if (!client || !params) {
+            return { valid: false, error: 'Invalid parameters' };
+        }
+
+        const { jobId } = params;
+
+        if (!client.currentJob || client.currentJob.id !== jobId) {
+            return { valid: false, error: 'Job not found or expired' };
+        }
+
+        const jobData = {
+            ...client.currentJob,
+            extranonce1: client.extranonce1 || '',
+            target: this.difficultyToTarget(client.difficulty || 1)
+        };
+
+        return this.shareValidator.validateStratumShare(params, jobData);
+    }
+
+    /**
+     * Convert difficulty to target buffer
+     */
+    difficultyToTarget(difficulty) {
+        const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+        const target = maxTarget / BigInt(Math.floor(difficulty));
+        const targetHex = target.toString(16).padStart(64, '0');
+        return Buffer.from(targetHex, 'hex');
     }
 
     /**
@@ -286,8 +338,26 @@ class StratumWebSocketServer {
      * Handle eth_submitWork
      */
     handleEthSubmitWork(client, id, params) {
+        const [nonce, header, mixDigest] = params;
+
         console.log(`[STRATUM] Share submitted (ethProxy) by ${client.id}`);
-        this.sendResponse(client, id, true);
+
+        // Validate ethash share with proper cryptographic verification
+        const validation = this.shareValidator.validateEthashShare({
+            nonce,
+            header,
+            mixDigest,
+            difficulty: client.difficulty || 1,
+            target: this.difficultyToTarget(client.difficulty || 1)
+        });
+
+        if (validation.valid) {
+            this.sendResponse(client, id, true);
+            console.log(`✅ Valid ethash share accepted from ${client.id}: diff=${validation.difficulty}`);
+        } else {
+            this.sendResponse(client, id, false);
+            console.log(`❌ Invalid ethash share rejected from ${client.id}: ${validation.error}`);
+        }
     }
 
     /**
@@ -305,6 +375,10 @@ class StratumWebSocketServer {
             ntime: Math.floor(Date.now() / 1000).toString(16),
             clean_jobs: true
         };
+
+        // Store job for validation
+        client.currentJob = job;
+        client.difficulty = client.difficulty || 1;
 
         this.sendNotification(client, 'mining.notify', [
             job.id,

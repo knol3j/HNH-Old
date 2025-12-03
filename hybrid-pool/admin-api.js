@@ -83,10 +83,13 @@ class AdminAPI {
                     return next();
                 }
 
-                const apiKey = req.headers['x-api-key'] || req.query.apiKey;
+                // Only accept API key from headers for security (not query params)
+                const apiKey = req.headers['x-api-key'];
 
-                if (apiKey !== this.config.apiKey) {
-                    return res.status(401).json({ error: 'Unauthorized' });
+                if (!apiKey || apiKey !== this.config.apiKey) {
+                    return res.status(401).json({
+                        error: 'Unauthorized - Valid API key required in X-API-Key header'
+                    });
                 }
 
                 next();

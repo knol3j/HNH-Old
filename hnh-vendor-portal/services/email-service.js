@@ -12,12 +12,8 @@ class EmailService {
             fromEmail: config.fromEmail || 'noreply@hashnhedge.com',
             fromName: config.fromName || 'HashNHedge',
 
-            // Admin notification emails
-            adminEmails: [
-                'knol3j@gmail.com',
-                'ugbuni@proton.me',
-                'nolij@ik.me'
-            ],
+            // Admin notification emails - from environment variable
+            adminEmails: config.adminEmails || (process.env.ADMIN_EMAILS || '').split(',').filter(e => e.trim()),
 
             ...config
         };

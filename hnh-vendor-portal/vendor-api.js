@@ -10,9 +10,26 @@ const path = require('path');
 
 class VendorAPI {
     constructor(config = {}) {
+        // Validate encryption key
+        let encryptionKey;
+        if (config.encryptionKey) {
+            encryptionKey = Buffer.from(config.encryptionKey, 'hex');
+        } else if (process.env.VENDOR_ENCRYPTION_KEY) {
+            encryptionKey = Buffer.from(process.env.VENDOR_ENCRYPTION_KEY, 'hex');
+        } else {
+            const randomKey = crypto.randomBytes(32).toString('hex');
+            console.warn('⚠️  No encryption key provided. Generated random key:', randomKey);
+            console.warn('⚠️  Set VENDOR_ENCRYPTION_KEY environment variable for production');
+            encryptionKey = Buffer.from(randomKey, 'hex');
+        }
+
+        if (encryptionKey.length !== 32) {
+            throw new Error('Encryption key must be exactly 32 bytes (64 hex characters)');
+        }
+
         this.config = {
             dataDir: config.dataDir || './data/vendors',
-            encryptionKey: config.encryptionKey || process.env.VENDOR_ENCRYPTION_KEY || crypto.randomBytes(32),
+            encryptionKey: encryptionKey,
             ...config
         };
 
@@ -40,8 +57,11 @@ class VendorAPI {
      * Encrypt sensitive data
      */
     encrypt(text) {
+        if (!text) {
+            throw new Error('Text to encrypt cannot be empty');
+        }
         const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(this.config.encryptionKey), iv);
+        const cipher = crypto.createCipheriv('aes-256-cbc', this.config.encryptionKey, iv);
         let encrypted = cipher.update(text, 'utf8', 'hex');
         encrypted += cipher.final('hex');
         return iv.toString('hex') + ':' + encrypted;
@@ -51,10 +71,16 @@ class VendorAPI {
      * Decrypt sensitive data
      */
     decrypt(encryptedText) {
+        if (!encryptedText || typeof encryptedText !== 'string') {
+            throw new Error('Invalid encrypted text');
+        }
         const parts = encryptedText.split(':');
+        if (parts.length !== 2) {
+            throw new Error('Invalid encrypted text format');
+        }
         const iv = Buffer.from(parts[0], 'hex');
         const encrypted = parts[1];
-        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(this.config.encryptionKey), iv);
+        const decipher = crypto.createDecipheriv('aes-256-cbc', this.config.encryptionKey, iv);
         let decrypted = decipher.update(encrypted, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
         return decrypted;
@@ -84,8 +110,8 @@ class VendorAPI {
                     }
                 }
 
-                // Generate vendor ID
-                const vendorId = 'VND-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+                // Generate vendor ID - use 12 bytes for better uniqueness
+                const vendorId = 'VND-' + crypto.randomBytes(12).toString('hex').toUpperCase();
 
                 // Encrypt sensitive data
                 const encryptedData = {
@@ -326,11 +352,16 @@ class VendorAPI {
      * Admin authentication middleware
      */
     requireAdmin = (req, res, next) => {
-        const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-        const validKey = process.env.ADMIN_API_KEY || 'change-me';
+        // Only accept API key from headers for security (not query params)
+        const apiKey = req.headers['x-api-key'];
 
-        if (apiKey !== validKey) {
-            return res.status(401).json({ error: 'Unauthorized' });
+        if (!process.env.ADMIN_API_KEY) {
+            console.error('ADMIN_API_KEY environment variable not set');
+            return res.status(500).json({ error: 'Server configuration error' });
+        }
+
+        if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+            return res.status(401).json({ error: 'Unauthorized - Valid API key required in X-API-Key header' });
         }
 
         req.admin = { username: 'admin' };

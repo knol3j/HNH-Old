@@ -22,7 +22,10 @@ class StratumServer extends EventEmitter {
 
         this.clients = new Map(); // socket -> client data
         this.server = null;
-        this.validator = new ShareValidator();
+        this.shareValidator = new ShareValidator({
+            maxTimeDrift: 7200,
+            checkDuplicates: true
+        });
     }
 
     /**
@@ -118,14 +121,7 @@ class StratumServer extends EventEmitter {
             }
         } catch (err) {
             console.error(`❌ Invalid JSON from ${client.id}:`, message);
-            console.error(`❌ Parse error:`, err.message);
-
-            // Try to send error, but don't crash if it fails
-            try {
-                this.sendError(client, null, -32700, 'Parse error');
-            } catch (sendErr) {
-                console.error(`[Stratum] Failed to send error response:`, sendErr.message);
-            }
+            this.sendError(client, null, -32700, 'Parse error');
         }
     }
 
@@ -224,18 +220,32 @@ class StratumServer extends EventEmitter {
 
         console.log(`📊 Share submitted (ethProxy) by ${client.id}`);
 
-        // Validate share (simplified)
-        const valid = true; // Accept all for now
+        // Validate ethash share with proper cryptographic verification
+        const validation = this.shareValidator.validateEthashShare({
+            nonce,
+            header,
+            mixDigest,
+            difficulty: client.difficulty || 1,
+            target: this.difficultyToTarget(client.difficulty || 1)
+        });
 
-        if (valid) {
+        if (validation.valid) {
             this.sendResponse(client, id, true);
             this.emit('share:valid', {
                 workerId: client.id,
-                difficulty: client.difficulty || 1
+                difficulty: validation.difficulty || client.difficulty || 1,
+                hash: validation.hash
             });
+
+            console.log(`✅ Valid ethash share accepted from ${client.id}: diff=${validation.difficulty}`);
         } else {
             this.sendResponse(client, id, false);
-            this.emit('share:invalid', { workerId: client.id });
+            this.emit('share:invalid', {
+                workerId: client.id,
+                error: validation.error
+            });
+
+            console.log(`❌ Invalid ethash share rejected from ${client.id}: ${validation.error}`);
         }
     }
 
@@ -315,17 +325,6 @@ class StratumServer extends EventEmitter {
 
         // Send initial difficulty
         this.sendDifficulty(client, 1);
-
-        // Send initial mining job immediately after authorization
-        // The orchestrator will assign a job, but we send a default one to start
-        setTimeout(() => {
-            if (client.authorized && !client.currentJob) {
-                this.sendMiningJob(client, {
-                    id: `job_${Date.now()}`,
-                    algorithm: 'sha256d'
-                });
-            }
-        }, 100);
     }
 
     /**
@@ -337,63 +336,86 @@ class StratumServer extends EventEmitter {
         console.log(`📊 Share submitted by ${client.id}: job ${jobId}`);
 
         // Validate share with proper cryptographic verification
-        const valid = this.validateShare(client, jobId, nonce, extranonce2, ntime);
+        const validation = this.validateShare(client, {
+            workerName,
+            jobId,
+            extranonce2,
+            ntime,
+            nonce
+        });
 
-        if (valid) {
+        if (validation.valid) {
             this.sendResponse(client, id, true);
 
             // Report to orchestrator as partial job completion
             this.emit('share:valid', {
                 workerId: client.id,
                 jobId,
-                difficulty: client.difficulty || 1
+                difficulty: validation.difficulty || client.difficulty || 1,
+                hash: validation.hash
             });
+
+            console.log(`✅ Valid share accepted from ${client.worker}: diff=${validation.difficulty}`);
         } else {
             this.sendResponse(client, id, false);
-            this.emit('share:invalid', { workerId: client.id, jobId });
+            this.emit('share:invalid', {
+                workerId: client.id,
+                jobId,
+                error: validation.error
+            });
+
+            console.log(`❌ Invalid share rejected from ${client.worker}: ${validation.error}`);
         }
     }
 
     /**
      * Validate share with proper cryptographic verification
      */
-    validateShare(client, jobId, nonce, extranonce2, ntime) {
-        // Basic validation
-        if (!client || !jobId || !nonce) {
-            console.error('❌ Invalid share parameters');
-            return false;
+    validateShare(client, params) {
+        // Basic parameter validation
+        if (!client || !params) {
+            return { valid: false, error: 'Invalid parameters' };
         }
+
+        const { jobId, nonce, extranonce2, ntime } = params;
 
         // Check if client has current job
         if (!client.currentJob || client.currentJob.id !== jobId) {
-            console.error('❌ Invalid job ID:', jobId);
-            return false;
+            return { valid: false, error: 'Job not found or expired' };
         }
 
-        // Use ShareValidator for proper validation
-        const result = this.validator.validateStratumShare(
-            {
-                workerName: client.worker,
-                jobId: jobId,
-                extranonce2: extranonce2 || '00000000',
-                ntime: ntime || Math.floor(Date.now() / 1000).toString(16),
-                nonce: nonce
-            },
-            {
-                ...client.currentJob,
-                extranonce1: client.extranonce1 || '00000000',
-                target: client.currentJob.target || Buffer.alloc(32, 0xff)
-            }
+        // Get job data (needs to be stored with full parameters in sendMiningJob)
+        const job = client.currentJob;
+
+        // Add required fields for validation
+        const jobData = {
+            ...job,
+            extranonce1: client.extranonce1 || '',
+            target: this.difficultyToTarget(client.difficulty || 1)
+        };
+
+        // Use ShareValidator for cryptographic verification
+        const result = this.shareValidator.validateStratumShare(
+            params,
+            jobData
         );
 
-        if (result.valid) {
-            console.log(`✅ Share accepted from ${client.worker}: job=${jobId}, nonce=${nonce}, diff=${client.difficulty || 1}`);
-            console.log(`   Hash: ${result.hash}, Difficulty: ${result.difficulty}`);
-            return true;
-        } else {
-            console.error(`❌ Share rejected from ${client.worker}: ${result.error}`);
-            return false;
-        }
+        return result;
+    }
+
+    /**
+     * Convert difficulty to target buffer
+     */
+    difficultyToTarget(difficulty) {
+        // Bitcoin difficulty 1 target
+        const maxTarget = BigInt('0x00000000FFFF0000000000000000000000000000000000000000000000000000');
+
+        // target = maxTarget / difficulty
+        const target = maxTarget / BigInt(Math.floor(difficulty));
+
+        // Convert to 32-byte buffer (little-endian)
+        const targetHex = target.toString(16).padStart(64, '0');
+        return Buffer.from(targetHex, 'hex');
     }
 
     /**
@@ -414,44 +436,33 @@ class StratumServer extends EventEmitter {
      * Send mining job via mining.notify
      */
     sendMiningJob(client, job) {
-        // Generate proper mining job parameters
-        const jobId = job.id || `job_${Date.now()}`;
-        const prevhash = job.prevhash || crypto.randomBytes(32).toString('hex');
-        const coinb1 = job.coinb1 || crypto.randomBytes(32).toString('hex');
-        const coinb2 = job.coinb2 || crypto.randomBytes(32).toString('hex');
-        const merkle_branch = job.merkle_branch || [];
-        const version = job.version || '00000002';
-        const nbits = job.nbits || '1d00ffff';
-        const ntime = job.ntime || Math.floor(Date.now() / 1000).toString(16).padStart(8, '0');
-
         const jobParams = [
-            jobId,                     // job_id
-            prevhash,                  // prevhash
-            coinb1,                    // coinb1
-            coinb2,                    // coinb2
-            merkle_branch,             // merkle_branch
-            version,                   // version
-            nbits,                     // nbits
-            ntime,                     // ntime
+            job.id,                    // job_id
+            job.prevhash || '00'.repeat(32),  // prevhash
+            job.coinb1 || '',          // coinb1
+            job.coinb2 || '',          // coinb2
+            job.merkle_branch || [],   // merkle_branch
+            job.version || '00000002', // version
+            job.nbits || '1d00ffff',   // nbits
+            job.ntime || Math.floor(Date.now() / 1000).toString(16), // ntime
             true                       // clean_jobs
         ];
 
-        // Store current job for share validation
+        // Store full job data for share validation
         client.currentJob = {
-            id: jobId,
-            prevhash: prevhash,
-            coinb1: coinb1,
-            coinb2: coinb2,
-            merkle_branch: merkle_branch,
-            version: version,
-            nbits: nbits,
-            ntime: ntime,
-            timestamp: Date.now(),
-            target: Buffer.alloc(32, 0xff) // Very low difficulty for testing
+            id: job.id,
+            prevhash: job.prevhash || '00'.repeat(32),
+            coinb1: job.coinb1 || '',
+            coinb2: job.coinb2 || '',
+            merkle_branch: job.merkle_branch || [],
+            version: job.version || '00000002',
+            nbits: job.nbits || '1d00ffff',
+            ntime: job.ntime || Math.floor(Date.now() / 1000).toString(16),
+            timestamp: Date.now()
         };
 
         this.sendNotification(client, 'mining.notify', jobParams);
-        console.log(`⛏️  Sent mining job ${jobId} to ${client.id}`);
+        console.log(`⛏️  Sent mining job ${job.id} to ${client.id}`);
     }
 
     /**
@@ -505,30 +516,8 @@ class StratumServer extends EventEmitter {
      * Send message to client
      */
     send(client, data) {
-        try {
-            if (!client || !client.socket || client.socket.destroyed) {
-                console.error('[Stratum] Cannot send to destroyed socket');
-                return false;
-            }
-
-            const message = JSON.stringify(data) + '\n';
-
-            if (!client.socket.writable) {
-                console.error('[Stratum] Socket not writable');
-                return false;
-            }
-
-            client.socket.write(message, (err) => {
-                if (err) {
-                    console.error(`[Stratum] Write error to ${client.id}:`, err.message);
-                }
-            });
-
-            return true;
-        } catch (err) {
-            console.error(`[Stratum] Send error to ${client.id}:`, err.message);
-            return false;
-        }
+        const message = JSON.stringify(data) + '\n';
+        client.socket.write(message);
     }
 
     /**
@@ -537,15 +526,6 @@ class StratumServer extends EventEmitter {
     handleError(client, err) {
         console.error(`❌ Client error ${client.id}:`, err.message);
         this.emit('client:error', { clientId: client.id, error: err });
-
-        // Don't let socket errors crash the server
-        try {
-            if (client && client.socket && !client.socket.destroyed) {
-                client.socket.destroy();
-            }
-        } catch (cleanupErr) {
-            console.error(`[Stratum] Cleanup error:`, cleanupErr.message);
-        }
     }
 
     /**
