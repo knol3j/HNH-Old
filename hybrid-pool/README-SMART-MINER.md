@@ -67,7 +67,7 @@ npm install
 
 **Option A: GUI Mode (Recommended)**
 ```bash
-START-SMART-MINER.bat
+smart-multi-hnhminer.exe
 ```
 
 **Option B: Command Line Only**
@@ -176,7 +176,7 @@ The HTML GUI provides:
 - **Settings** - Adjust check interval, profit thresholds, electricity cost
 - **Activity log** - View recent switches and events
 
-Open `miner-gui.html` in your browser or it will auto-open when using `START-SMART-MINER.bat`.
+Open `miner-gui.html` in your browser or it will auto-open when using `smart-multi-hnhminer.exe`.
 
 ### Wallet Integration
 
@@ -342,7 +342,7 @@ hybrid-pool/
 ├── profitability-api.js       # Profitability calculation
 ├── wallets.json               # Wallet configuration
 ├── miner-gui.html             # Web-based GUI
-├── START-SMART-MINER.bat      # Windows launcher
+├── smart-multi-hnhminer.exe   # Windows launcher
 ├── t-rex.exe                  # T-Rex miner (download separately)
 └── README-SMART-MINER.md      # This file
 ```

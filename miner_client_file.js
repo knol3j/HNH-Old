@@ -228,21 +228,11 @@ class HashNHedgeMiner {
     }
 }
 
-// Pool servers configuration
-const POOL_SERVERS = [
-    'https://hashnhedge-pool.onrender.com',
-    'http://35.160.120.126:10000',
-    'http://44.233.151.27:10000',
-    'http://34.211.200.85:10000'
-    // Note: IP ranges 74.220.48.0/24 and 74.220.56.0/24 would need specific IPs within those ranges
-];
-
 // Configuration - EDIT THIS!
 const config = {
-    poolUrl: POOL_SERVERS[0], // Primary pool server
-    poolServers: POOL_SERVERS, // All available pool servers for failover
+    poolUrl: 'http://localhost:3001',
     walletAddress: 'GCKbEgD4VSLtkwt57At7pWscaxaQ2gBZtTQE2hqr3Yrc', // CHANGE THIS!
-    workerName: `miner-${os.hostname()}`
+    workerName: 'test-worker-01'
 };
 
 // Validate configuration

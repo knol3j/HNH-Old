@@ -1,0 +1,18 @@
+# smart-multi-hnhminer.exe placeholder
+
+This file represents the Windows executable for the HashNHedge Smart Multi Miner.
+
+The actual compiled executable would be placed here for download by users.
+
+## Build Instructions:
+1. Compile the Node.js application using pkg or similar tool
+2. Package with T-Rex miner dependencies
+3. Include auto-switching logic and GUI components
+4. Replace this placeholder with the actual executable
+
+## Features:
+- Auto-profit switching
+- Multi-currency mining support
+- Web-based GUI
+- Phantom & Exodus wallet integration
+- Real-time profitability calculation
