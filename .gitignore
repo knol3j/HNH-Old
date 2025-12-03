@@ -18,6 +18,17 @@ npm-debug.log*
 # Environment variables
 .env
 .env.local
+.env.secure
+.env.backup.*
+
+# Security and encryption keys
+.secure/
+*.key
+*.pem
+*.p12
+*.pfx
+backup_encryption_key*
+*_encryption_key
 
 # Build outputs
 dist/
@@ -40,12 +51,14 @@ _redirects
 # Security audit reports (generated locally)
 security-audits/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+# Backups
+backup/
+*.backup
+*.bak
+*.sql
+*.dump
 
-# Process ID files
-*.pid
+# Security logs
+logs/security/
+security_*.log
+*.log.gz
