@@ -1,21 +1,31 @@
 /**
- * Jest configuration for HashNHedge API testing
+ * Jest Configuration for HashNHedge
+ * Configures testing environment, coverage, and test patterns
  */
+
 module.exports = {
   // Test environment
   testEnvironment: 'node',
 
+  // Test file patterns
+  testMatch: [
+    '**/tests/**/*.test.js',
+    '**/__tests__/**/*.js'
+  ],
+
   // Coverage configuration
   collectCoverageFrom: [
     'api/**/*.js',
-    '!api/server-unified.js', // Exclude main server file
+    'utils/**/*.js',
+    'lib/**/*.js',
     '!**/node_modules/**',
     '!**/tests/**',
-    '!**/coverage/**'
+    '!**/coverage/**',
+    '!**/dist/**'
   ],
 
-  // Coverage thresholds
-  coverageThresholds: {
+  // Coverage thresholds (start conservative, increase over time)
+  coverageThreshold: {
     global: {
       branches: 50,
       functions: 50,
@@ -24,10 +34,12 @@ module.exports = {
     }
   },
 
-  // Test match patterns
-  testMatch: [
-    '**/tests/**/*.test.js',
-    '**/__tests__/**/*.js'
+  // Coverage reporters
+  coverageReporters: [
+    'text',
+    'text-summary',
+    'lcov',
+    'html'
   ],
 
   // Setup files
@@ -36,21 +48,41 @@ module.exports = {
   // Module paths
   moduleDirectories: ['node_modules', '<rootDir>'],
 
-  // Coverage directory
-  coverageDirectory: 'coverage',
+  // Test timeout (10 seconds for integration tests)
+  testTimeout: 10000,
+
+  // Ignore patterns
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/coverage/',
+    '/HNH-pool/',
+    '/mobile-proof-pool/',
+    '/hybrid-pool/',
+    '/armageddon/',
+    '/orchestration-api/'
+  ],
 
   // Verbose output
   verbose: true,
 
-  // Test timeout
-  testTimeout: 10000,
-
   // Clear mocks between tests
   clearMocks: true,
-
-  // Reset mocks between tests
   resetMocks: true,
+  restoreMocks: true,
 
-  // Restore mocks between tests
-  restoreMocks: true
+  // Force exit after tests complete
+  forceExit: true,
+
+  // Detect open handles (helps find leaked connections)
+  detectOpenHandles: true,
+
+  // Transform files (if using ES6 imports in future)
+  transform: {
+    '^.+\\.js$': ['babel-jest', { configFile: false }]
+  },
+
+  // Global setup/teardown
+  globalSetup: undefined,
+  globalTeardown: undefined
 };

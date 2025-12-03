@@ -1,4 +1,18 @@
 require('dotenv').config();
+
+// Validate environment configuration before starting server
+const { validateConfig } = require('../utils/configValidator');
+const configValidation = validateConfig({
+  strict: false,  // Don't crash on validation errors, just warn
+  verbose: true   // Show detailed validation results
+});
+
+// Exit if critical configuration is missing in production
+if (!configValidation.valid && process.env.NODE_ENV === 'production') {
+  console.error('[FATAL] Invalid configuration in production mode. Exiting...');
+  process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
