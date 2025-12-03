@@ -1,0 +1,28 @@
+# HashNHedge - Robots.txt
+# https://hashnhedge.com/robots.txt
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /.env
+Disallow: /node_modules/
+Disallow: /scripts/
+Disallow: /.git/
+
+# Allow important pages
+Allow: /index.html
+Allow: /armageddon/
+Allow: /docs/
+Allow: /downloads/
+Allow: /pages/
+Allow: /HNH-pool/
+Allow: /mobile-proof-pool/
+
+# Sitemap location
+Sitemap: https://hashnhedge.com/sitemap.xml
+
+# Crawl rate - be nice to our servers
+Crawl-delay: 1
