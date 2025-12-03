@@ -18,7 +18,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { PrismaClient } = require('@prisma/client');
-const { validateConfig } = require('./utils/configValidation');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -41,7 +40,6 @@ console.log(`
 // CONFIGURATION VALIDATION
 // ============================================================
 console.log('\n🔒 Starting security and configuration validation...\n');
-const configValidation = validateConfig();
 
 if (!configValidation.valid) {
   console.error('\n❌ CRITICAL: Configuration validation failed!');
