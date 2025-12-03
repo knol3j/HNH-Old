@@ -3,258 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HashNHedge - Decentralized GPU Mining & AI Compute Network | 70% Revenue Share</title>
-
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Connect your GPU farm to earn 70% revenue share through cryptocurrency mining and AI/ML compute tasks. Join the federated GPU network with seamless integration. ARMgeddon mobile mining available.">
-    <meta name="keywords" content="GPU mining, decentralized GPU network, AI compute marketplace, mobile cryptocurrency mining, GPU revenue optimization, federated computing, mine crypto on phone, ARMgeddon, PhoneProof algorithm">
-    <meta name="author" content="HashNHedge">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://hashnhedge.com/">
-
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="HashNHedge - Decentralized GPU Mining & AI Compute Network">
-    <meta property="og:description" content="Connect your GPU farm to earn 70% revenue share through cryptocurrency mining and AI/ML compute tasks. Revolutionary mobile mining with ARMgeddon.">
-    <meta property="og:url" content="https://hashnhedge.com/">
-    <meta property="og:site_name" content="HashNHedge">
-    <meta property="og:image" content="https://hashnhedge.com/img/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@hashnhedge">
-    <meta name="twitter:title" content="HashNHedge - Decentralized GPU Mining & AI Compute">
-    <meta name="twitter:description" content="Earn 70% revenue share with dual-stream GPU mining and AI compute. Revolutionary mobile mining with ARMgeddon PhoneProof algorithm.">
-    <meta name="twitter:image" content="https://hashnhedge.com/img/twitter-card.png">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Schema.org Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "HashNHedge",
-      "description": "Decentralized GPU computing network for cryptocurrency mining and AI/ML compute tasks",
-      "url": "https://hashnhedge.com",
-      "logo": "https://hashnhedge.com/img/logo.png",
-      "sameAs": [
-        "https://twitter.com/hashnhedge",
-        "https://github.com/knol3j/hashnhedge",
-        "https://discord.gg/hashnhedge",
-        "https://t.me/hashnhedge"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "ugbuni@proton.me",
-        "contactType": "Customer Support"
-      }
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "HashNHedge GPU Mining Platform",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Windows, Linux",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "23"
-      },
-      "description": "Federated GPU network offering 70% revenue share for cryptocurrency mining and AI compute tasks"
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      "name": "ARMgeddon Mobile Cryptocurrency Mining",
-      "description": "Revolutionary mobile-first cryptocurrency mining using PhoneProof algorithm optimized for ARM processors",
-      "brand": {
-        "@type": "Brand",
-        "name": "HashNHedge"
-      },
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      }
-    }
-    </script>
-
-    <style>
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .gradient-animate {
-            background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-        }
-        
-        .hamburger-menu {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        .side-menu {
-            position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100vh;
-            background: rgba(17, 24, 39, 0.95);
-            backdrop-filter: blur(10px);
-            transition: right 0.3s ease;
-            z-index: 999;
-            padding: 80px 20px 20px;
-            overflow-y: auto;
-        }
-        
-        .side-menu.active {
-            right: 0;
-        }
-        
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 998;
-        }
-        
-        .menu-overlay.active {
-            display: block;
-        }
-        
-        .hero-glow {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
-            filter: blur(100px);
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, -30px) scale(1.1); }
-        }
-        
-        .feature-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3);
-            border-color: rgba(99, 102, 241, 0.5);
-        }
-    </style>
-    <script>
-        // HashNHedge Configuration - Wallet addresses fetched from secure API
-        // NEVER store private keys or secrets in frontend code
-        let OFFICIAL_WALLET = null;
-
-        // Fetch wallet address from secure backend
-        async function initializeWallet() {
-            try {
-                const response = await fetch('/api/config/wallet');
-                const data = await response.json();
-                if (data.success) {
-                    OFFICIAL_WALLET = data.walletAddress;
-                }
-            } catch (error) {
-                console.error('Failed to fetch wallet configuration');
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', initializeWallet);
-    </script>
+    <title>HashNHedge - Decentralized GPU Computing Network</title>
+    <link rel="preload" href="assets/css/tailwind-lite.css" as="style">
+    <link rel="stylesheet" href="assets/css/tailwind-lite.css">
+    <link rel="stylesheet" href="assets/css/common.css">
 </head>
 <body class="bg-gray-900 text-white overflow-x-hidden">
     <!-- Pre-Launch Banner -->
     <div class="bg-gradient-to-r from-yellow-600 to-orange-600 text-center py-3 text-black font-semibold">
-        🚀 PRE-LAUNCH PHASE | Token Not Yet Released | Testnet Active
+        🚀 PRE-LAUNCH PHASE | Token Not Yet Released | Testnet Active |
+        <a href="docs/solana-token-creator.html" class="underline hover:no-underline">Create Your Token Now!</a>
     </div>
 
     <!-- Hamburger Menu Button -->
-    <button class="hamburger-menu bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition" onclick="toggleMenu()">
-        <i class="fas fa-bars text-2xl"></i>
+    <button class="hamburger-menu bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition" onclick="toggleMenu()" aria-label="Toggle navigation menu">
+        <span class="sr-only">Toggle navigation</span>
+        <span aria-hidden="true" class="text-2xl">☰</span>
     </button>
     
     <!-- Side Menu -->
     <div class="side-menu" id="sideMenu">
-        <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="toggleMenu()">
-            <i class="fas fa-times text-2xl"></i>
+        <button class="absolute top-4 right-4 text-gray-400 hover:text-white" onclick="toggleMenu()" aria-label="Close navigation menu">
+            <span class="sr-only">Close navigation</span>
+            <span aria-hidden="true" class="text-2xl">✕</span>
         </button>
         
         <h3 class="text-2xl font-bold mb-8 gradient-animate bg-clip-text text-transparent">HashNHedge</h3>
         
         <nav class="space-y-4">
             <a href="#home" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition" onclick="toggleMenu()">
-                <i class="fas fa-home mr-3"></i> Home
+                <span aria-hidden="true" class="mr-3">🏠</span>
+                <span>Home</span>
             </a>
             <a href="docs/gpu-farm-dashboard.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-indigo-600 hover:bg-indigo-700">
-                <i class="fas fa-server mr-3"></i> GPU Farm Dashboard
+                <span aria-hidden="true" class="mr-3">🖥️</span>
+                <span>GPU Farm Dashboard</span>
             </a>
             <a href="docs/security-platform.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-orange-600 hover:bg-orange-700">
-                <i class="fas fa-shield-alt mr-3"></i> Security & Hashcat Platform
+                <span aria-hidden="true" class="mr-3">🛡️</span>
+                <span>Security &amp; Hashcat Platform</span>
             </a>
             <a href="pages/whitepaper.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-purple-600 hover:bg-purple-700">
-                <i class="fas fa-file-alt mr-3"></i> Whitepaper
+                <span aria-hidden="true" class="mr-3">📄</span>
+                <span>Whitepaper</span>
             </a>
             <a href="downloads/index.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-blue-600 hover:bg-blue-700">
-                <i class="fas fa-download mr-3"></i> Windows Miner Download
+                <span aria-hidden="true" class="mr-3">⬇️</span>
+                <span>Windows Miner Download</span>
             </a>
             <a href="HNH-pool/pool-dashboard.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-cyan-600 hover:bg-cyan-700">
-                <i class="fas fa-swimming-pool mr-3"></i> Mining Pool Dashboard
+                <span aria-hidden="true" class="mr-3">🏊</span>
+                <span>Mining Pool Dashboard</span>
             </a>
             <a href="mobile-proof-pool/dashboard/index.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600">
-                <i class="fas fa-mobile-alt mr-3"></i> 📱 Mobile Pool Dashboard
+                <span aria-hidden="true" class="mr-3">📱</span>
+                <span>Mobile Pool Dashboard</span>
             </a>
             <a href="docs/revenue-calculator.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-green-600 hover:bg-green-700">
-                <i class="fas fa-calculator mr-3"></i> Revenue Calculator
+                <span aria-hidden="true" class="mr-3">🧮</span>
+                <span>Revenue Calculator</span>
+            </a>
+            <a href="docs/solana-token-creator.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-yellow-600 hover:bg-yellow-700">
+                <span aria-hidden="true" class="mr-3">🪙</span>
+                <span>Token Creator</span>
             </a>
             <a href="armageddon/index.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-red-600 hover:bg-red-700">
-                <i class="fas fa-mobile-alt mr-3"></i> ARMgeddon - Mobile Mining
+                <span aria-hidden="true" class="mr-3">📱</span>
+                <span>ARMgeddon</span>
             </a>
             <a href="downloads/mobile.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-indigo-600 hover:bg-indigo-700">
-                <i class="fas fa-mobile mr-3"></i> Mobile App Downloads
+                <span aria-hidden="true" class="mr-3">📲</span>
+                <span>Mobile App Downloads</span>
             </a>
             <a href="https://github.com/knol3j/hashnhedge" target="_blank" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition">
-                <i class="fab fa-github mr-3"></i> GitHub
+                <span aria-hidden="true" class="mr-3">🐙</span>
+                <span>GitHub</span>
             </a>
             <a href="pages/community-support.html" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700">
-                <i class="fas fa-users mr-3"></i> Community Support
+                <span aria-hidden="true" class="mr-3">👥</span>
+                <span>Community Support</span>
             </a>
             <a href="#contact" class="block py-3 px-4 rounded-lg hover:bg-gray-800 transition" onclick="toggleMenu()">
-                <i class="fas fa-envelope mr-3"></i> Contact
+                <span aria-hidden="true" class="mr-3">✉️</span>
+                <span>Contact</span>
             </a>
         </nav>
         
@@ -284,19 +115,24 @@
             </p>
             <div class="flex flex-wrap gap-4 justify-center">
                 <a href="downloads/index.html" class="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105 shadow-lg">
-                    <i class="fas fa-download mr-2"></i> Download Miner
+                    <span aria-hidden="true" class="mr-2">⬇️</span>
+                    <span>Download Miner</span>
                 </a>
                 <a href="pages/community-support.html" class="bg-pink-600 hover:bg-pink-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
-                    <i class="fas fa-users mr-2"></i> Community Support
+                    <span aria-hidden="true" class="mr-2">👥</span>
+                    <span>Community Support</span>
                 </a>
                 <a href="docs/gpu-farm-dashboard.html" class="bg-indigo-600 hover:bg-indigo-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
-                    <i class="fas fa-rocket mr-2"></i> Launch Dashboard
+                    <span aria-hidden="true" class="mr-2">🚀</span>
+                    <span>Launch Dashboard</span>
                 </a>
                 <a href="pages/whitepaper.html" class="border border-gray-600 hover:border-purple-500 px-8 py-4 rounded-lg font-semibold text-lg transition">
-                    <i class="fas fa-book mr-2"></i> Read Whitepaper
+                    <span aria-hidden="true" class="mr-2">📖</span>
+                    <span>Read Whitepaper</span>
                 </a>
                 <a href="docs/revenue-calculator.html" class="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg font-semibold text-lg transition transform hover:scale-105">
-                    <i class="fas fa-calculator mr-2"></i> Revenue Calculator
+                    <span aria-hidden="true" class="mr-2">🧮</span>
+                    <span>Revenue Calculator</span>
                 </a>
             </div>
         </div>
@@ -310,7 +146,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl mb-6 text-indigo-400">
-                        <i class="fas fa-network-wired"></i>
+                        <span aria-hidden="true">🌐</span>
                     </div>
                     <h3 class="text-2xl font-semibold mb-4">Federated GPU Network</h3>
                     <p class="text-gray-400">
@@ -321,7 +157,7 @@
                 
                 <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl mb-6 text-purple-400">
-                        <i class="fas fa-coins"></i>
+                        <span aria-hidden="true">🪙</span>
                     </div>
                     <h3 class="text-2xl font-semibold mb-4">Dual Revenue Streams</h3>
                     <p class="text-gray-400">
@@ -332,7 +168,7 @@
                 
                 <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl mb-6 text-pink-400">
-                        <i class="fas fa-chart-line"></i>
+                        <span aria-hidden="true">📈</span>
                     </div>
                     <h3 class="text-2xl font-semibold mb-4">70% Revenue Share</h3>
                     <p class="text-gray-400">
@@ -343,7 +179,7 @@
 
                 <div class="feature-card p-8 rounded-xl border-2 border-red-500">
                     <div class="text-5xl mb-6 text-red-400">
-                        <i class="fas fa-mobile-alt"></i>
+                        <span aria-hidden="true">📱</span>
                     </div>
                     <h3 class="text-2xl font-semibold mb-4">ARMgeddon 📱</h3>
                     <p class="text-gray-400">
@@ -383,7 +219,8 @@
                 </div>
             </div>
             <a href="HNH-pool/pool-dashboard.html" class="bg-white text-purple-900 px-12 py-4 rounded-lg font-bold text-xl hover:bg-gray-100 transition transform hover:scale-105 shadow-2xl">
-                <i class="fas fa-swimming-pool mr-3"></i> Join Mining Pool
+                <span aria-hidden="true" class="mr-3">⛏️</span>
+                <span>Join Mining Pool</span>
             </a>
         </div>
     </section>
@@ -417,7 +254,8 @@
 
             <div class="mt-12 text-center">
                 <a href="docs/revenue-calculator.html" class="bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-4 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-emerald-700 transition transform hover:scale-105">
-                    <i class="fas fa-calculator mr-2"></i> Calculate Your Earnings
+                    <span aria-hidden="true" class="mr-2">🧮</span>
+                    <span>Calculate Your Earnings</span>
                 </a>
             </div>
         </div>
@@ -433,10 +271,16 @@
             </p>
             <div class="flex flex-wrap gap-4 justify-center">
                 <a href="downloads/index.html" class="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition transform hover:scale-105">
-                    <i class="fas fa-download mr-2"></i> Download Windows Miner
+                    <span aria-hidden="true" class="mr-2">⬇️</span>
+                    <span>Download Windows Miner</span>
                 </a>
                 <a href="docs/gpu-farm-dashboard.html" class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-4 rounded-lg font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition transform hover:scale-105">
-                    Join Testnet
+                    <span aria-hidden="true" class="mr-2">🚀</span>
+                    <span>Join Testnet</span>
+                </a>
+                <a href="docs/solana-token-creator.html" class="bg-yellow-600 hover:bg-yellow-700 px-8 py-4 rounded-lg font-semibold text-lg transition">
+                    <span aria-hidden="true" class="mr-2">🪙</span>
+                    <span>Token Creator (Ready!)</span>
                 </a>
             </div>
         </div>
@@ -463,23 +307,23 @@
                     <ul class="space-y-2 text-gray-400">
                         <li><a href="downloads/index.html" class="hover:text-white transition">Windows Miner</a></li>
                         <li><a href="docs/gpu-farm-dashboard.html#contracts" class="hover:text-white transition">API Reference</a></li>
-                        <li><a href="downloads/mobile.html" class="hover:text-white transition">Mobile App</a></li>
+                        <li><a href="docs/node_setup_downloads.html" class="hover:text-white transition">Node Setup</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="font-semibold mb-4">Connect</h4>
                     <div class="space-y-2 text-gray-400 mb-4">
-                        <div><a href="mailto:ugbuni@proton.me" class="hover:text-white transition"><i class="fas fa-envelope mr-2"></i>ugbuni@proton.me</a></div>
-                        <div><a href="mailto:nolij@ik.me" class="hover:text-white transition"><i class="fas fa-cog mr-2"></i>nolij@ik.me</a></div>
+                        <div><a href="mailto:ugbuni@proton.me" class="hover:text-white transition"><span aria-hidden="true" class="mr-2">✉️</span>ugbuni@proton.me</a></div>
+                        <div><a href="mailto:nolij@ik.me" class="hover:text-white transition"><span aria-hidden="true" class="mr-2">⚙️</span>nolij@ik.me</a></div>
                     </div>
                     <div class="flex space-x-4 text-2xl mb-6">
-                        <a href="https://twitter.com/hashnhedge" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
-                        <a href="https://discord.gg/hashnhedge" class="text-gray-400 hover:text-white transition"><i class="fab fa-discord"></i></a>
-                        <a href="https://t.me/hashnhedge" class="text-gray-400 hover:text-white transition"><i class="fab fa-telegram"></i></a>
-                        <a href="https://github.com/knol3j/hashnhedge" class="text-gray-400 hover:text-white transition"><i class="fab fa-github"></i></a>
+                        <a href="https://twitter.com/hashnhedge" class="text-gray-400 hover:text-white transition" aria-label="HashNHedge on X"><span aria-hidden="true">𝕏</span></a>
+                        <a href="https://discord.gg/hashnhedge" class="text-gray-400 hover:text-white transition" aria-label="HashNHedge on Discord"><span aria-hidden="true">💬</span></a>
+                        <a href="https://t.me/hashnhedge" class="text-gray-400 hover:text-white transition" aria-label="HashNHedge on Telegram"><span aria-hidden="true">📣</span></a>
+                        <a href="https://github.com/knol3j/hashnhedge" class="text-gray-400 hover:text-white transition" aria-label="HashNHedge on GitHub"><span aria-hidden="true">🐙</span></a>
                     </div>
                     <div class="discord-widget">
-                        <iframe src="https://discordapp.com/widget?id=1421983088338272370&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+                        <iframe src="https://discordapp.com/widget?id=1421983088338272370&theme=dark" width="350" height="500" loading="lazy" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
                     </div>
                 </div>
             </div>
@@ -490,24 +334,6 @@
         </div>
     </footer>
     
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('sideMenu');
-            const overlay = document.getElementById('menuOverlay');
-            menu.classList.toggle('active');
-            overlay.classList.toggle('active');
-        }
-        
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        });
-    </script>
+    <script src="assets/js/common.js" defer></script>
 </body>
 </html>

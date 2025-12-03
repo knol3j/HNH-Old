@@ -3,32 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPU Farm Dashboard - Connect & Earn 70% Revenue Share | HashNHedge</title>
-
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="Connect your GPU farm to HashNHedge's decentralized network. Earn 70% revenue share through cryptocurrency mining and AI/ML compute tasks. Industry-leading federated GPU platform.">
-    <meta name="keywords" content="GPU farm, decentralized GPU network, GPU revenue optimization, federated GPU computing, GPU farm management, cryptocurrency mining farm, AI compute network, GPU rental marketplace">
-    <meta name="author" content="HashNHedge">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://hashnhedge.com/docs/gpu-farm-dashboard.html">
-
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="GPU Farm Dashboard - 70% Revenue Share">
-    <meta property="og:description" content="Connect your GPU farm to earn industry-leading 70% revenue share. Dual-stream income from mining and AI compute. Seamless integration with existing infrastructure.">
-    <meta property="og:url" content="https://hashnhedge.com/docs/gpu-farm-dashboard.html">
-    <meta property="og:site_name" content="HashNHedge">
-    <meta property="og:image" content="https://hashnhedge.com/img/gpu-farm-og-image.png">
-
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@hashnhedge">
-    <meta name="twitter:title" content="GPU Farm Dashboard - 70% Revenue Share">
-    <meta name="twitter:description" content="Federated GPU network with 70% revenue share. Mining + AI compute. Seamless integration.">
-    <meta name="twitter:image" content="https://hashnhedge.com/img/gpu-farm-twitter-card.png">
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>HashNHedge - Distributed GPU Farm Platform</title>
+    <link rel="preload" href="../assets/css/tailwind-lite.css" as="style">
+    <link rel="stylesheet" href="../assets/css/tailwind-lite.css">
+    <link rel="stylesheet" href="../assets/css/common.css">
     <style>
         @keyframes glow {
             0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
@@ -66,6 +44,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
+    <script src="../assets/js/common.js" defer></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
     <!-- Header -->
@@ -77,7 +56,8 @@
             </div>
             <div class="flex gap-4">
                 <a href="../index.html" class="bg-gray-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-600 transition">
-                    <i class="fas fa-arrow-left mr-2"></i> Back to Home
+                    <span aria-hidden="true" class="mr-2">?</span>
+                    <span>Back to Home</span>
                 </a>
                 <button onclick="connectWallet()" class="bg-white text-purple-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
                     Connect Wallet
@@ -187,7 +167,7 @@
                     <h3 class="text-xl font-semibold mb-4">Active Farms</h3>
                     <div class="space-y-3" id="farmList">
                         <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
-                            <i class="fas fa-server text-2xl mb-2"></i>
+                            <span aria-hidden="true" class="text-2xl mb-2 block">???</span>
                             <p>No farms registered yet</p>
                             <p class="text-sm">Register your first farm to get started</p>
                         </div>
@@ -236,7 +216,7 @@
                     <h4 class="font-semibold mb-3">Your Nodes</h4>
                     <div class="space-y-2" id="nodesList">
                         <div class="text-center text-gray-400">
-                            <i class="fas fa-desktop text-xl mb-2"></i>
+                            <span aria-hidden="true" class="text-xl mb-2 block">???</span>
                             <p class="text-sm">No nodes connected</p>
                         </div>
                     </div>
@@ -358,19 +338,19 @@
                     <h3 class="text-2xl font-bold mb-4">Problem Statement</h3>
                     <ul class="space-y-3 text-gray-300">
                         <li class="flex items-start">
-                            <span class="text-indigo-400 mr-2">•</span>
+                            <span class="text-indigo-400 mr-2">?</span>
                             <span>Cloud computing costs have increased 300% over the past 5 years, creating barriers for innovation</span>
                         </li>
                         <li class="flex items-start">
-                            <span class="text-indigo-400 mr-2">•</span>
+                            <span class="text-indigo-400 mr-2">?</span>
                             <span>90% of consumer GPUs sit idle 20+ hours per day, representing massive underutilized resources</span>
                         </li>
                         <li class="flex items-start">
-                            <span class="text-indigo-400 mr-2">•</span>
+                            <span class="text-indigo-400 mr-2">?</span>
                             <span>Centralized providers create vendor lock-in and single points of failure</span>
                         </li>
                         <li class="flex items-start">
-                            <span class="text-indigo-400 mr-2">•</span>
+                            <span class="text-indigo-400 mr-2">?</span>
                             <span>Small-scale miners lack profitable alternatives post-Ethereum merge</span>
                         </li>
                     </ul>
@@ -626,7 +606,7 @@ contract HashNHedgeOrchestrator {
                             <div class="flex justify-between items-center">
                                 <div>
                                     <p class="font-semibold">${farm.name}</p>
-                                    <p class="text-sm text-gray-400">${farm.gpus} GPUs • ${farm.location}</p>
+                                    <p class="text-sm text-gray-400">${farm.gpus} GPUs ? ${farm.location}</p>
                                 </div>
                                 <span class="bg-${farm.status === 'online' ? 'green' : 'red'}-500 px-3 py-1 rounded-full text-sm">
                                     ${farm.status.charAt(0).toUpperCase() + farm.status.slice(1)}
@@ -637,7 +617,7 @@ contract HashNHedgeOrchestrator {
                 } else {
                     farmList.innerHTML = `
                         <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
-                            <i class="fas fa-server text-2xl mb-2"></i>
+                            <span aria-hidden="true" class="text-2xl mb-2 block">???</span>
                             <p>No farms registered yet</p>
                             <p class="text-sm">Register your first farm to get started</p>
                         </div>
@@ -648,7 +628,7 @@ contract HashNHedgeOrchestrator {
                 const farmList = document.getElementById('farmList');
                 farmList.innerHTML = `
                     <div class="bg-gray-700 p-4 rounded-lg text-center text-gray-400">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <span aria-hidden="true" class="text-2xl mb-2 block">??</span>
                         <p>Unable to load farms</p>
                         <p class="text-sm">Check your connection and try again</p>
                     </div>
@@ -658,50 +638,63 @@ contract HashNHedgeOrchestrator {
 
         // Initialize Charts with real data or empty states
         async function initCharts() {
+            const Chart = await loadChartJs();
+
+            const growthCanvas = document.getElementById('growthChart');
+            const computeCanvas = document.getElementById('computeChart');
+            const tokenCanvas = document.getElementById('tokenDistChart');
+            const farmPerformanceCanvas = document.getElementById('farmPerformanceChart');
+
+            if (!growthCanvas && !computeCanvas && !tokenCanvas && !farmPerformanceCanvas) {
+                return;
+            }
+
             try {
                 // Network Growth Chart - Load real historical data
                 const growthResponse = await fetch(`${API_BASE}/network-growth`);
                 const growthData = await growthResponse.json();
 
-                const growthCtx = document.getElementById('growthChart').getContext('2d');
-                new Chart(growthCtx, {
-                    type: 'line',
-                    data: {
-                        labels: growthData.labels || ['No Data'],
-                        datasets: [{
-                            label: 'Active Nodes',
-                            data: growthData.data || [0],
-                            borderColor: 'rgb(99, 102, 241)',
-                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+                const growthCtx = growthCanvas?.getContext('2d');
+                if (growthCtx) {
+                    new Chart(growthCtx, {
+                        type: 'line',
+                        data: {
+                            labels: growthData.labels || ['No Data'],
+                            datasets: [{
+                                label: 'Active Nodes',
+                                data: growthData.data || [0],
+                                borderColor: 'rgb(99, 102, 241)',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                tension: 0.4
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
                                 }
                             },
-                            x: {
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)'
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             } catch (error) {
                 // Show empty chart on error
-                const growthCtx = document.getElementById('growthChart').getContext('2d');
-                new Chart(growthCtx, {
+                const growthCtx = growthCanvas?.getContext('2d');
+                growthCtx && new Chart(growthCtx, {
                     type: 'line',
                     data: {
                         labels: ['No Data'],
@@ -728,58 +721,61 @@ contract HashNHedgeOrchestrator {
                 const computeResponse = await fetch(`${API_BASE}/compute-distribution`);
                 const computeData = await computeResponse.json();
 
-                const computeCtx = document.getElementById('computeChart').getContext('2d');
-                new Chart(computeCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: computeData.labels || ['No Active Tasks'],
-                        datasets: [{
-                            data: computeData.data || [100],
-                            backgroundColor: computeData.colors || ['rgb(75, 85, 99)']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: 'white'
+                const computeCtx = computeCanvas?.getContext('2d');
+                if (computeCtx) {
+                    new Chart(computeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: computeData.labels || ['No Active Tasks'],
+                            datasets: [{
+                                data: computeData.data || [100],
+                                backgroundColor: computeData.colors || ['rgb(75, 85, 99)']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: 'white'
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             } catch (error) {
                 // Show empty state
-                const computeCtx = document.getElementById('computeChart').getContext('2d');
-                new Chart(computeCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['No Active Tasks'],
-                        datasets: [{
-                            data: [100],
-                            backgroundColor: ['rgb(75, 85, 99)']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: 'white'
+                const computeCtx = computeCanvas?.getContext('2d');
+                if (computeCtx) {
+                    new Chart(computeCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['No Active Tasks'],
+                            datasets: [{
+                                data: [100],
+                                backgroundColor: ['rgb(75, 85, 99)']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: 'white'
+                                    }
                                 }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
 
             // Token Distribution Chart - Keep static planned distribution
-            const tokenCtx = document.getElementById('tokenDistChart');
-            if (tokenCtx) {
-                new Chart(tokenCtx.getContext('2d'), {
+            if (tokenCanvas) {
+                new Chart(tokenCanvas.getContext('2d'), {
                     type: 'pie',
                     data: {
                         labels: ['Node Operators', 'Public Sale', 'Team', 'Treasury', 'Marketing'],
@@ -813,7 +809,7 @@ contract HashNHedgeOrchestrator {
                 const farmPerfResponse = await fetch(`${API_BASE}/farm-performance`);
                 const farmPerfData = await farmPerfResponse.json();
 
-                const farmPerfCtx = document.getElementById('farmPerformanceChart');
+                const farmPerfCtx = farmPerformanceCanvas;
                 if (farmPerfCtx) {
                     new Chart(farmPerfCtx.getContext('2d'), {
                         type: 'bar',
@@ -850,7 +846,7 @@ contract HashNHedgeOrchestrator {
                 }
             } catch (error) {
                 // Show empty state
-                const farmPerfCtx = document.getElementById('farmPerformanceChart');
+                const farmPerfCtx = farmPerformanceCanvas;
                 if (farmPerfCtx) {
                     new Chart(farmPerfCtx.getContext('2d'), {
                         type: 'bar',
@@ -980,16 +976,42 @@ contract HashNHedgeOrchestrator {
 
         // Initialize on load
         window.addEventListener('load', () => {
-            initCharts();
             calculateROI();
-            loadNetworkStats();
-            loadFarms();
 
-            // Auto-refresh data every 30 seconds
-            setInterval(() => {
+            const refreshData = () => {
                 loadNetworkStats();
                 loadFarms();
+            };
+
+            refreshData();
+
+            let refreshIntervalId = setInterval(() => {
+                if (document.hidden) {
+                    return;
+                }
+                refreshData();
             }, 30000);
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (refreshIntervalId) {
+                        clearInterval(refreshIntervalId);
+                        refreshIntervalId = null;
+                    }
+                } else if (!refreshIntervalId) {
+                    refreshData();
+                    refreshIntervalId = setInterval(() => {
+                        if (document.hidden) {
+                            return;
+                        }
+                        refreshData();
+                    }, 30000);
+                }
+            });
+
+            runWhenIdle(() => {
+                initCharts();
+            }, 1200);
         });
     </script>
 </body>
