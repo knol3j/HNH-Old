@@ -42,8 +42,8 @@
         <div class="text-center mb-12">
             <h1 class="text-5xl font-bold mb-6">Download HashNHedge Smart Miner</h1>
             <p class="text-xl text-gray-300 max-w-3xl mx-auto">
-                🤖 Intelligent auto-profit switching miner with mine integration.
-                Automatically mines the most profitable coin every 5 minutes!
+                🤖 Intelligent auto-profit switching miner with multi-backend support.
+                Supports T-Rex, ethminer, XMRig, and lolMiner. Automatically mines the most profitable coin every 5 minutes!
             </p>
         </div>
 
@@ -63,53 +63,44 @@
                 <div class="space-y-4 mb-6">
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>Auto-switches to most profitable coin</span>
+                        <span>Multi-backend support (T-Rex, ethminer, XMRig, lolMiner)</span>
                     </div>
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>7+ coins supported (ETC, RVN, ERGO, etc.)</span>
+                        <span>7+ algorithms (Ethash, KawPow, RandomX, etc.)</span>
                     </div>
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>Phantom & Exodus wallet integration</span>
+                        <span>Input validation & security hardened</span>
                     </div>
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>Beautiful web-based GUI</span>
+                        <span>Cross-platform (Windows & Linux launchers)</span>
                     </div>
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>Mine integration</span>
+                        <span>Real-time GPU monitoring & stats</span>
                     </div>
                     <div class="flex items-center">
                         <i class="fas fa-check-circle text-green-400 mr-3"></i>
-                        <span>Real-time profitability calculation</span>
+                        <span>Auto-profit switching capability</span>
                     </div>
                 </div>
 
                 <div class="space-y-3">
                     <a href="../hybrid-pool/miner-gui.html"
                        class="block bg-purple-600 hover:bg-purple-700 text-center py-3 px-6 rounded-lg font-semibold transition">
-                        <i class="fas fa-rocket mr-2"></i> Launch Smart Miner GUI
+                        <i class="fas fa-rocket mr-2"></i> Launch Web GUI
                     </a>
-                    
-                    <!-- OS-specific downloads -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                        <a href="../hybrid-pool/smart-multi-hnhminer.exe" download
-                           class="block bg-blue-600 hover:bg-blue-700 text-center py-3 px-4 rounded-lg font-semibold transition">
-                            <i class="fab fa-windows mr-2"></i> Windows (.exe)
-                        </a>
-                        <a href="../hybrid-pool/start-smart-miner.sh" download
-                           class="block bg-orange-600 hover:bg-orange-700 text-center py-3 px-4 rounded-lg font-semibold transition">
-                            <i class="fab fa-linux mr-2"></i> Linux (.sh)
-                        </a>
-                    </div>
-                    
-                    <a href="../hybrid-pool/README-SMART-MINER.md"
+                    <a href="https://github.com/knol3j/HNH/tree/main/mining-engine" target="_blank"
+                       class="block bg-blue-600 hover:bg-blue-700 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fas fa-download mr-2"></i> Download HashNHedge Miner v3.0
+                    </a>
+                    <a href="../mining-engine/README.md"
                        class="block bg-green-600 hover:bg-green-700 text-center py-3 px-6 rounded-lg font-semibold transition">
                         <i class="fas fa-book mr-2"></i> Setup Guide
                     </a>
-                    <a href="https://github.com/knol3j/HNH/tree/master/hybrid-pool" target="_blank"
+                    <a href="https://github.com/knol3j/HNH/tree/main/mining-engine" target="_blank"
                        class="block bg-indigo-600 hover:bg-indigo-700 text-center py-3 px-6 rounded-lg font-semibold transition">
                         <i class="fab fa-github mr-2"></i> View on GitHub
                     </a>
@@ -118,9 +109,9 @@
                 <div class="mt-6 p-4 bg-gray-800 rounded-lg">
                     <p class="text-sm text-gray-400">
                         <strong>System Requirements:</strong><br>
-                        Modern web browser (Chrome, Firefox, Edge), Node.js<br>
-                        <strong>Windows:</strong> Windows 10/11, T-Rex Miner, 2GB RAM<br>
-                        <strong>Linux:</strong> Ubuntu 18.04+, T-Rex Miner for Linux, 2GB RAM
+                        <strong>Web GUI:</strong> Modern web browser (Chrome, Firefox, Edge)<br>
+                        <strong>Desktop Miner:</strong> Windows 10+/Linux, Python 3.8+, NVIDIA/AMD GPU, 2GB RAM<br>
+                        <strong>Standalone .exe:</strong> Windows 10+ (no Python required)
                     </p>
                 </div>
             </div>
@@ -199,16 +190,16 @@
                     <div class="flex">
                         <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 font-bold">3</div>
                         <div>
-                            <h4 class="font-semibold mb-1">Download Miner</h4>
-                            <p class="text-gray-400 text-sm">Download Windows .exe or Linux .sh based on your OS</p>
+                            <h4 class="font-semibold mb-1">Download HashNHedge Miner</h4>
+                            <p class="text-gray-400 text-sm">Get the v3.0 miner with multi-backend support</p>
                         </div>
                     </div>
 
                     <div class="flex">
                         <div class="bg-orange-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0 font-bold">4</div>
                         <div>
-                            <h4 class="font-semibold mb-1">Run & Configure</h4>
-                            <p class="text-gray-400 text-sm">Execute downloaded file, select coins and start auto-switching!</p>
+                            <h4 class="font-semibold mb-1">Configure & Mine</h4>
+                            <p class="text-gray-400 text-sm">Select coins and start auto-switching!</p>
                         </div>
                     </div>
                 </div>
@@ -216,7 +207,7 @@
                 <div class="mt-6 p-4 bg-purple-900 bg-opacity-30 border border-purple-600 rounded-lg">
                     <p class="text-purple-300 text-sm">
                         <i class="fas fa-magic mr-2"></i>
-                        <strong>Cross-Platform Support:</strong> Download the appropriate executable for your operating system. Windows users get a .exe file, Linux users get a .sh script. Both provide the same powerful auto-profit switching functionality.
+                        <strong>Web-Based:</strong> No downloads needed to get started! Open the GUI in your browser, connect wallet, and manage mining from anywhere. Download HashNHedge Miner v3.0 for desktop mining with multi-backend support (T-Rex, ethminer, XMRig, lolMiner).
                     </p>
                 </div>
             </div>

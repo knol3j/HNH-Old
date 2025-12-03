@@ -1,0 +1,293 @@
+{
+  "clusterName": "hashnhedge-hybrid-pool",
+  "instanceId": "pool-main-01",
+
+  "logging": {
+    "level": "info",
+    "enableConsoleLog": true,
+    "enableConsoleColors": true,
+    "logFile": "logs/pool-{0:yyyy-MM-dd}.log",
+    "logBaseDirectory": "logs",
+    "perPoolLogFile": true
+  },
+
+  "banning": {
+    "manager": "integrated",
+    "banOnJunkReceive": true,
+    "banOnInvalidShares": true
+  },
+
+  "notifications": {
+    "enabled": true,
+    "email": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "user": "pool@hashnhedge.com",
+      "password": "${SMTP_PASSWORD}",
+      "fromAddress": "pool@hashnhedge.com",
+      "fromName": "HashNHedge Pool Notifications"
+    },
+    "admin": {
+      "enabled": true,
+      "emailAddress": "admin@hashnhedge.com",
+      "notifyBlockFound": true,
+      "notifyPaymentSuccess": false
+    }
+  },
+
+  "persistence": {
+    "postgres": {
+      "host": "127.0.0.1",
+      "port": 5432,
+      "database": "hashnhedge_pool",
+      "user": "pooluser",
+      "password": "${DATABASE_PASSWORD}"
+    }
+  },
+
+  "paymentProcessing": {
+    "enabled": true,
+    "interval": 300,
+    "shareRecoveryFile": "recovered-shares.txt"
+  },
+
+  "api": {
+    "enabled": true,
+    "listenAddress": "0.0.0.0",
+    "port": 4000,
+    "rateLimiting": {
+      "disabled": false,
+      "rules": [
+        {
+          "endpoint": "*",
+          "period": "1m",
+          "limit": 60
+        },
+        {
+          "endpoint": "/api/pools/*/miners/*",
+          "period": "1m",
+          "limit": 30
+        }
+      ]
+    }
+  },
+
+  "pools": [
+    {
+      "id": "etc-hybrid",
+      "enabled": true,
+      "coin": "etc",
+      "address": "0x0000000000000000000000000000000000000000",
+
+      "rewardRecipients": [
+        {
+          "address": "0x0000000000000000000000000000000000000000",
+          "percentage": 0.03,
+          "type": "dev"
+        }
+      ],
+
+      "blockRefreshInterval": 1000,
+      "jobRebroadcastTimeout": 10,
+      "clientConnectionTimeout": 600,
+
+      "banning": {
+        "enabled": true,
+        "time": 600,
+        "invalidPercent": 50,
+        "checkThreshold": 50,
+        "malformedPercent": 50
+      },
+
+      "ports": {
+        "3333": {
+          "name": "Low Difficulty (for GPUs)",
+          "difficulty": 4000000000,
+          "varDiff": {
+            "minDiff": 2000000000,
+            "maxDiff": 100000000000,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30,
+            "maxDelta": 500
+          }
+        },
+        "3334": {
+          "name": "High Difficulty (for Mining Farms)",
+          "difficulty": 40000000000,
+          "varDiff": {
+            "minDiff": 20000000000,
+            "maxDiff": 500000000000,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        },
+        "3335": {
+          "name": "NiceHash Compatible",
+          "difficulty": 100000000000,
+          "varDiff": {
+            "minDiff": 50000000000,
+            "maxDiff": 1000000000000,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        }
+      },
+
+      "daemons": [
+        {
+          "host": "127.0.0.1",
+          "port": 8545,
+          "http": true,
+          "ssl": false,
+          "validateCert": true,
+          "timeout": 30000
+        }
+      ],
+
+      "paymentProcessing": {
+        "enabled": true,
+        "minimumPayment": 0.01,
+        "minimumPaymentToPaymentId": 0.001,
+        "payoutScheme": "PPLNS",
+        "payoutSchemeConfig": {
+          "factor": 2.0
+        },
+        "extraConfig": {
+          "enableInternalPayouts": true,
+          "gasPrice": null,
+          "chainId": 61
+        }
+      },
+
+      "extraConfig": {
+        "enableDualMining": false
+      }
+    },
+
+    {
+      "id": "rvn-hybrid",
+      "enabled": true,
+      "coin": "rvn",
+      "address": "RPLACEHOLDER1234567890ABCDEFGHIJKL",
+
+      "rewardRecipients": [
+        {
+          "address": "RPLACEHOLDER1234567890ABCDEFGHIJKL",
+          "percentage": 0.03,
+          "type": "dev"
+        }
+      ],
+
+      "blockRefreshInterval": 1000,
+      "jobRebroadcastTimeout": 10,
+      "clientConnectionTimeout": 600,
+
+      "banning": {
+        "enabled": true,
+        "time": 600,
+        "invalidPercent": 50,
+        "checkThreshold": 50
+      },
+
+      "ports": {
+        "4333": {
+          "name": "Standard Port",
+          "difficulty": 0.05,
+          "varDiff": {
+            "minDiff": 0.01,
+            "maxDiff": 100,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        },
+        "4334": {
+          "name": "High Difficulty",
+          "difficulty": 1.0,
+          "varDiff": {
+            "minDiff": 0.5,
+            "maxDiff": 500,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        }
+      },
+
+      "daemons": [
+        {
+          "host": "127.0.0.1",
+          "port": 8766,
+          "user": "rpcuser",
+          "password": "${RPC_PASSWORD}",
+          "timeout": 30000
+        }
+      ],
+
+      "paymentProcessing": {
+        "enabled": true,
+        "minimumPayment": 1.0,
+        "minimumPaymentToPaymentId": 0.5,
+        "payoutScheme": "PPLNS",
+        "payoutSchemeConfig": {
+          "factor": 2.0
+        }
+      }
+    },
+
+    {
+      "id": "ergo-hybrid",
+      "enabled": false,
+      "coin": "ergo",
+      "address": "9PLACEHOLDER_ERGO_ADDRESS_HERE_ABCDEF",
+
+      "rewardRecipients": [
+        {
+          "address": "9PLACEHOLDER_ERGO_ADDRESS_HERE_ABCDEF",
+          "percentage": 0.03,
+          "type": "dev"
+        }
+      ],
+
+      "blockRefreshInterval": 1000,
+      "jobRebroadcastTimeout": 10,
+      "clientConnectionTimeout": 600,
+
+      "ports": {
+        "5333": {
+          "difficulty": 100000000,
+          "varDiff": {
+            "minDiff": 50000000,
+            "maxDiff": 10000000000,
+            "targetTime": 15,
+            "retargetTime": 90,
+            "variancePercent": 30
+          }
+        }
+      },
+
+      "daemons": [
+        {
+          "host": "127.0.0.1",
+          "port": 9053,
+          "user": "",
+          "password": "",
+          "http": true,
+          "ssl": false
+        }
+      ],
+
+      "paymentProcessing": {
+        "enabled": true,
+        "minimumPayment": 0.1,
+        "payoutScheme": "PPLNS",
+        "payoutSchemeConfig": {
+          "factor": 2.0
+        }
+      }
+    }
+  ]
+}

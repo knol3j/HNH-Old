@@ -1,7 +1,5 @@
 # Dependencies
 node_modules/
-.husky_root/
-node_modules_root/
 
 # OS files
 .DS_Store
@@ -26,7 +24,6 @@ dist/
 build/
 
 # Temporary files
-__pycache__/
 *.tmp
 *.temp
 
@@ -43,4 +40,12 @@ _redirects
 # Security audit reports (generated locally)
 security-audits/
 
-mining-engine/.venv/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Process ID files
+*.pid
