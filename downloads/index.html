@@ -48,7 +48,74 @@
         </div>
 
         <!-- Download Options -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <!-- CLI Miner - NEW -->
+            <div class="download-card p-8 rounded-xl border-2 border-green-500">
+                <div class="text-center mb-6">
+                    <i class="fas fa-terminal text-6xl text-green-400 mb-4"></i>
+                    <h3 class="text-2xl font-bold mb-2">CLI Miner v2.0</h3>
+                    <p class="text-gray-400">Command Line Mining Client</p>
+                    <span class="inline-block mt-2 bg-blue-600 px-3 py-1 rounded-full text-sm font-semibold">
+                        ⚡ Lightweight & Fast
+                    </span>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Easy one-command setup</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Auto-installs dependencies</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Real-time mining stats</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Low resource usage</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                        <span>Works on any system</span>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <a href="miner/hnh-miner-windows.bat" download
+                       class="block bg-blue-600 hover:bg-blue-700 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fab fa-windows mr-2"></i> Windows (.bat)
+                    </a>
+                    <a href="miner/hnh-miner-windows.ps1" download
+                       class="block bg-blue-500 hover:bg-blue-600 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fab fa-windows mr-2"></i> Windows PowerShell
+                    </a>
+                    <a href="miner/hnh-miner-linux.sh" download
+                       class="block bg-orange-600 hover:bg-orange-700 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fab fa-linux mr-2"></i> Linux (.sh)
+                    </a>
+                    <a href="miner/hnh-miner-macos.sh" download
+                       class="block bg-gray-600 hover:bg-gray-700 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fab fa-apple mr-2"></i> MacOS (.sh)
+                    </a>
+                    <a href="miner/README.md" target="_blank"
+                       class="block bg-green-600 hover:bg-green-700 text-center py-3 px-6 rounded-lg font-semibold transition">
+                        <i class="fas fa-book mr-2"></i> Quick Start Guide
+                    </a>
+                </div>
+
+                <div class="mt-6 p-4 bg-gray-800 rounded-lg">
+                    <p class="text-sm text-gray-400">
+                        <strong>Requirements:</strong><br>
+                        Node.js 16+ (auto-installs if missing)<br>
+                        Solana wallet address<br>
+                        <strong>Best For:</strong> CPU mining, servers, VPS
+                    </p>
+                </div>
+            </div>
+
             <!-- Smart Miner -->
             <div class="download-card p-8 rounded-xl border-2 border-purple-500">
                 <div class="text-center mb-6">
@@ -163,7 +230,7 @@
             </div>
 
             <!-- Quick Start Guide -->
-            <div class="download-card p-8 rounded-xl col-span-1 md:col-span-2">
+            <div class="download-card p-8 rounded-xl col-span-1 md:col-span-2 lg:col-span-3">
                 <div class="text-center mb-6">
                     <i class="fas fa-rocket text-6xl text-green-400 mb-4"></i>
                     <h3 class="text-2xl font-bold mb-2">Smart Miner Quick Start</h3>

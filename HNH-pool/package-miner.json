@@ -1,0 +1,40 @@
+{
+  "name": "hashnhedge-miner",
+  "version": "2.0.0",
+  "description": "HashNHedge Pool Miner - CPU/GPU Mining Client",
+  "main": "hashnhedge-miner.js",
+  "bin": {
+    "hnh-miner": "./hashnhedge-miner.js"
+  },
+  "scripts": {
+    "start": "node hashnhedge-miner.js",
+    "build": "npm run build:windows && npm run build:linux",
+    "build:windows": "pkg hashnhedge-miner.js --targets node18-win-x64 --output ../downloads/miner/hnh-miner-windows.exe",
+    "build:linux": "pkg hashnhedge-miner.js --targets node18-linux-x64 --output ../downloads/miner/hnh-miner-linux",
+    "build:macos": "pkg hashnhedge-miner.js --targets node18-macos-x64 --output ../downloads/miner/hnh-miner-macos"
+  },
+  "keywords": [
+    "cryptocurrency",
+    "mining",
+    "hashnhedge",
+    "blockchain"
+  ],
+  "author": "HashNHedge Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.12.2"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [],
+    "scripts": "hashnhedge-miner.js",
+    "targets": [
+      "node18-win-x64",
+      "node18-linux-x64",
+      "node18-macos-x64"
+    ],
+    "outputPath": "../downloads/miner"
+  }
+}
