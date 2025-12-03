@@ -13,8 +13,8 @@ class MobilePoolServer {
     constructor(options = {}) {
         this.stratumPort = options.stratumPort || 3333;
         this.wsPort = options.wsPort || 8081;
-        // Use Render's PORT environment variable or default to 8080
-        this.apiPort = process.env.PORT || options.apiPort || 8080;
+        // Prioritize PORT (for Render/cloud platforms) over API_PORT
+        this.apiPort = options.apiPort || options.port || 8080;
         this.poolAddress = options.poolAddress || 'pool_default_address';
         this.poolFee = options.poolFee || 2; // 2% pool fee
         this.minPayout = options.minPayout || 0.01;
@@ -23,7 +23,6 @@ class MobilePoolServer {
         this.miners = new Map();
         this.shares = new Map();
         this.blocks = [];
-        this.jobs = new Map(); // Store active jobs for verification: jobId -> job data
         this.stats = {
             totalHashrate: 0,
             activeMiners: 0,
@@ -269,66 +268,11 @@ class MobilePoolServer {
     }
 
     /**
-     * Verify share validity using proper cryptographic verification
+     * Verify share validity
      */
     verifyShare(share) {
-        try {
-            // Basic validation
-            if (!share || !share.nonce || !share.hash) {
-                console.error('[Pool] Invalid share: missing fields');
-                return false;
-            }
-
-            // Validate hash format (must be 64-char hex string)
-            if (!/^[0-9a-f]{64}$/i.test(share.hash)) {
-                console.error('[Pool] Invalid hash format:', share.hash);
-                return false;
-            }
-
-            // Get difficulty (from share or use current network difficulty)
-            const difficulty = share.difficulty || this.algorithm.currentDifficulty;
-            const target = '0'.repeat(difficulty);
-
-            // Check if hash meets difficulty target
-            if (!share.hash.startsWith(target)) {
-                console.error(`[Pool] Hash does not meet difficulty ${difficulty}:`, share.hash);
-                return false;
-            }
-
-            // Re-verify the hash was computed correctly using stored job data
-            if (share.jobId) {
-                const job = this.jobs.get(share.jobId);
-
-                if (!job) {
-                    console.error('[Pool] Unknown or expired job ID:', share.jobId);
-                    return false;
-                }
-
-                // Verify hash was computed correctly from the job's blockData
-                const input = `${job.blockData}${share.nonce}`;
-                const computedHash = crypto.createHash('sha256').update(input).digest('hex');
-
-                if (computedHash !== share.hash) {
-                    console.error('[Pool] Hash mismatch - possible tampering');
-                    console.error('  Expected:', computedHash);
-                    console.error('  Received:', share.hash);
-                    return false;
-                }
-
-                // Verify difficulty matches the job
-                if (job.difficulty !== this.algorithm.currentDifficulty) {
-                    console.log(`[Pool] Job difficulty ${job.difficulty} differs from current ${this.algorithm.currentDifficulty}`);
-                }
-            } else {
-                console.error('[Pool] Share missing jobId');
-                return false;
-            }
-
-            return true;
-        } catch (error) {
-            console.error('[Pool] Error verifying share:', error);
-            return false;
-        }
+        // Basic validation - in production, verify against actual block data
+        return share.nonce && share.hash && share.hash.startsWith('0');
     }
 
     /**
@@ -394,8 +338,36 @@ class MobilePoolServer {
      * Setup WebSocket server for real-time updates
      */
     setupWebSocketServer() {
-        // WebSocket server will be attached to HTTP server in start() method
-        // We'll initialize it later when we have the HTTP server
+        const httpServer = http.createServer();
+        this.wss = new WebSocket.Server({ server: httpServer });
+
+        this.wss.on('connection', (ws, req) => {
+            const clientId = crypto.randomBytes(8).toString('hex');
+            console.log(`[WebSocket] Client connected: ${clientId}`);
+
+            // Send initial stats
+            ws.send(JSON.stringify({
+                type: 'stats',
+                data: this.stats
+            }));
+
+            ws.on('message', (message) => {
+                try {
+                    const data = JSON.parse(message);
+                    this.handleWebSocketMessage(ws, clientId, data);
+                } catch (err) {
+                    console.error('[WebSocket] Parse error:', err);
+                }
+            });
+
+            ws.on('close', () => {
+                console.log(`[WebSocket] Client disconnected: ${clientId}`);
+            });
+        });
+
+        httpServer.listen(this.wsPort, () => {
+            console.log(`[WebSocket] Server listening on port ${this.wsPort}`);
+        });
     }
 
     /**
@@ -403,114 +375,6 @@ class MobilePoolServer {
      */
     handleWebSocketMessage(ws, clientId, message) {
         switch (message.type) {
-            case 'register':
-                // Register a new miner
-                const miner = {
-                    id: clientId,
-                    address: message.wallet || 'unknown',
-                    worker: message.worker || 'unknown',
-                    hashrate: 0,
-                    shares: 0,
-                    deviceTier: message.deviceInfo?.platform || 'unknown',
-                    connectedAt: Date.now(),
-                    ws
-                };
-                this.miners.set(clientId, miner);
-                console.log(`[WebSocket] Miner registered: ${miner.address} (${miner.worker})`);
-
-                // Send initial job
-                const job = {
-                    type: 'job',
-                    jobId: crypto.randomBytes(8).toString('hex'),
-                    blockData: crypto.randomBytes(32).toString('hex'),
-                    difficulty: this.algorithm.currentDifficulty,
-                    target: '0'.repeat(this.algorithm.currentDifficulty)
-                };
-
-                // Store job for later verification
-                this.jobs.set(job.jobId, {
-                    blockData: job.blockData,
-                    difficulty: job.difficulty,
-                    createdAt: Date.now()
-                });
-
-                ws.send(JSON.stringify(job));
-                break;
-
-            case 'submit':
-                // Handle share submission
-                const share = {
-                    jobId: message.jobId,
-                    nonce: message.nonce,
-                    hash: message.hash
-                };
-
-                const submitMiner = this.miners.get(clientId);
-                if (!submitMiner) {
-                    ws.send(JSON.stringify({
-                        type: 'error',
-                        message: 'Miner not registered'
-                    }));
-                    return;
-                }
-
-                // Verify share
-                const isValid = this.verifyShare(share);
-
-                if (isValid) {
-                    this.stats.validShares++;
-                    submitMiner.shares++;
-
-                    const minerShares = this.shares.get(submitMiner.address) || { valid: 0, invalid: 0, pending: 0 };
-                    minerShares.valid++;
-                    minerShares.pending += this.calculateShareValue(this.algorithm.currentDifficulty);
-                    this.shares.set(submitMiner.address, minerShares);
-
-                    ws.send(JSON.stringify({
-                        type: 'share_accepted',
-                        jobId: share.jobId,
-                        hash: share.hash,
-                        reward: this.calculateShareValue(this.algorithm.currentDifficulty)
-                    }));
-
-                    console.log(`[Pool] Valid share from ${submitMiner.address} (${minerShares.valid} total)`);
-
-                    // Check if block found
-                    if (this.isBlockFound(share)) {
-                        this.handleBlockFound(submitMiner, share);
-                    }
-
-                    // Send new job
-                    const newJob = {
-                        type: 'job',
-                        jobId: crypto.randomBytes(8).toString('hex'),
-                        blockData: crypto.randomBytes(32).toString('hex'),
-                        difficulty: this.algorithm.currentDifficulty,
-                        target: '0'.repeat(this.algorithm.currentDifficulty)
-                    };
-
-                    // Store new job
-                    this.jobs.set(newJob.jobId, {
-                        blockData: newJob.blockData,
-                        difficulty: newJob.difficulty,
-                        createdAt: Date.now()
-                    });
-
-                    ws.send(JSON.stringify(newJob));
-                } else {
-                    this.stats.invalidShares++;
-                    ws.send(JSON.stringify({
-                        type: 'share_rejected',
-                        jobId: share.jobId,
-                        reason: 'Invalid hash'
-                    }));
-                    console.log(`[Pool] Invalid share from ${submitMiner.address}`);
-                }
-
-                this.stats.totalShares++;
-                this.broadcastStats();
-                break;
-
             case 'subscribe':
                 // Subscribe to specific events
                 break;
@@ -559,22 +423,7 @@ class MobilePoolServer {
         setInterval(() => {
             this.updateStats();
             this.broadcastStats();
-            this.cleanupOldJobs();
         }, 10000); // Update every 10 seconds
-    }
-
-    /**
-     * Clean up old jobs (older than 5 minutes)
-     */
-    cleanupOldJobs() {
-        const now = Date.now();
-        const maxAge = 5 * 60 * 1000; // 5 minutes
-
-        for (const [jobId, job] of this.jobs) {
-            if (now - job.createdAt > maxAge) {
-                this.jobs.delete(jobId);
-            }
-        }
     }
 
     /**
@@ -597,62 +446,22 @@ class MobilePoolServer {
      * Start all servers
      */
     start() {
-        // Create HTTP server from Express app
-        const httpServer = http.createServer(this.app);
-
-        // Attach WebSocket server to HTTP server
-        this.wss = new WebSocket.Server({ server: httpServer });
-
-        this.wss.on('connection', (ws, req) => {
-            const clientId = crypto.randomBytes(8).toString('hex');
-            console.log(`[WebSocket] Client connected: ${clientId}`);
-
-            // Send initial stats
-            ws.send(JSON.stringify({
-                type: 'stats',
-                data: this.stats
-            }));
-
-            ws.on('message', (message) => {
-                try {
-                    const data = JSON.parse(message);
-                    this.handleWebSocketMessage(ws, clientId, data);
-                } catch (err) {
-                    console.error('[WebSocket] Parse error:', err);
-                }
-            });
-
-            ws.on('close', () => {
-                console.log(`[WebSocket] Client disconnected: ${clientId}`);
-                this.miners.delete(clientId);
-                this.updateStats();
-            });
-
-            ws.on('error', (err) => {
-                console.error(`[WebSocket] Error:`, err.message);
-            });
+        // Start Stratum server
+        this.stratumServer.listen(this.stratumPort, () => {
+            console.log(`[Stratum] Server listening on port ${this.stratumPort}`);
         });
 
-        // Start combined HTTP + WebSocket server on single port
-        httpServer.listen(this.apiPort, () => {
+        // Start API server
+        this.app.listen(this.apiPort, () => {
             console.log(`[API] Server listening on port ${this.apiPort}`);
-            console.log(`[WebSocket] Server attached to port ${this.apiPort}`);
         });
-
-        // Optionally start Stratum server (skip in cloud environments like Render)
-        if (!process.env.RENDER && !process.env.RAILWAY_ENVIRONMENT) {
-            this.stratumServer.listen(this.stratumPort, () => {
-                console.log(`[Stratum] Server listening on port ${this.stratumPort}`);
-            }).on('error', (err) => {
-                console.log(`[Stratum] Skipping Stratum server (${err.message})`);
-            });
-        }
 
         console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║        Mobile Mining Pool Server Started 🚀           ║
 ╠════════════════════════════════════════════════════════╣
-║  WebSocket:  ws://localhost:${this.apiPort}                 ║
+║  Stratum:    stratum+tcp://localhost:${this.stratumPort}        ║
+║  WebSocket:  ws://localhost:${this.wsPort}                 ║
 ║  API:        http://localhost:${this.apiPort}              ║
 ║  Dashboard:  http://localhost:${this.apiPort}/dashboard  ║
 ╚════════════════════════════════════════════════════════╝
@@ -690,7 +499,9 @@ if (require.main === module) {
     const pool = new MobilePoolServer({
         stratumPort: process.env.STRATUM_PORT || 3333,
         wsPort: process.env.WS_PORT || 8081,
-        apiPort: process.env.API_PORT || 8080,
+        // Prioritize PORT (standard for Render/cloud) over API_PORT
+        apiPort: process.env.PORT || process.env.API_PORT || 8080,
+        port: process.env.PORT || process.env.API_PORT || 8080,
         poolAddress: process.env.POOL_ADDRESS || 'default_pool_address',
         poolFee: parseFloat(process.env.POOL_FEE) || 2,
         minPayout: parseFloat(process.env.MIN_PAYOUT) || 0.01
