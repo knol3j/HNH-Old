@@ -1,7 +1,16 @@
 [build]
 builder = "NIXPACKS"
+buildCommand = "npm install --production=false"
 
 [deploy]
 startCommand = "node index.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+
+[env]
+NODE_ENV = "production"
+PORT = "10000"
+STRATUM_PORT = "3333"
+STRATUM_HOST = "0.0.0.0"

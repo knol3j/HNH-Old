@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     buildCommand: npm run deploy:build
-    startCommand: npm start
+    startCommand: npm run start:unified
     envVars:
       - key: NODE_ENV
         value: production
@@ -43,6 +43,7 @@ services:
         sync: false
       - key: STACK_SECRET_SERVER_KEY
         sync: false
+    healthCheckPath: /api/health
     autoDeploy: true
 
   # Hybrid Pool Server (AI/Mining)
@@ -51,8 +52,8 @@ services:
     env: node
     plan: free
     rootDir: hybrid-pool
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install --production=false
+    startCommand: node index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -93,8 +94,8 @@ services:
     env: node
     plan: free
     rootDir: mobile-proof-pool
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install --production=false
+    startCommand: node src/mobile-pool-server.js
     envVars:
       - key: NODE_ENV
         value: production
